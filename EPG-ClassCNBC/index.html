@@ -248,7 +248,7 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; color: #666; font-size: 14px;">
-            Versione 2.3.0 - Ultimo aggiornamento: 05/06/2025
+            Versione 2.3.1 - Ultimo aggiornamento: 05/06/2025
         </div>
         
         <div class="channel-selector">
@@ -295,10 +295,10 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="iconUrl">URL Icona/Logo (default canale):</label>
-                        <input type="text" id="iconUrl" value="https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Class+CNBC" />
+                        <label for="iconUrl">URL Icona Base del Canale:</label>
+                        <input type="text" id="iconUrl" value="https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/" readonly style="background: #f0f0f0;" />
                         <small style="display: block; color: #666; margin-top: 5px;">
-                            Nota: Ogni format avrà la sua icona specifica automaticamente
+                            URL base per le icone. Ogni format avrà il suo file specifico (default: default.jpg)
                         </small>
                     </div>
                 </div>
@@ -482,7 +482,7 @@
         // 5. Salva il file HTML
 
         // Versione software
-        const SOFTWARE_VERSION = "2.3.0";
+        const SOFTWARE_VERSION = "2.3.1";
         const LAST_UPDATE = "05/06/2025";
         
         // Array per memorizzare i format trovati nel file corrente
@@ -559,7 +559,7 @@
             const config = channelConfigs[channel];
             document.getElementById('channelId').value = config.id;
             document.getElementById('channelName').value = config.name;
-            document.getElementById('iconUrl').value = config.icon;
+            document.getElementById('iconUrl').value = config.baseIconUrl;
             
             addLog(`Canale selezionato: ${config.name}`);
         }
