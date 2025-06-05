@@ -44,11 +44,34 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
+            position: relative;
         }
         .channel-btn img {
             height: 30px;
             width: auto;
             object-fit: contain;
+            max-width: 150px;
+        }
+        .channel-btn .logo-text {
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 10px;
+        }
+        .channel-btn.classcnbc-btn {
+            background: #003366;
+            color: white;
+        }
+        .channel-btn.classcnbc-btn.active {
+            background: #004488;
+            border-color: #0066cc;
+        }
+        .channel-btn.tvmoda-btn {
+            background: #FF1493;
+            color: white;
+        }
+        .channel-btn.tvmoda-btn.active {
+            background: #FF69B4;
+            border-color: #FF1493;
         }
         .channel-btn:hover {
             background: #dee2e6;
@@ -256,18 +279,16 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; color: #666; font-size: 14px;">
-            Versione 2.3.3 - Ultimo aggiornamento: 05/06/2025
+            Versione 2.3.4 - Ultimo aggiornamento: 05/06/2025
         </div>
         
         <div class="channel-selector">
             <h3>Seleziona il canale:</h3>
-            <button class="channel-btn active" onclick="selectChannel('classcnbc')" id="btnClassCNBC">
-                <img src="https://upload.wikimedia.org/wikipedia/it/d/d2/Class_CNBC.png" alt="Class CNBC" />
-                Class CNBC
+            <button class="channel-btn classcnbc-btn active" onclick="selectChannel('classcnbc')" id="btnClassCNBC">
+                <span class="logo-text">CLASS CNBC</span>
             </button>
-            <button class="channel-btn" onclick="selectChannel('tvmoda')" id="btnTVModa">
-                <img src="https://res.cloudinary.com/quickpublish/image/upload/Mediacenter/ChannelGraphicsLogoSmallcbf95edb-01c8-44f7-83ae-0278f8defb35.webp" alt="Class TV Moda" />
-                Class TV Moda
+            <button class="channel-btn tvmoda-btn" onclick="selectChannel('tvmoda')" id="btnTVModa">
+                <span class="logo-text">CLASS TV MODA</span>
             </button>
         </div>
 
@@ -492,7 +513,7 @@
         // 5. Salva il file HTML
 
         // Versione software
-        const SOFTWARE_VERSION = "2.3.3";
+        const SOFTWARE_VERSION = "2.3.4";
         const LAST_UPDATE = "05/06/2025";
         
         // Array per memorizzare i format trovati nel file corrente
@@ -570,6 +591,12 @@
             document.getElementById('channelId').value = config.id;
             document.getElementById('channelName').value = config.name;
             document.getElementById('iconUrl').value = config.baseIconUrl;
+            
+            // Aggiorna la lista delle icone se il pannello è aperto
+            const iconManager = document.getElementById('iconManager');
+            if (iconManager.classList.contains('active')) {
+                updateIconList();
+            }
             
             addLog(`Canale selezionato: ${config.name}`);
         }
