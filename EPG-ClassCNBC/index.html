@@ -248,7 +248,7 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; color: #666; font-size: 14px;">
-            Versione 2.2.1 - Ultimo aggiornamento: 05/06/2025
+            Versione 2.3.0 - Ultimo aggiornamento: 05/06/2025
         </div>
         
         <div class="channel-selector">
@@ -349,7 +349,7 @@
                 <h4>➕ Aggiungi Nuovo Format</h4>
                 <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px;">
                     <input type="text" id="newFormatName" placeholder="Nome format" />
-                    <input type="text" id="newFormatIcon" placeholder="URL icona" />
+                    <input type="text" id="newFormatIcon" placeholder="nome-file.jpg (default: default.jpg)" />
                     <button class="btn btn-success btn-small" onclick="addNewFormat()">Aggiungi</button>
                 </div>
             </div>
@@ -482,7 +482,7 @@
         // 5. Salva il file HTML
 
         // Versione software
-        const SOFTWARE_VERSION = "2.2.1";
+        const SOFTWARE_VERSION = "2.3.0";
         const LAST_UPDATE = "05/06/2025";
         
         // Array per memorizzare i format trovati nel file corrente
@@ -490,7 +490,7 @@
 
         // Funzione per ottenere l'icona corretta in base al format (case-insensitive)
         function getIconForFormat(format, channel) {
-            if (!format) return channelConfigs[channel].icon;
+            if (!format) return channelConfigs[channel].baseIconUrl + 'default.jpg';
             
             const formatIcons = channel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
             
@@ -500,12 +500,13 @@
             // Cerca la chiave corrispondente (case-insensitive)
             for (const [key, value] of Object.entries(formatIcons)) {
                 if (key.toUpperCase() === normalizedFormat) {
-                    return value;
+                    // Combina la base URL con il nome del file
+                    return channelConfigs[channel].baseIconUrl + value;
                 }
             }
             
             // Se non trovato, ritorna l'icona default del canale
-            return channelConfigs[channel].icon;
+            return channelConfigs[channel].baseIconUrl + 'default.jpg';
         }
 
         // Mappatura categorie
@@ -1211,10 +1212,12 @@
                 const blob = new Blob([xmltvContent], { type: 'application/xml;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 
-                const channelId = document.getElementById('channelId').value.trim().toLowerCase();
-                const dateRange = document.getElementById('dateRange').value;
-                const dateStr = new Date().toISOString().split('T')[0];
-                const filename = `${channelId}_epg_${dateRange}_${dateStr}.xml`;
+                // Genera il nome del file nel formato AAAA-MM-GG.xml
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const filename = `${year}-${month}-${day}.xml`;
                 
                 downloadSection.innerHTML = `
                     <h3>📥 Download File</h3>
@@ -1222,7 +1225,8 @@
                     <p style="color: #666; font-size: 14px;">
                         File generato con successo<br>
                         Canale: ${document.getElementById('channelName').value}<br>
-                        Periodo: ${document.getElementById('dateRange').selectedOptions[0].text}
+                        Periodo: ${document.getElementById('dateRange').selectedOptions[0].text}<br>
+                        Nome file: ${filename}
                     </p>
                 `;
                 downloadSection.style.display = 'block';
@@ -1367,20 +1371,21 @@
             list.innerHTML = '';
             
             missingFormats.forEach((format, index) => {
-                const defaultUrl = `https://via.placeholder.com/1920x1080/${currentChannel === 'tvmoda' ? 'FF1493' : '003366'}/FFFFFF?text=${encodeURIComponent(format.replace(/\s+/g, '+'))}`;
+                const defaultFilename = 'default.jpg';
+                const baseUrl = channelConfigs[currentChannel].baseIconUrl;
                 
                 const item = document.createElement('div');
                 item.className = 'icon-item';
                 item.innerHTML = `
                     <div>
                         <strong>${format}</strong>
-                        <div class="icon-preview" style="background-image: url('${defaultUrl}')"></div>
+                        <div class="icon-preview" style="background-image: url('${baseUrl + defaultFilename}')"></div>
                     </div>
                     <input type="text" 
                            id="missingFormat_${index}" 
-                           value="${defaultUrl}" 
+                           value="${defaultFilename}" 
                            style="padding: 5px; font-size: 12px;" 
-                           placeholder="Inserisci URL icona" 
+                           placeholder="nome-file.jpg" 
                            data-format="${format}" />
                     <div class="icon-actions">
                         <button class="btn btn-success btn-small" onclick="testMissingIconUrl(${index})">👁️ Test</button>
@@ -1396,8 +1401,9 @@
 
         function testMissingIconUrl(index) {
             const input = document.getElementById(`missingFormat_${index}`);
+            const baseUrl = channelConfigs[currentChannel].baseIconUrl;
             if (input && input.value) {
-                window.open(input.value, '_blank');
+                window.open(baseUrl + input.value, '_blank');
             }
         }
 
@@ -1408,9 +1414,9 @@
             
             inputs.forEach(input => {
                 const format = input.getAttribute('data-format');
-                const url = input.value.trim();
-                if (format && url) {
-                    formatIcons[format] = url;
+                const filename = input.value.trim();
+                if (format && filename) {
+                    formatIcons[format] = filename;
                     addedCount++;
                 }
             });
@@ -1420,6 +1426,7 @@
                 closeMissingFormats();
                 showStatus(`✅ Aggiunti ${addedCount} format al dizionario`, 'success');
                 addLog(`Aggiunti ${addedCount} nuovi format al dizionario ${currentChannel}`);
+                saveMappingsToLocalStorage();
             }
         }
 
@@ -1440,20 +1447,21 @@
         function updateIconList() {
             const iconList = document.getElementById('iconList');
             const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            const baseUrl = channelConfigs[currentChannel].baseIconUrl;
             
             iconList.innerHTML = '';
             
-            Object.entries(formatIcons).forEach(([format, url]) => {
+            Object.entries(formatIcons).forEach(([format, filename]) => {
                 const item = document.createElement('div');
                 item.className = 'icon-item';
                 item.innerHTML = `
                     <div>
                         <strong>${format}</strong>
-                        <div class="icon-preview" style="background-image: url('${url}')"></div>
+                        <div class="icon-preview" style="background-image: url('${baseUrl + filename}')"></div>
                     </div>
-                    <input type="text" value="${url}" onchange="updateFormatIcon('${format}', this.value)" 
+                    <input type="text" value="${filename}" onchange="updateFormatIcon('${format}', this.value)" 
                            style="padding: 5px; font-size: 12px;" 
-                           placeholder="Inserisci URL icona" />
+                           placeholder="nome-file.jpg" />
                     <div class="icon-actions">
                         <button class="btn btn-success btn-small" onclick="testIconUrl('${format}')">👁️ Test</button>
                         <button class="btn btn-danger btn-small" onclick="removeFormat('${format}')">🗑️</button>
@@ -1484,10 +1492,11 @@
 
         function testIconUrl(format) {
             const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-            const url = formatIcons[format];
+            const filename = formatIcons[format];
+            const baseUrl = channelConfigs[currentChannel].baseIconUrl;
             
-            if (url) {
-                window.open(url, '_blank');
+            if (filename) {
+                window.open(baseUrl + filename, '_blank');
             }
         }
 
@@ -1505,21 +1514,22 @@
             const iconInput = document.getElementById('newFormatIcon');
             
             const name = nameInput.value.trim();
-            const icon = iconInput.value.trim();
+            const filename = iconInput.value.trim() || 'default.jpg';
             
-            if (!name || !icon) {
-                alert('Inserisci sia il nome del format che l\'URL dell\'icona');
+            if (!name) {
+                alert('Inserisci il nome del format');
                 return;
             }
             
             const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-            formatIcons[name] = icon;
+            formatIcons[name] = filename;
             
             nameInput.value = '';
             iconInput.value = '';
             
             updateIconList();
-            addLog(`Nuovo format aggiunto: "${name}"`);
+            addLog(`Nuovo format aggiunto: "${name}" -> ${filename}`);
+            saveMappingsToLocalStorage();
         }
 
         function exportIconMapping() {
