@@ -352,8 +352,12 @@
             </div>
             
             <div style="text-align: center; margin-top: 15px;">
-                <button class="btn btn-small" onclick="exportIconMapping()">💾 Esporta Mappatura</button>
-                <button class="btn btn-small" onclick="importIconMapping()">📂 Importa Mappatura</button>
+                <button class="btn btn-success" onclick="saveIconMapping()">💾 Salva Modifiche</button>
+                <button class="btn btn-small" onclick="loadSavedMapping()">🔄 Carica Salvate</button>
+                <button class="btn btn-small" onclick="resetToDefaults()">🔧 Ripristina Default</button>
+                <hr style="margin: 15px 0;">
+                <button class="btn btn-small" onclick="exportIconMapping()">📤 Esporta File</button>
+                <button class="btn btn-small" onclick="importIconMapping()">📥 Importa File</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)" />
             </div>
         </div>
@@ -386,8 +390,8 @@
             }
         };
 
-        // Mappatura icone per format - TV Moda
-        const tvModaFormatIcons = {
+        // Mappatura icone per format - TV Moda (con valori default)
+        const tvModaFormatIconsDefault = {
             "(UN)ACCESSING BACKSTAGE": "https://via.placeholder.com/1920x1080/8B008B/FFFFFF?text=Backstage",
             "CATWALKS": "https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=Catwalks",
             "CLASS TV MODA STORIES": "https://via.placeholder.com/1920x1080/DA70D6/FFFFFF?text=TV+Moda+Stories",
@@ -403,8 +407,8 @@
             "WHAT WOMEN WEAR": "https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=What+Women+Wear"
         };
 
-        // Mappatura icone per format - Class CNBC
-        const classCNBCFormatIcons = {
+        // Mappatura icone per format - Class CNBC (con valori default)
+        const classCNBCFormatIconsDefault = {
             "Business Class": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Business+Class",
             "Mercati in 10 minuti": "https://via.placeholder.com/1920x1080/0066CC/FFFFFF?text=Mercati+10min",
             "Class Meteo": "https://via.placeholder.com/1920x1080/87CEEB/FFFFFF?text=Class+Meteo",
@@ -419,6 +423,10 @@
             "Report": "https://via.placeholder.com/1920x1080/2F4F4F/FFFFFF?text=Report",
             "Documentario": "https://via.placeholder.com/1920x1080/708090/FFFFFF?text=Documentario"
         };
+
+        // Carica mappature salvate o usa quelle default
+        let tvModaFormatIcons = loadFromLocalStorage('tvModaFormatIcons') || {...tvModaFormatIconsDefault};
+        let classCNBCFormatIcons = loadFromLocalStorage('classCNBCFormatIcons') || {...classCNBCFormatIconsDefault};
 
         // Funzione per ottenere l'icona corretta in base al format (case-insensitive)
         function getIconForFormat(format, channel) {
@@ -1137,6 +1145,70 @@
             }
         }
 
+        // Funzioni per localStorage
+        function saveToLocalStorage(key, data) {
+            try {
+                localStorage.setItem(`epgConverter_${key}`, JSON.stringify(data));
+                return true;
+            } catch (e) {
+                console.error('Errore salvataggio localStorage:', e);
+                return false;
+            }
+        }
+
+        function loadFromLocalStorage(key) {
+            try {
+                const data = localStorage.getItem(`epgConverter_${key}`);
+                return data ? JSON.parse(data) : null;
+            } catch (e) {
+                console.error('Errore caricamento localStorage:', e);
+                return null;
+            }
+        }
+
+        function saveIconMapping() {
+            const tvSaved = saveToLocalStorage('tvModaFormatIcons', tvModaFormatIcons);
+            const cnbcSaved = saveToLocalStorage('classCNBCFormatIcons', classCNBCFormatIcons);
+            
+            if (tvSaved && cnbcSaved) {
+                showStatus('✅ Mappature icone salvate con successo!', 'success');
+                addLog('Mappature icone salvate nel browser (localStorage)');
+            } else {
+                showStatus('⚠️ Errore nel salvataggio delle mappature', 'error');
+            }
+        }
+
+        function loadSavedMapping() {
+            const savedTvModa = loadFromLocalStorage('tvModaFormatIcons');
+            const savedClassCNBC = loadFromLocalStorage('classCNBCFormatIcons');
+            
+            if (savedTvModa) {
+                tvModaFormatIcons = savedTvModa;
+            }
+            if (savedClassCNBC) {
+                classCNBCFormatIcons = savedClassCNBC;
+            }
+            
+            updateIconList();
+            showStatus('✅ Mappature salvate caricate con successo!', 'success');
+            addLog('Mappature icone caricate da localStorage');
+        }
+
+        function resetToDefaults() {
+            if (confirm('Ripristinare le mappature alle impostazioni predefinite? Le modifiche non salvate andranno perse.')) {
+                tvModaFormatIcons = {...tvModaFormatIconsDefault};
+                classCNBCFormatIcons = {...classCNBCFormatIconsDefault};
+                
+                // Rimuovi dal localStorage
+                localStorage.removeItem('epgConverter_tvModaFormatIcons');
+                localStorage.removeItem('epgConverter_classCNBCFormatIcons');
+                
+                updateIconList();
+                showStatus('✅ Mappature ripristinate ai valori predefiniti', 'success');
+                addLog('Mappature icone ripristinate ai default');
+            }
+        }
+
         // Funzioni per la gestione delle icone
         function toggleIconManager() {
             const manager = document.getElementById('iconManager');
@@ -1291,6 +1363,11 @@
         // Log iniziale
         addLog('🚀 Convertitore EPG Multi-Canale pronto all\'uso');
         addLog('Seleziona il canale appropriato prima di caricare il file Excel');
+        
+        // Controlla se ci sono mappature salvate
+        if (loadFromLocalStorage('tvModaFormatIcons') || loadFromLocalStorage('classCNBCFormatIcons')) {
+            addLog('📌 Trovate mappature icone salvate precedentemente');
+        }
     </script>
 </body>
 </html>
