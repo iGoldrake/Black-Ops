@@ -180,13 +180,67 @@
                 grid-template-columns: 1fr;
             }
         }
-        .warning-box {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 5px;
+        .icon-manager {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        .icon-manager.active {
+            display: block;
+        }
+        .icon-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .icon-item {
+            display: grid;
+            grid-template-columns: 200px 1fr auto;
+            gap: 10px;
+            align-items: center;
             padding: 10px;
-            margin: 10px 0;
-            color: #856404;
+            border-bottom: 1px solid #ddd;
+        }
+        .icon-item:last-child {
+            border-bottom: none;
+        }
+        .icon-preview {
+            width: 40px;
+            height: 23px;
+            background-size: cover;
+            background-position: center;
+            border: 1px solid #ccc;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .add-format-section {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .icon-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
         }
     </style>
 </head>
@@ -238,8 +292,11 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="iconUrl">URL Icona/Logo:</label>
+                        <label for="iconUrl">URL Icona/Logo (default canale):</label>
                         <input type="text" id="iconUrl" value="https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Class+CNBC" />
+                        <small style="display: block; color: #666; margin-top: 5px;">
+                            Nota: Ogni format avrà la sua icona specifica automaticamente
+                        </small>
                     </div>
                 </div>
                 
@@ -268,6 +325,36 @@
                         <label for="fillGaps">Riempi automaticamente i gap temporali</label>
                     </div>
                 </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-small" onclick="toggleIconManager()">
+                    🎨 Gestisci Icone Format
+                </button>
+            </div>
+        </div>
+
+        <div class="icon-manager" id="iconManager">
+            <h3>🎨 Gestione Icone Format</h3>
+            <p>Modifica le associazioni format → icona per il canale selezionato</p>
+            
+            <div class="icon-list" id="iconList">
+                <!-- Popolato dinamicamente -->
+            </div>
+            
+            <div class="add-format-section">
+                <h4>➕ Aggiungi Nuovo Format</h4>
+                <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px;">
+                    <input type="text" id="newFormatName" placeholder="Nome format" />
+                    <input type="text" id="newFormatIcon" placeholder="URL icona" />
+                    <button class="btn btn-success btn-small" onclick="addNewFormat()">Aggiungi</button>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn btn-small" onclick="exportIconMapping()">💾 Esporta Mappatura</button>
+                <button class="btn btn-small" onclick="importIconMapping()">📂 Importa Mappatura</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)" />
             </div>
         </div>
 
@@ -298,6 +385,60 @@
                 icon: 'https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=Class+TV+Moda'
             }
         };
+
+        // Mappatura icone per format - TV Moda
+        const tvModaFormatIcons = {
+            "(UN)ACCESSING BACKSTAGE": "https://via.placeholder.com/1920x1080/8B008B/FFFFFF?text=Backstage",
+            "CATWALKS": "https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=Catwalks",
+            "CLASS TV MODA STORIES": "https://via.placeholder.com/1920x1080/DA70D6/FFFFFF?text=TV+Moda+Stories",
+            "DESIGN MAP": "https://via.placeholder.com/1920x1080/9370DB/FFFFFF?text=Design+Map",
+            "DISTRICTS": "https://via.placeholder.com/1920x1080/BA55D3/FFFFFF?text=Districts",
+            "FASHION NEWS": "https://via.placeholder.com/1920x1080/FF69B4/FFFFFF?text=Fashion+News",
+            "FASHION&BEYOND": "https://via.placeholder.com/1920x1080/DDA0DD/FFFFFF?text=Fashion+Beyond",
+            "FRONT ROW": "https://via.placeholder.com/1920x1080/EE82EE/FFFFFF?text=Front+Row",
+            "GREEN REVOLUTION FORWARD": "https://via.placeholder.com/1920x1080/32CD32/FFFFFF?text=Green+Revolution",
+            "SOUND OF FASHION": "https://via.placeholder.com/1920x1080/FF6347/FFFFFF?text=Sound+of+Fashion",
+            "SPOTLIGHT": "https://via.placeholder.com/1920x1080/FFD700/FFFFFF?text=Spotlight",
+            "VOICES": "https://via.placeholder.com/1920x1080/4169E1/FFFFFF?text=Voices",
+            "WHAT WOMEN WEAR": "https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=What+Women+Wear"
+        };
+
+        // Mappatura icone per format - Class CNBC
+        const classCNBCFormatIcons = {
+            "Business Class": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Business+Class",
+            "Mercati in 10 minuti": "https://via.placeholder.com/1920x1080/0066CC/FFFFFF?text=Mercati+10min",
+            "Class Meteo": "https://via.placeholder.com/1920x1080/87CEEB/FFFFFF?text=Class+Meteo",
+            "Trading Room": "https://via.placeholder.com/1920x1080/FF4500/FFFFFF?text=Trading+Room",
+            "Borse Oggi": "https://via.placeholder.com/1920x1080/32CD32/FFFFFF?text=Borse+Oggi",
+            "Apertura Mercati": "https://via.placeholder.com/1920x1080/FFD700/FFFFFF?text=Apertura+Mercati",
+            "Market Driver": "https://via.placeholder.com/1920x1080/4169E1/FFFFFF?text=Market+Driver",
+            "Wall Street": "https://via.placeholder.com/1920x1080/FF6347/FFFFFF?text=Wall+Street",
+            "Chiusura Mercati": "https://via.placeholder.com/1920x1080/DC143C/FFFFFF?text=Chiusura+Mercati",
+            "Business Talk": "https://via.placeholder.com/1920x1080/008080/FFFFFF?text=Business+Talk",
+            "Class Life": "https://via.placeholder.com/1920x1080/9370DB/FFFFFF?text=Class+Life",
+            "Report": "https://via.placeholder.com/1920x1080/2F4F4F/FFFFFF?text=Report",
+            "Documentario": "https://via.placeholder.com/1920x1080/708090/FFFFFF?text=Documentario"
+        };
+
+        // Funzione per ottenere l'icona corretta in base al format (case-insensitive)
+        function getIconForFormat(format, channel) {
+            if (!format) return channelConfigs[channel].icon;
+            
+            const formatIcons = channel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            
+            // Normalizza il format per la ricerca case-insensitive
+            const normalizedFormat = format.trim().toUpperCase();
+            
+            // Cerca la chiave corrispondente (case-insensitive)
+            for (const [key, value] of Object.entries(formatIcons)) {
+                if (key.toUpperCase() === normalizedFormat) {
+                    return value;
+                }
+            }
+            
+            // Se non trovato, ritorna l'icona default del canale
+            return channelConfigs[channel].icon;
+        }
 
         // Mappatura categorie
         const categoryMapping = {
@@ -650,7 +791,8 @@
                         title: title,
                         description: description || '',
                         duration: durationMinutes * 60, // in secondi
-                        category: 'Fashion' // Categoria default per TV Moda
+                        category: 'Fashion', // Categoria default per TV Moda
+                        format: title // Il titolo È il format per TV Moda
                     });
                     
                     programsInDay++;
@@ -711,7 +853,10 @@
                 xml += `      <value>0</value>\n`;
                 xml += `    </rating>\n`;
                 xml += `    <category lang="it">${program.category}</category>\n`;
-                xml += `    <icon src="${escapeXml(iconUrl)}" width="1920" height="1080"></icon>\n`;
+                
+                // Usa l'icona specifica per il format
+                const formatIcon = getIconForFormat(program.format, 'tvmoda');
+                xml += `    <icon src="${escapeXml(formatIcon)}" width="1920" height="1080"></icon>\n`;
                 xml += `  </programme>\n\n`;
             }
             
@@ -842,7 +987,8 @@
                     category: category,
                     rating: rating,
                     shortDesc: shortDesc,
-                    longDesc: longDesc
+                    longDesc: longDesc,
+                    format: title // Per ClassCNBC il titolo è anche il format
                 });
                 
                 programCount++;
@@ -935,7 +1081,9 @@
                     xml += `    <category lang="it">${escapeXml(mappedCategory)}</category>\n`;
                 }
                 
-                xml += `    <icon src="${escapeXml(iconUrl)}" width="1920" height="1080"></icon>\n`;
+                // Usa l'icona specifica per il format
+                const formatIcon = getIconForFormat(program.format, 'classcnbc');
+                xml += `    <icon src="${escapeXml(formatIcon)}" width="1920" height="1080"></icon>\n`;
                 xml += `  </programme>\n\n`;
             }
             
@@ -987,6 +1135,132 @@
                 addLog(`Errore creazione download: ${error.message}`);
                 showStatus('❌ Errore nella creazione del file', 'error');
             }
+        }
+
+        // Funzioni per la gestione delle icone
+        function toggleIconManager() {
+            const manager = document.getElementById('iconManager');
+            manager.classList.toggle('active');
+            if (manager.classList.contains('active')) {
+                updateIconList();
+            }
+        }
+
+        function updateIconList() {
+            const iconList = document.getElementById('iconList');
+            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            
+            iconList.innerHTML = '';
+            
+            Object.entries(formatIcons).forEach(([format, url]) => {
+                const item = document.createElement('div');
+                item.className = 'icon-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${format}</strong>
+                        <div class="icon-preview" style="background-image: url('${url}')"></div>
+                    </div>
+                    <input type="text" value="${url}" onchange="updateFormatIcon('${format}', this.value)" />
+                    <div class="icon-actions">
+                        <button class="btn btn-danger btn-small" onclick="removeFormat('${format}')">🗑️</button>
+                    </div>
+                `;
+                iconList.appendChild(item);
+            });
+        }
+
+        function updateFormatIcon(format, newUrl) {
+            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            formatIcons[format] = newUrl;
+            addLog(`Icona aggiornata per format "${format}"`);
+        }
+
+        function removeFormat(format) {
+            if (confirm(`Rimuovere il format "${format}"?`)) {
+                const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+                delete formatIcons[format];
+                updateIconList();
+                addLog(`Format "${format}" rimosso`);
+            }
+        }
+
+        function addNewFormat() {
+            const nameInput = document.getElementById('newFormatName');
+            const iconInput = document.getElementById('newFormatIcon');
+            
+            const name = nameInput.value.trim();
+            const icon = iconInput.value.trim();
+            
+            if (!name || !icon) {
+                alert('Inserisci sia il nome del format che l\'URL dell\'icona');
+                return;
+            }
+            
+            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            formatIcons[name] = icon;
+            
+            nameInput.value = '';
+            iconInput.value = '';
+            
+            updateIconList();
+            addLog(`Nuovo format aggiunto: "${name}"`);
+        }
+
+        function exportIconMapping() {
+            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            const data = {
+                channel: currentChannel,
+                channelName: channelConfigs[currentChannel].name,
+                formatIcons: formatIcons,
+                defaultIcon: channelConfigs[currentChannel].icon,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `format-icons-${currentChannel}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            addLog(`Mappatura icone esportata per ${channelConfigs[currentChannel].name}`);
+        }
+
+        function importIconMapping() {
+            document.getElementById('importFile').click();
+        }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.formatIcons) {
+                        const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+                        
+                        // Sostituisci le mappature esistenti
+                        Object.keys(formatIcons).forEach(key => delete formatIcons[key]);
+                        Object.assign(formatIcons, data.formatIcons);
+                        
+                        updateIconList();
+                        addLog(`Mappatura icone importata con successo (${Object.keys(data.formatIcons).length} format)`);
+                    } else {
+                        alert('File non valido: manca la sezione formatIcons');
+                    }
+                } catch (error) {
+                    alert('Errore nel leggere il file: ' + error.message);
+                    addLog(`Errore importazione: ${error.message}`);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset input file
+            event.target.value = '';
         }
 
         // Log iniziale
