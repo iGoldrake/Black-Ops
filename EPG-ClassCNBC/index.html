@@ -352,13 +352,28 @@
             </div>
             
             <div style="text-align: center; margin-top: 15px;">
-                <button class="btn btn-success" onclick="saveIconMapping()">💾 Salva Modifiche</button>
-                <button class="btn btn-small" onclick="loadSavedMapping()">🔄 Carica Salvate</button>
-                <button class="btn btn-small" onclick="resetToDefaults()">🔧 Ripristina Default</button>
+                <button class="btn btn-warning btn-small" onclick="scanForMissingFormats()" 
+                        style="background: #ffc107; color: #000;">
+                    🔍 Verifica Format Mancanti
+                </button>
                 <hr style="margin: 15px 0;">
-                <button class="btn btn-small" onclick="exportIconMapping()">📤 Esporta File</button>
-                <button class="btn btn-small" onclick="importIconMapping()">📥 Importa File</button>
+                <button class="btn btn-small" onclick="exportIconMapping()">💾 Esporta Mappatura</button>
+                <button class="btn btn-small" onclick="importIconMapping()">📂 Importa Mappatura</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)" />
+            </div>
+        </div>
+
+        <div class="icon-manager" id="missingFormatsManager" style="background: #fff3cd; border-color: #ffeaa7;">
+            <h3>⚠️ Format Mancanti nel Dizionario</h3>
+            <p>I seguenti format sono stati trovati nel file ma non hanno un'icona associata:</p>
+            
+            <div class="icon-list" id="missingFormatsList">
+                <!-- Popolato dinamicamente -->
+            </div>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn btn-success" onclick="saveMissingFormats()">✅ Aggiungi al Dizionario</button>
+                <button class="btn btn-small" onclick="closeMissingFormats()">❌ Chiudi</button>
             </div>
         </div>
 
@@ -390,8 +405,8 @@
             }
         };
 
-        // Mappatura icone per format - TV Moda (con valori default)
-        const tvModaFormatIconsDefault = {
+        // Mappatura icone per format - TV Moda
+        const tvModaFormatIcons = {
             "(UN)ACCESSING BACKSTAGE": "https://via.placeholder.com/1920x1080/8B008B/FFFFFF?text=Backstage",
             "CATWALKS": "https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=Catwalks",
             "CLASS TV MODA STORIES": "https://via.placeholder.com/1920x1080/DA70D6/FFFFFF?text=TV+Moda+Stories",
@@ -407,8 +422,8 @@
             "WHAT WOMEN WEAR": "https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=What+Women+Wear"
         };
 
-        // Mappatura icone per format - Class CNBC (con valori default)
-        const classCNBCFormatIconsDefault = {
+        // Mappatura icone per format - Class CNBC
+        const classCNBCFormatIcons = {
             "Business Class": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Business+Class",
             "Mercati in 10 minuti": "https://via.placeholder.com/1920x1080/0066CC/FFFFFF?text=Mercati+10min",
             "Class Meteo": "https://via.placeholder.com/1920x1080/87CEEB/FFFFFF?text=Class+Meteo",
@@ -424,9 +439,8 @@
             "Documentario": "https://via.placeholder.com/1920x1080/708090/FFFFFF?text=Documentario"
         };
 
-        // Carica mappature salvate o usa quelle default
-        let tvModaFormatIcons = loadFromLocalStorage('tvModaFormatIcons') || {...tvModaFormatIconsDefault};
-        let classCNBCFormatIcons = loadFromLocalStorage('classCNBCFormatIcons') || {...classCNBCFormatIconsDefault};
+        // Array per memorizzare i format trovati nel file corrente
+        let detectedFormats = new Set();
 
         // Funzione per ottenere l'icona corretta in base al format (case-insensitive)
         function getIconForFormat(format, channel) {
@@ -562,7 +576,10 @@
                         cellText: false
                     });
                     
-                    // Analizza il tipo di file
+                    // Reset format rilevati
+                    detectedFormats.clear();
+                    
+                    // Analizza il tipo di file e rileva i format
                     if (currentChannel === 'tvmoda') {
                         // TVModa ha fogli per giorni della settimana
                         const expectedSheets = ['SABATO', 'DOMENICA', 'LUNEDI', 'MARTEDI', 'MERCOLEDI', 'GIOVEDI', 'VENERDI'];
@@ -573,16 +590,41 @@
                             return;
                         }
                         
-                        showStatus(`✅ File TV Moda caricato: ${file.name} (${workbook.SheetNames.length} fogli)`, 'success');
+                        // Scansiona tutti i format nel file
+                        for (const sheetName of workbook.SheetNames) {
+                            if (expectedSheets.includes(sheetName)) {
+                                const worksheet = workbook.Sheets[sheetName];
+                                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                                
+                                for (let i = 3; i < data.length; i++) {
+                                    const row = data[i];
+                                    if (row && row[1] && typeof row[1] === 'string') {
+                                        detectedFormats.add(row[1].trim());
+                                    }
+                                }
+                            }
+                        }
+                        
+                        showStatus(`✅ File TV Moda caricato: ${file.name} (${workbook.SheetNames.length} fogli, ${detectedFormats.size} format unici trovati)`, 'success');
                         addLog(`File TV Moda caricato con fogli: ${workbook.SheetNames.join(', ')}`);
+                        addLog(`Format unici trovati: ${detectedFormats.size}`);
                     } else {
                         // ClassCNBC ha un singolo foglio
                         const sheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[sheetName];
                         fileData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
                         
-                        showStatus(`✅ File Class CNBC caricato: ${file.name} (${fileData.length} righe)`, 'success');
+                        // Scansiona i format
+                        for (let i = 1; i < fileData.length; i++) {
+                            const row = fileData[i];
+                            if (row && row[1] && typeof row[1] === 'string' && row.length > 10) {
+                                detectedFormats.add(row[1].trim());
+                            }
+                        }
+                        
+                        showStatus(`✅ File Class CNBC caricato: ${file.name} (${fileData.length} righe, ${detectedFormats.size} format unici trovati)`, 'success');
                         addLog(`File Class CNBC caricato: ${sheetName} con ${fileData.length} righe`);
+                        addLog(`Format unici trovati: ${detectedFormats.size}`);
                     }
                     
                     convertBtn.disabled = false;
@@ -1145,68 +1187,107 @@
             }
         }
 
-        // Funzioni per localStorage
-        function saveToLocalStorage(key, data) {
-            try {
-                localStorage.setItem(`epgConverter_${key}`, JSON.stringify(data));
-                return true;
-            } catch (e) {
-                console.error('Errore salvataggio localStorage:', e);
-                return false;
+        // Funzioni per verificare format mancanti
+        function scanForMissingFormats() {
+            if (!workbook && !fileData) {
+                showStatus('⚠️ Carica prima un file Excel per verificare i format', 'error');
+                return;
             }
+
+            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            const missingFormats = [];
+
+            // Trova i format non presenti nel dizionario
+            for (const format of detectedFormats) {
+                let found = false;
+                // Ricerca case-insensitive
+                for (const key of Object.keys(formatIcons)) {
+                    if (key.toUpperCase() === format.toUpperCase()) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    missingFormats.push(format);
+                }
+            }
+
+            if (missingFormats.length === 0) {
+                showStatus('✅ Tutti i format nel file hanno un\'icona associata!', 'success');
+                addLog('Nessun format mancante rilevato');
+                return;
+            }
+
+            // Mostra la maschera per i format mancanti
+            showMissingFormatsDialog(missingFormats);
         }
 
-        function loadFromLocalStorage(key) {
-            try {
-                const data = localStorage.getItem(`epgConverter_${key}`);
-                return data ? JSON.parse(data) : null;
-            } catch (e) {
-                console.error('Errore caricamento localStorage:', e);
-                return null;
-            }
-        }
-
-        function saveIconMapping() {
-            const tvSaved = saveToLocalStorage('tvModaFormatIcons', tvModaFormatIcons);
-            const cnbcSaved = saveToLocalStorage('classCNBCFormatIcons', classCNBCFormatIcons);
+        function showMissingFormatsDialog(missingFormats) {
+            const dialog = document.getElementById('missingFormatsManager');
+            const list = document.getElementById('missingFormatsList');
             
-            if (tvSaved && cnbcSaved) {
-                showStatus('✅ Mappature icone salvate con successo!', 'success');
-                addLog('Mappature icone salvate nel browser (localStorage)');
-            } else {
-                showStatus('⚠️ Errore nel salvataggio delle mappature', 'error');
-            }
-        }
-
-        function loadSavedMapping() {
-            const savedTvModa = loadFromLocalStorage('tvModaFormatIcons');
-            const savedClassCNBC = loadFromLocalStorage('classCNBCFormatIcons');
+            list.innerHTML = '';
             
-            if (savedTvModa) {
-                tvModaFormatIcons = savedTvModa;
-            }
-            if (savedClassCNBC) {
-                classCNBCFormatIcons = savedClassCNBC;
-            }
-            
-            updateIconList();
-            showStatus('✅ Mappature salvate caricate con successo!', 'success');
-            addLog('Mappature icone caricate da localStorage');
-        }
-
-        function resetToDefaults() {
-            if (confirm('Ripristinare le mappature alle impostazioni predefinite? Le modifiche non salvate andranno perse.')) {
-                tvModaFormatIcons = {...tvModaFormatIconsDefault};
-                classCNBCFormatIcons = {...classCNBCFormatIconsDefault};
+            missingFormats.forEach((format, index) => {
+                const defaultUrl = `https://via.placeholder.com/1920x1080/${currentChannel === 'tvmoda' ? 'FF1493' : '003366'}/FFFFFF?text=${encodeURIComponent(format.replace(/\s+/g, '+'))}`;
                 
-                // Rimuovi dal localStorage
-                localStorage.removeItem('epgConverter_tvModaFormatIcons');
-                localStorage.removeItem('epgConverter_classCNBCFormatIcons');
-                
+                const item = document.createElement('div');
+                item.className = 'icon-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${format}</strong>
+                        <div class="icon-preview" style="background-image: url('${defaultUrl}')"></div>
+                    </div>
+                    <input type="text" 
+                           id="missingFormat_${index}" 
+                           value="${defaultUrl}" 
+                           style="padding: 5px; font-size: 12px;" 
+                           placeholder="Inserisci URL icona" 
+                           data-format="${format}" />
+                    <div class="icon-actions">
+                        <button class="btn btn-success btn-small" onclick="testMissingIconUrl(${index})">👁️ Test</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+            
+            dialog.classList.add('active');
+            addLog(`Trovati ${missingFormats.length} format mancanti nel dizionario`);
+            showStatus(`⚠️ ${missingFormats.length} format non hanno un'icona associata`, 'info');
+        }
+
+        function testMissingIconUrl(index) {
+            const input = document.getElementById(`missingFormat_${index}`);
+            if (input && input.value) {
+                window.open(input.value, '_blank');
+            }
+        }
+
+        function saveMissingFormats() {
+            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            const inputs = document.querySelectorAll('#missingFormatsList input[type="text"]');
+            let addedCount = 0;
+            
+            inputs.forEach(input => {
+                const format = input.getAttribute('data-format');
+                const url = input.value.trim();
+                if (format && url) {
+                    formatIcons[format] = url;
+                    addedCount++;
+                }
+            });
+            
+            if (addedCount > 0) {
                 updateIconList();
-                showStatus('✅ Mappature ripristinate ai valori predefiniti', 'success');
-                addLog('Mappature icone ripristinate ai default');
+                closeMissingFormats();
+                showStatus(`✅ Aggiunti ${addedCount} format al dizionario`, 'success');
+                addLog(`Aggiunti ${addedCount} nuovi format al dizionario ${currentChannel}`);
             }
+        }
+
+        function closeMissingFormats() {
+            const dialog = document.getElementById('missingFormatsManager');
+            dialog.classList.remove('active');
         }
 
         // Funzioni per la gestione delle icone
@@ -1363,11 +1444,6 @@
         // Log iniziale
         addLog('🚀 Convertitore EPG Multi-Canale pronto all\'uso');
         addLog('Seleziona il canale appropriato prima di caricare il file Excel');
-        
-        // Controlla se ci sono mappature salvate
-        if (loadFromLocalStorage('tvModaFormatIcons') || loadFromLocalStorage('classCNBCFormatIcons')) {
-            addLog('📌 Trovate mappature icone salvate precedentemente');
-        }
     </script>
 </body>
 </html>
