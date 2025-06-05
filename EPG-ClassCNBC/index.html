@@ -248,7 +248,7 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; color: #666; font-size: 14px;">
-            Versione 2.1.0 - Ultimo aggiornamento: 05/06/2025
+            Versione 2.1.1 - Ultimo aggiornamento: 05/06/2025
         </div>
         
         <div class="channel-selector">
@@ -468,7 +468,7 @@
         };
 
         // Versione software
-        const SOFTWARE_VERSION = "2.1.0";
+        const SOFTWARE_VERSION = "2.1.1";
         const LAST_UPDATE = "05/06/2025";
         
         // Array per memorizzare i format trovati nel file corrente
@@ -1454,32 +1454,71 @@
                         // Verifica quale canale stiamo importando
                         const importChannel = data.channel || currentChannel;
                         let formatIcons;
+                        let targetChannelName;
                         
                         if (importChannel === 'tvmoda') {
                             formatIcons = tvModaFormatIcons;
+                            targetChannelName = 'TV Moda';
                         } else if (importChannel === 'classcnbc') {
                             formatIcons = classCNBCFormatIcons;
+                            targetChannelName = 'Class CNBC';
                         } else {
                             // Se non specificato, usa il canale corrente
                             formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+                            targetChannelName = currentChannel === 'tvmoda' ? 'TV Moda' : 'Class CNBC';
                         }
                         
-                        // Conta i format esistenti prima
-                        const beforeCount = Object.keys(formatIcons).length;
+                        // Salva una copia del dizionario precedente per confronto
+                        const oldIcons = {...formatIcons};
+                        const beforeCount = Object.keys(oldIcons).length;
                         
-                        // Sostituisci COMPLETAMENTE le mappature esistenti
+                        // Conta le differenze
+                        let newFormats = 0;
+                        let modifiedFormats = 0;
+                        let removedFormats = 0;
+                        
+                        // Controlla format modificati e nuovi
+                        for (const [format, url] of Object.entries(data.formatIcons)) {
+                            if (oldIcons[format]) {
+                                if (oldIcons[format] !== url) {
+                                    modifiedFormats++;
+                                    addLog(`🔄 Modificato: "${format}"`);
+                                }
+                            } else {
+                                newFormats++;
+                                addLog(`➕ Nuovo: "${format}"`);
+                            }
+                        }
+                        
+                        // Controlla format rimossi
+                        for (const format of Object.keys(oldIcons)) {
+                            if (!data.formatIcons[format]) {
+                                removedFormats++;
+                                addLog(`➖ Rimosso: "${format}"`);
+                            }
+                        }
+                        
+                        // SOSTITUISCI COMPLETAMENTE il dizionario
                         Object.keys(formatIcons).forEach(key => delete formatIcons[key]);
-                        
-                        // Aggiungi tutte le nuove mappature
                         Object.assign(formatIcons, data.formatIcons);
                         
                         const afterCount = Object.keys(formatIcons).length;
                         
                         updateIconList();
                         
-                        showStatus(`✅ Importazione completata: ${afterCount} format totali (${afterCount - beforeCount} nuovi)`, 'success');
-                        addLog(`Mappatura icone importata per ${data.channelName || importChannel}`);
-                        addLog(`Format prima: ${beforeCount}, dopo: ${afterCount}`);
+                        // Messaggio dettagliato
+                        let statusMessage = `✅ Import ${targetChannelName}: ${afterCount} format totali`;
+                        if (newFormats > 0) statusMessage += ` (+${newFormats} nuovi)`;
+                        if (modifiedFormats > 0) statusMessage += ` (${modifiedFormats} modificati)`;
+                        if (removedFormats > 0) statusMessage += ` (-${removedFormats} rimossi)`;
+                        
+                        showStatus(statusMessage, 'success');
+                        addLog(`\n📥 RIEPILOGO IMPORT:`);
+                        addLog(`- Canale: ${targetChannelName}`);
+                        addLog(`- Format totali: ${afterCount}`);
+                        addLog(`- Nuovi: ${newFormats}`);
+                        addLog(`- Modificati: ${modifiedFormats}`);
+                        addLog(`- Rimossi: ${removedFormats}`);
                         
                         // Se abbiamo importato per un canale diverso da quello corrente, avvisa
                         if (importChannel !== currentChannel) {
