@@ -248,7 +248,7 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; color: #666; font-size: 14px;">
-            Versione 2.1.1 - Ultimo aggiornamento: 05/06/2025
+            Versione 2.2.0 - Ultimo aggiornamento: 05/06/2025
         </div>
         
         <div class="channel-selector">
@@ -360,6 +360,12 @@
                     🔍 Verifica Format Mancanti
                 </button>
                 <hr style="margin: 15px 0;">
+                <div style="background: #e8f0fe; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                    <label style="font-weight: normal;">
+                        <input type="checkbox" id="enablePersistence" onchange="togglePersistence()">
+                        Abilita salvataggio automatico nel browser (localStorage)
+                    </label>
+                </div>
                 <button class="btn btn-small" onclick="exportIconMapping()">💾 Esporta Mappatura</button>
                 <button class="btn btn-small" onclick="importIconMapping()">📂 Importa Mappatura</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)" />
@@ -426,6 +432,7 @@
         };
 
         // Mappatura icone per format - Class CNBC
+        // NOTA: Per rendere permanenti le modifiche, esporta il JSON e sostituisci questo oggetto
         const classCNBCFormatIcons = {
             "Business Class": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Business+Class",
             "Mercati in 10 minuti": "https://via.placeholder.com/1920x1080/0066CC/FFFFFF?text=Mercati+10min",
@@ -466,9 +473,16 @@
             "Speciale FED": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Speciale+FED",
             "4cLegal Academy Pt 9": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+9"
         };
+        
+        // ISTRUZIONI PER RENDERE PERMANENTI LE MODIFICHE:
+        // 1. Fai le tue modifiche nell'interfaccia
+        // 2. Esporta il JSON
+        // 3. Apri il JSON e copia il contenuto di "formatIcons"
+        // 4. Sostituisci l'oggetto sopra con il tuo contenuto
+        // 5. Salva il file HTML
 
         // Versione software
-        const SOFTWARE_VERSION = "2.1.1";
+        const SOFTWARE_VERSION = "2.2.0";
         const LAST_UPDATE = "05/06/2025";
         
         // Array per memorizzare i format trovati nel file corrente
@@ -1219,7 +1233,99 @@
             }
         }
 
-        // Funzioni per verificare format mancanti
+        // Flag per abilitare/disabilitare la persistenza
+        let persistenceEnabled = false;
+
+        // Funzioni per la persistenza opzionale
+        function togglePersistence() {
+            persistenceEnabled = document.getElementById('enablePersistence').checked;
+            
+            if (persistenceEnabled) {
+                // Salva lo stato corrente
+                saveMappingsToLocalStorage();
+                showStatus('✅ Salvataggio automatico attivato', 'success');
+                addLog('Persistenza localStorage abilitata');
+            } else {
+                // Opzionale: rimuovi dal localStorage
+                if (confirm('Vuoi rimuovere anche i dati salvati nel browser?')) {
+                    localStorage.removeItem('epgConverter_tvModaFormatIcons');
+                    localStorage.removeItem('epgConverter_classCNBCFormatIcons');
+                    localStorage.removeItem('epgConverter_persistenceEnabled');
+                    showStatus('✅ Salvataggio automatico disattivato e dati rimossi', 'success');
+                } else {
+                    showStatus('✅ Salvataggio automatico disattivato', 'success');
+                }
+                addLog('Persistenza localStorage disabilitata');
+            }
+            
+            // Salva la preferenza
+            localStorage.setItem('epgConverter_persistenceEnabled', persistenceEnabled);
+        }
+
+        function saveMappingsToLocalStorage() {
+            if (!persistenceEnabled) return;
+            
+            try {
+                localStorage.setItem('epgConverter_tvModaFormatIcons', JSON.stringify(tvModaFormatIcons));
+                localStorage.setItem('epgConverter_classCNBCFormatIcons', JSON.stringify(classCNBCFormatIcons));
+                return true;
+            } catch (e) {
+                console.error('Errore salvataggio localStorage:', e);
+                return false;
+            }
+        }
+
+        function loadMappingsFromLocalStorage() {
+            try {
+                // Controlla se la persistenza era abilitata
+                const wasPersistenceEnabled = localStorage.getItem('epgConverter_persistenceEnabled') === 'true';
+                
+                if (wasPersistenceEnabled) {
+                    const savedTvModa = localStorage.getItem('epgConverter_tvModaFormatIcons');
+                    const savedClassCNBC = localStorage.getItem('epgConverter_classCNBCFormatIcons');
+                    
+                    if (savedTvModa) {
+                        Object.assign(tvModaFormatIcons, JSON.parse(savedTvModa));
+                        addLog('Caricate mappature TV Moda da localStorage');
+                    }
+                    if (savedClassCNBC) {
+                        Object.assign(classCNBCFormatIcons, JSON.parse(savedClassCNBC));
+                        addLog('Caricate mappature Class CNBC da localStorage');
+                    }
+                    
+                    // Ripristina lo stato della checkbox
+                    document.getElementById('enablePersistence').checked = true;
+                    persistenceEnabled = true;
+                }
+            } catch (e) {
+                console.error('Errore caricamento localStorage:', e);
+            }
+        }
+
+        // Modifica le funzioni esistenti per salvare automaticamente se abilitato
+        const originalUpdateFormatIcon = updateFormatIcon;
+        function updateFormatIcon(format, newUrl) {
+            originalUpdateFormatIcon(format, newUrl);
+            saveMappingsToLocalStorage();
+        }
+
+        const originalAddNewFormat = addNewFormat;
+        function addNewFormat() {
+            originalAddNewFormat();
+            saveMappingsToLocalStorage();
+        }
+
+        const originalRemoveFormat = removeFormat;
+        function removeFormat(format) {
+            originalRemoveFormat(format);
+            saveMappingsToLocalStorage();
+        }
+
+        const originalSaveMissingFormats = saveMissingFormats;
+        function saveMissingFormats() {
+            originalSaveMissingFormats();
+            saveMappingsToLocalStorage();
+        }
         function scanForMissingFormats() {
             if (!workbook && !fileData) {
                 showStatus('⚠️ Carica prima un file Excel per verificare i format', 'error');
@@ -1542,6 +1648,9 @@
         addLog('🚀 Convertitore EPG Multi-Canale pronto all\'uso');
         addLog(`📌 Versione ${SOFTWARE_VERSION} (${LAST_UPDATE})`);
         addLog('Seleziona il canale appropriato prima di caricare il file Excel');
+        
+        // Carica mappature salvate se la persistenza è abilitata
+        loadMappingsFromLocalStorage();
     </script>
 </body>
 </html>
