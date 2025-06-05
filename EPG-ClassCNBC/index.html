@@ -409,8 +409,14 @@
                 const tomorrow = new Date(today);
                 tomorrow.setDate(today.getDate() + 1);
                 
-                targetDates = [tomorrow.toDateString()];
-                addLog(`Filtro attivo: Solo ${tomorrow.toDateString()}`);
+                // Usa solo la data senza orario per il confronto
+                const tomorrowDateStr = tomorrow.getFullYear() + '-' + 
+                    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(tomorrow.getDate()).padStart(2, '0');
+                
+                targetDates = [tomorrowDateStr];
+                addLog(`FILTRO DOMANI: Oggi è ${today.toDateString()}`);
+                addLog(`FILTRO DOMANI: Cerco solo programmi del ${tomorrow.toDateString()} (${tomorrowDateStr})`);
             } else if (dateRange === 'next2days') {
                 const today = new Date();
                 const tomorrow = new Date(today);
@@ -418,12 +424,17 @@
                 const dayAfterTomorrow = new Date(today);
                 dayAfterTomorrow.setDate(today.getDate() + 2);
                 
-                targetDates = [
-                    tomorrow.toDateString(),
-                    dayAfterTomorrow.toDateString()
-                ];
+                const tomorrowDateStr = tomorrow.getFullYear() + '-' + 
+                    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(tomorrow.getDate()).padStart(2, '0');
+                const dayAfterDateStr = dayAfterTomorrow.getFullYear() + '-' + 
+                    String(dayAfterTomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(dayAfterTomorrow.getDate()).padStart(2, '0');
                 
-                addLog(`Filtro attivo: Solo ${tomorrow.toDateString()} e ${dayAfterTomorrow.toDateString()}`);
+                targetDates = [tomorrowDateStr, dayAfterDateStr];
+                
+                addLog(`FILTRO 2 GIORNI: Oggi è ${today.toDateString()}`);
+                addLog(`FILTRO 2 GIORNI: Cerco programmi del ${tomorrow.toDateString()} e ${dayAfterTomorrow.toDateString()}`);
             } else {
                 addLog('Estrazione: Tutti i giorni');
             }
@@ -491,10 +502,19 @@
                 }
                 
                 // Controlla se questo giorno deve essere incluso
-                if (targetDates && !targetDates.includes(currentDate.toDateString())) {
-                    if (i < 50) addLog(`Skip giorno ${currentDate.toDateString()} (non nel filtro selezionato)`);
-                    filteredOutDays++;
-                    continue;
+                if (targetDates) {
+                    // Usa solo la data senza orario per il confronto
+                    const programDateStr = programTime.getFullYear() + '-' + 
+                        String(programTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(programTime.getDate()).padStart(2, '0');
+                    
+                    if (!targetDates.includes(programDateStr)) {
+                        if (programCount < 10) addLog(`Skip programma ${title} del ${programDateStr} (non nel filtro selezionato)`);
+                        filteredOutDays++;
+                        continue;
+                    } else {
+                        if (programCount < 10) addLog(`✓ Incluso programma ${title} del ${programDateStr}`);
+                    }
                 }
                 
                 // Parse dati programma
@@ -558,8 +578,22 @@
             
             // ORDINAMENTO: Ordina tutti i programmi per data e ora
             addLog('\nORDINAMENTO: Ordino programmi per data e ora...');
-            allPrograms.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+            allPrograms.sort((a, b) => {
+                const timeA = a.startTime.getTime();
+                const timeB = b.startTime.getTime();
+                return timeA - timeB;
+            });
             addLog(`Ordinamento completato: ${allPrograms.length} programmi in ordine cronologico`);
+            
+            // Debug: mostra i primi 10 programmi ordinati
+            if (allPrograms.length > 0) {
+                addLog('\n=== PRIMI 10 PROGRAMMI ORDINATI ===');
+                for (let i = 0; i < Math.min(10, allPrograms.length); i++) {
+                    const p = allPrograms[i];
+                    const dateStr = p.startTime.toISOString().substring(0, 16).replace('T', ' ');
+                    addLog(`${i+1}. ${dateStr} - ${p.title} (${p.programId})`);
+                }
+            }
             
             // FASE 2: Calcolo delle durate con riempimento gap
             if (fillGaps) {
@@ -582,7 +616,13 @@
                             gapsFilledCount++;
                             const gapMinutes = Math.round((endTime - originalEnd) / (1000 * 60));
                             if (i < 10) {
-                                addLog(`Gap riempito per "${currentProgram.title}": +${gapMinutes} minuti`);
+                                addLog(`Gap riempito per "${currentProgram.title}": +${gapMinutes} minuti (fino a ${endTime.toTimeString().substring(0,8)})`);
+                            }
+                        } else if (endTime < originalEnd) {
+                            // Il prossimo programma inizia prima della fine naturale - accorcia
+                            if (i < 10) {
+                                const shortenMinutes = Math.round((originalEnd - endTime) / (1000 * 60));
+                                addLog(`Programma accorciato "${currentProgram.title}": -${shortenMinutes} minuti`);
                             }
                         }
                     } else {
@@ -692,6 +732,9 @@
             else if (dateRange === 'next2days') periodText = 'Prossimi 2 giorni';
             
             addLog(`Modalità: ${periodText}`);
+            if (targetDates) {
+                addLog(`Date richieste: ${targetDates.join(', ')}`);
+            }
             addLog(`Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
             if (fillGaps) {
                 addLog(`Gap riempiti: ${gapsFilledCount}`);
@@ -699,12 +742,36 @@
             addLog(`Ordinamento: CRONOLOGICO (tutti i programmi ordinati per data/ora)`);
             addLog(`Cambi giorno trovati: ${dayChangeCount}`);
             addLog(`Righe saltate: ${skippedRows}`);
-            if (targetDates) {
-                addLog(`Giorni filtrati: ${filteredOutDays}`);
-                addLog(`Date target: ${targetDates.join(', ')}`);
-            }
+            addLog(`Programmi filtrati fuori: ${filteredOutDays}`);
             addLog(`Programmi generati: ${allPrograms.length}`);
             addLog(`Lunghezza XML finale: ${xml.length} caratteri`);
+            
+            // Verifica finale delle date nei programmi generati
+            if (allPrograms.length > 0) {
+                const uniqueDates = new Set();
+                allPrograms.forEach(p => {
+                    const dateStr = p.startTime.getFullYear() + '-' + 
+                        String(p.startTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(p.startTime.getDate()).padStart(2, '0');
+                    uniqueDates.add(dateStr);
+                });
+                addLog(`\n🗓️ DATE EFFETTIVE NEL FILE GENERATO: ${Array.from(uniqueDates).sort().join(', ')}`);
+                
+                if (targetDates && uniqueDates.size > 0) {
+                    const extraDates = Array.from(uniqueDates).filter(d => !targetDates.includes(d));
+                    const missingDates = targetDates.filter(d => !uniqueDates.has(d));
+                    
+                    if (extraDates.length > 0) {
+                        addLog(`⚠️ DATE EXTRA NON RICHIESTE: ${extraDates.join(', ')}`);
+                    }
+                    if (missingDates.length > 0) {
+                        addLog(`⚠️ DATE MANCANTI: ${missingDates.join(', ')}`);
+                    }
+                    if (extraDates.length === 0 && missingDates.length === 0) {
+                        addLog(`✅ FILTRO PERFETTO: Solo le date richieste sono presenti`);
+                    }
+                }
+            }
             
             return xml;
         }
