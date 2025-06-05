@@ -247,6 +247,9 @@
 <body>
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
+        <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; color: #666; font-size: 14px;">
+            Versione 2.1.0 - Ultimo aggiornamento: 05/06/2025
+        </div>
         
         <div class="channel-selector">
             <h3>Seleziona il canale:</h3>
@@ -464,6 +467,10 @@
             "4cLegal Academy Pt 9": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+9"
         };
 
+        // Versione software
+        const SOFTWARE_VERSION = "2.1.0";
+        const LAST_UPDATE = "05/06/2025";
+        
         // Array per memorizzare i format trovati nel file corrente
         let detectedFormats = new Set();
 
@@ -1494,6 +1501,7 @@
 
         // Log iniziale
         addLog('🚀 Convertitore EPG Multi-Canale pronto all\'uso');
+        addLog(`📌 Versione ${SOFTWARE_VERSION} (${LAST_UPDATE})`);
         addLog('Seleziona il canale appropriato prima di caricare il file Excel');
     </script>
 </body>
