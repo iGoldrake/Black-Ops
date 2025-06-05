@@ -186,6 +186,13 @@
                         <option value="next2days">Solo prossimi 2 giorni (domani e dopodomani)</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="fillGaps">Riempimento Gap Temporali:</label>
+                    <select id="fillGaps">
+                        <option value="true">Sì - Estendi programmi per coprire i buchi</option>
+                        <option value="false">No - Mantieni durate originali</option>
+                    </select>
+                </div>
             </div>
             
             <div class="settings">
@@ -390,9 +397,9 @@
             }
         }
 
-        function generateXMLTV(data, channelId, channelName, baseDate, timezone, iconUrl, dateRange) {
+        function generateXMLTV(data, channelId, channelName, baseDate, timezone, iconUrl, dateRange, fillGaps) {
             addLog('Generazione XMLTV...');
-            addLog(`Parametri: channelId=${channelId}, baseDate=${baseDate}, timezone=${timezone}, dateRange=${dateRange}`);
+            addLog(`Parametri: channelId=${channelId}, baseDate=${baseDate}, timezone=${timezone}, dateRange=${dateRange}, fillGaps=${fillGaps}`);
             
             // Calcola le date target se necessario
             let targetDates = null;
@@ -426,9 +433,14 @@
             let dayChangeCount = 0;
             let skippedRows = 0;
             let filteredOutDays = 0;
+            let gapsFilledCount = 0;
+            
+            // Array per raccogliere tutti i programmi e poi processarli
+            let allPrograms = [];
             
             addLog(`Data iniziale: ${currentDate.toISOString()}`);
             
+            // FASE 1: Raccolta di tutti i programmi
             for (let i = 0; i < data.length; i++) {
                 const row = data[i];
                 
@@ -519,47 +531,76 @@
                     continue;
                 }
                 
-                // Calcola ora di fine dal prossimo programma
-                let endTime = new Date(programTime);
-                let foundNextTime = false;
+                // Aggiungi il programma all'array per processarlo dopo
+                allPrograms.push({
+                    startTime: programTime,
+                    title: title,
+                    programId: programId,
+                    category: category,
+                    rating: rating,
+                    shortDesc: shortDesc,
+                    longDesc: longDesc,
+                    originalIndex: i
+                });
                 
-                // Cerca il prossimo programma per calcolare la durata
-                for (let j = i + 1; j < Math.min(i + 10, data.length); j++) {
-                    const nextRow = data[j];
-                    if (nextRow && nextRow.length >= 10 && nextRow[0] && nextRow[1]) {
-                        try {
-                            let nextTimeObj = nextRow[0];
-                            if (typeof nextTimeObj === 'string') {
-                                nextTimeObj = new Date(nextTimeObj);
+                programCount++;
+            }
+            
+            addLog(`\nFASE 1 completata: Raccolti ${allPrograms.length} programmi`);
+            
+            // FASE 2: Calcolo delle durate con riempimento gap
+            if (fillGaps) {
+                addLog('\nFASE 2: Calcolo durate con riempimento gap...');
+                
+                for (let i = 0; i < allPrograms.length; i++) {
+                    const currentProgram = allPrograms[i];
+                    let endTime;
+                    
+                    if (i + 1 < allPrograms.length) {
+                        // Non è l'ultimo programma - estendi fino all'inizio del successivo
+                        const nextProgram = allPrograms[i + 1];
+                        endTime = new Date(nextProgram.startTime);
+                        
+                        // Controlla se c'era un gap
+                        const originalDuration = 30 * 60 * 1000; // 30 minuti di default
+                        const originalEnd = new Date(currentProgram.startTime.getTime() + originalDuration);
+                        
+                        if (endTime > originalEnd) {
+                            gapsFilledCount++;
+                            const gapMinutes = Math.round((endTime - originalEnd) / (1000 * 60));
+                            if (i < 10) {
+                                addLog(`Gap riempito per "${currentProgram.title}": +${gapMinutes} minuti`);
                             }
-                            
-                            if (nextTimeObj instanceof Date && !isNaN(nextTimeObj.getTime())) {
-                                endTime = new Date(currentDate);
-                                endTime.setHours(nextTimeObj.getHours(), nextTimeObj.getMinutes(), nextTimeObj.getSeconds(), 0);
-                                foundNextTime = true;
-                                break;
-                            }
-                        } catch (e) {
-                            // Continua a cercare
                         }
-                    } else if (nextRow && nextRow.length === 1) {
-                        // Se trova un cambio di giorno, ferma la ricerca
-                        break;
+                    } else {
+                        // È l'ultimo programma - usa durata standard
+                        endTime = new Date(currentProgram.startTime);
+                        endTime.setMinutes(endTime.getMinutes() + 30);
                     }
+                    
+                    currentProgram.endTime = endTime;
+                    currentProgram.duration = Math.max(60, Math.floor((endTime - currentProgram.startTime) / 1000));
                 }
+            } else {
+                addLog('\nFASE 2: Calcolo durate standard (senza riempimento gap)...');
                 
-                // Se non trova il prossimo programma, usa durata predefinita
-                if (!foundNextTime) {
+                for (let i = 0; i < allPrograms.length; i++) {
+                    const currentProgram = allPrograms[i];
+                    
+                    // Usa durata standard di 30 minuti
+                    const endTime = new Date(currentProgram.startTime);
                     endTime.setMinutes(endTime.getMinutes() + 30);
+                    
+                    currentProgram.endTime = endTime;
+                    currentProgram.duration = 30 * 60; // 30 minuti in secondi
                 }
-                
-                // Gestisci il caso in cui il programma attraversa la mezzanotte
-                if (endTime <= programTime) {
-                    endTime.setDate(endTime.getDate() + 1);
-                }
-                
-                // Durata in secondi
-                const duration = Math.max(60, Math.floor((endTime - programTime) / 1000));
+            }
+            
+            // FASE 3: Generazione XML
+            addLog('\nFASE 3: Generazione XML...');
+            
+            for (let i = 0; i < allPrograms.length; i++) {
+                const program = allPrograms[i];
                 
                 // Formatta date per XMLTV (ISO 8601 con timezone)
                 const formatXMLTVDate = (date) => {
@@ -579,26 +620,26 @@
                     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${tz}`;
                 };
                 
-                const startFormatted = formatXMLTVDate(programTime);
-                const endFormatted = formatXMLTVDate(endTime);
+                const startFormatted = formatXMLTVDate(program.startTime);
+                const endFormatted = formatXMLTVDate(program.endTime);
                 
                 // Genera XML programma seguendo esattamente il formato dell'esempio
                 xml += `  <programme start="${startFormatted}" stop="${endFormatted}" channel="${channelId}">\n`;
-                xml += `    <episode-num system="assetID">${escapeXml(programId)}</episode-num>\n`;
-                xml += `    <title lang="it">${escapeXml(title)}</title>\n`;
+                xml += `    <episode-num system="assetID">${escapeXml(program.programId)}</episode-num>\n`;
+                xml += `    <title lang="it">${escapeXml(program.title)}</title>\n`;
                 
-                if (longDesc && longDesc !== title && longDesc.trim() !== '') {
-                    xml += `    <desc lang="it">${escapeXml(longDesc)}</desc>\n`;
-                } else if (shortDesc && shortDesc !== title && shortDesc.trim() !== '') {
-                    xml += `    <desc lang="it">${escapeXml(shortDesc)}</desc>\n`;
+                if (program.longDesc && program.longDesc !== program.title && program.longDesc.trim() !== '') {
+                    xml += `    <desc lang="it">${escapeXml(program.longDesc)}</desc>\n`;
+                } else if (program.shortDesc && program.shortDesc !== program.title && program.shortDesc.trim() !== '') {
+                    xml += `    <desc lang="it">${escapeXml(program.shortDesc)}</desc>\n`;
                 }
                 
                 // Durata
-                xml += `    <length units="seconds">${duration}</length>\n`;
+                xml += `    <length units="seconds">${program.duration}</length>\n`;
                 
                 // Rating (seguendo il formato dell'esempio)
-                if (rating && rating !== 'U' && rating.trim() !== '') {
-                    const mappedRating = ratingMapping[rating] || '0';
+                if (program.rating && program.rating !== 'U' && program.rating.trim() !== '') {
+                    const mappedRating = ratingMapping[program.rating] || '0';
                     xml += `    <rating system="Italy Parental Rating">\n`;
                     xml += `      <value>${mappedRating}</value>\n`;
                     xml += `    </rating>\n`;
@@ -610,8 +651,8 @@
                 }
                 
                 // Categoria
-                if (category && category.trim() !== '') {
-                    const mappedCategory = categoryMapping[category] || category;
+                if (program.category && program.category.trim() !== '') {
+                    const mappedCategory = categoryMapping[program.category] || program.category;
                     xml += `    <category lang="it">${escapeXml(mappedCategory)}</category>\n`;
                 }
                 
@@ -624,10 +665,9 @@
                 }
                 
                 xml += `  </programme>\n\n`;
-                programCount++;
                 
-                if (programCount % 20 === 0) {
-                    addLog(`Processati ${programCount} programmi...`);
+                if ((i + 1) % 20 === 0) {
+                    addLog(`Generati ${i + 1} programmi XML...`);
                 }
             }
             
@@ -635,13 +675,17 @@
             
             addLog(`\n=== RIEPILOGO ===`);
             addLog(`Modalità: ${dateRange === 'next2days' ? 'Solo prossimi 2 giorni' : 'Tutti i giorni'}`);
+            addLog(`Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
+            if (fillGaps) {
+                addLog(`Gap riempiti: ${gapsFilledCount}`);
+            }
             addLog(`Cambi giorno trovati: ${dayChangeCount}`);
             addLog(`Righe saltate: ${skippedRows}`);
             if (targetDates) {
                 addLog(`Giorni filtrati: ${filteredOutDays}`);
                 addLog(`Date target: ${targetDates.join(', ')}`);
             }
-            addLog(`Programmi generati: ${programCount}`);
+            addLog(`Programmi generati: ${allPrograms.length}`);
             addLog(`Lunghezza XML finale: ${xml.length} caratteri`);
             
             return xml;
