@@ -428,6 +428,7 @@
             "Mercati in 10 minuti": "https://via.placeholder.com/1920x1080/0066CC/FFFFFF?text=Mercati+10min",
             "Class Meteo": "https://via.placeholder.com/1920x1080/87CEEB/FFFFFF?text=Class+Meteo",
             "Trading Room": "https://via.placeholder.com/1920x1080/FF4500/FFFFFF?text=Trading+Room",
+            "Tradingroom": "https://via.placeholder.com/1920x1080/FF4500/FFFFFF?text=Trading+Room",
             "Borse Oggi": "https://via.placeholder.com/1920x1080/32CD32/FFFFFF?text=Borse+Oggi",
             "Apertura Mercati": "https://via.placeholder.com/1920x1080/FFD700/FFFFFF?text=Apertura+Mercati",
             "Market Driver": "https://via.placeholder.com/1920x1080/4169E1/FFFFFF?text=Market+Driver",
@@ -436,7 +437,31 @@
             "Business Talk": "https://via.placeholder.com/1920x1080/008080/FFFFFF?text=Business+Talk",
             "Class Life": "https://via.placeholder.com/1920x1080/9370DB/FFFFFF?text=Class+Life",
             "Report": "https://via.placeholder.com/1920x1080/2F4F4F/FFFFFF?text=Report",
-            "Documentario": "https://via.placeholder.com/1920x1080/708090/FFFFFF?text=Documentario"
+            "Documentario": "https://via.placeholder.com/1920x1080/708090/FFFFFF?text=Documentario",
+            "Gli speciali settimanali di Class Cnbc": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Gli+speciali+settimanali+di+Class+Cnbc",
+            "4cLegal Academy Pt 5": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+5",
+            "Caffe' Affari": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Caffe+Affari",
+            "Analisi Tecnica": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Analisi+Tecnica",
+            "Linea Mercati": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Linea+Mercati",
+            "Growth Italia": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Growth+Italia",
+            "Gli speciali di Class Cnbc": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Gli+speciali+di+Class+Cnbc",
+            "Trading Nation": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Trading+Nation",
+            "Market Movers": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Market+Movers",
+            "Linea Mercati Wall Street": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Linea+Mercati+Wall+Street",
+            "Linea Mercati Notte": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Linea+Mercati+Notte",
+            "La giornata di Class Cnbc": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=La+giornata+di+Class+Cnbc",
+            "4cLegal Academy Pt 6": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+6",
+            "Fabi risponde": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Fabi+risponde",
+            "Speciale Mondi da scoprire Pt 4": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Speciale+Mondi+da+scoprire+Pt+4",
+            "BCE - annuncio tassi": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=BCE+-+annuncio+tassi",
+            "BCE - conferenza stampa": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=BCE+-+conferenza+stampa",
+            "The Floor": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=The+Floor",
+            "5 Giorni Sui Mercati": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=5+Giorni+Sui+Mercati",
+            "4cLegal Academy Pt 7": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+7",
+            "Gli speciali di ClassCnbc": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Gli+speciali+di+ClassCnbc",
+            "4cLegal Academy Pt 8": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+8",
+            "Speciale FED": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Speciale+FED",
+            "4cLegal Academy Pt 9": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+9"
         };
 
         // Array per memorizzare i format trovati nel file corrente
@@ -1419,14 +1444,40 @@
                     const data = JSON.parse(e.target.result);
                     
                     if (data.formatIcons) {
-                        const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+                        // Verifica quale canale stiamo importando
+                        const importChannel = data.channel || currentChannel;
+                        let formatIcons;
                         
-                        // Sostituisci le mappature esistenti
+                        if (importChannel === 'tvmoda') {
+                            formatIcons = tvModaFormatIcons;
+                        } else if (importChannel === 'classcnbc') {
+                            formatIcons = classCNBCFormatIcons;
+                        } else {
+                            // Se non specificato, usa il canale corrente
+                            formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+                        }
+                        
+                        // Conta i format esistenti prima
+                        const beforeCount = Object.keys(formatIcons).length;
+                        
+                        // Sostituisci COMPLETAMENTE le mappature esistenti
                         Object.keys(formatIcons).forEach(key => delete formatIcons[key]);
+                        
+                        // Aggiungi tutte le nuove mappature
                         Object.assign(formatIcons, data.formatIcons);
                         
+                        const afterCount = Object.keys(formatIcons).length;
+                        
                         updateIconList();
-                        addLog(`Mappatura icone importata con successo (${Object.keys(data.formatIcons).length} format)`);
+                        
+                        showStatus(`✅ Importazione completata: ${afterCount} format totali (${afterCount - beforeCount} nuovi)`, 'success');
+                        addLog(`Mappatura icone importata per ${data.channelName || importChannel}`);
+                        addLog(`Format prima: ${beforeCount}, dopo: ${afterCount}`);
+                        
+                        // Se abbiamo importato per un canale diverso da quello corrente, avvisa
+                        if (importChannel !== currentChannel) {
+                            addLog(`⚠️ Nota: Importati format per ${importChannel} mentre il canale corrente è ${currentChannel}`);
+                        }
                     } else {
                         alert('File non valido: manca la sezione formatIcons');
                     }
@@ -1437,7 +1488,7 @@
             };
             reader.readAsText(file);
             
-            // Reset input file
+            // Reset input file per permettere di reimportare lo stesso file
             event.target.value = '';
         }
 
