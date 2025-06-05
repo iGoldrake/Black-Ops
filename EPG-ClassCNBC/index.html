@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Convertitore EPG Excel a XMLTV</title>
+    <title>Convertitore EPG Excel a XMLTV - Versione Semplificata</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -87,14 +87,6 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
-        .preview {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            max-height: 400px;
-            overflow-y: auto;
-        }
         .log {
             background: #1a1a1a;
             color: #00ff00;
@@ -102,7 +94,7 @@
             border-radius: 8px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             margin: 20px 0;
         }
@@ -120,17 +112,6 @@
             background: #1e7e34;
             color: white;
         }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin: 20px 0;
-        }
-        @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        }
         .status {
             padding: 10px;
             border-radius: 5px;
@@ -139,15 +120,34 @@
         .status.success { background: #d4edda; color: #155724; }
         .status.error { background: #f8d7da; color: #721c24; }
         .status.info { background: #d1ecf1; color: #0c5460; }
+        .config-box {
+            background: #e8f5e8;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .config-box h3 {
+            color: #155724;
+            margin: 0 0 10px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔄 Convertitore EPG Excel → XMLTV</h1>
-        <p style="text-align: center; color: #666;">Converte il file EPG di ClassCNBC nel formato XMLTV richiesto da Samsung TV+</p>
-        <div style="text-align: center; background: #e3f2fd; padding: 8px; border-radius: 5px; margin-bottom: 20px; font-size: 12px; color: #1565c0;">
-            <strong>🔧 Versione 2.4</strong> - FIX parametri filtro date + ordinamento + debug avanzato
-            <br><span style="font-size: 10px;">Ultimo aggiornamento: Giugno 2025</span>
+        <h1>🔄 Convertitore EPG - Versione TEST</h1>
+        <p style="text-align: center; color: #666;">Solo DOMANI + Riempimento Gap Automatico</p>
+        <div style="text-align: center; background: #fff3cd; padding: 8px; border-radius: 5px; margin-bottom: 20px; font-size: 12px; color: #856404;">
+            <strong>🧪 Versione TEST 1.0</strong> - Parametri fissi per test debug
+        </div>
+        
+        <div class="config-box">
+            <h3>⚙️ Configurazione Fissa</h3>
+            <p><strong>Periodo:</strong> Solo domani (calcolato automaticamente)</p>
+            <p><strong>Gap filling:</strong> Attivo (estende programmi per coprire buchi)</p>
+            <p><strong>Ordinamento:</strong> Cronologico automatico</p>
+            <p><strong>Canale:</strong> ClassCNBC</p>
         </div>
         
         <div class="upload-area" id="uploadArea">
@@ -156,90 +156,10 @@
             <input type="file" id="fileInput" accept=".xlsx,.xls" />
         </div>
 
-        <div class="settings">
-            <h3>⚙️ Impostazioni Canale</h3>
-            <div class="grid">
-                <div class="form-group">
-                    <label for="channelId">ID Canale:</label>
-                    <input type="text" id="channelId" value="ClassCNBC" />
-                </div>
-                <div class="form-group">
-                    <label for="channelName">Nome Canale:</label>
-                    <input type="text" id="channelName" value="Class CNBC" />
-                </div>
-                <div class="form-group">
-                    <label for="baseDate">Data Base (YYYY-MM-DD):</label>
-                    <input type="text" id="baseDate" value="2025-06-01" placeholder="2025-06-01" />
-                </div>
-                <div class="form-group">
-                    <label for="timezone">Timezone:</label>
-                    <select id="timezone">
-                        <option value="+01:00">+01:00 (Europa/Roma - Inverno)</option>
-                        <option value="+02:00">+02:00 (Europa/Roma - Estate)</option>
-                        <option value="+00:00">+00:00 (UTC)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="iconUrl">URL Icona Programmi (opzionale):</label>
-                    <input type="text" id="iconUrl" placeholder="https://your-cdn.com/classcnbc-icon.jpg" />
-                </div>
-                <div class="form-group">
-                    <label for="dateRange">Periodo di Estrazione:</label>
-                    <select id="dateRange">
-                        <option value="all">Tutto il file (tutti i giorni)</option>
-                        <option value="tomorrow">Solo domani</option>
-                        <option value="next2days">Prossimi 2 giorni (domani e dopodomani)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="fillGaps">Riempimento Gap Temporali:</label>
-                    <select id="fillGaps">
-                        <option value="true">Sì - Estendi programmi per coprire i buchi</option>
-                        <option value="false">No - Mantieni durate originali</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="settings">
-                <h3>🌐 Upload Automatico (Opzionale)</h3>
-                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
-                    <strong>Nota:</strong> I browser non supportano FTP diretto. Inserisci l'endpoint HTTP/HTTPS del tuo server per l'upload automatico.
-                </p>
-                <div class="grid">
-                    <div class="form-group">
-                        <label for="uploadEnabled">Abilita Upload Automatico:</label>
-                        <select id="uploadEnabled">
-                            <option value="false">No - Solo Download</option>
-                            <option value="true">Sì - Upload + Download</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="uploadUrl">URL Endpoint Upload:</label>
-                        <input type="text" id="uploadUrl" placeholder="https://your-server.com/upload/epg" />
-                    </div>
-                    <div class="form-group">
-                        <label for="uploadUser">Username:</label>
-                        <input type="text" id="uploadUser" placeholder="username" />
-                    </div>
-                    <div class="form-group">
-                        <label for="uploadPass">Password:</label>
-                        <input type="password" id="uploadPass" placeholder="password" />
-                    </div>
-                </div>
-                <div class="status info" style="font-size: 12px;">
-                    💡 <strong>Suggerimenti per setup server:</strong><br>
-                    • Crea uno script PHP/Node.js che riceva il file via POST e lo carichi via FTP<br>
-                    • Usa un servizio webhook come Zapier o Make.com<br>
-                    • Configura un endpoint REST API sul tuo server
-                </div>
-            </div>
-        </div>
-
-        <button class="btn" id="convertBtn" onclick="convertFile()" disabled>🚀 Converti in XMLTV</button>
+        <button class="btn" id="convertBtn" onclick="convertFile()" disabled>🚀 Converti SOLO DOMANI</button>
 
         <div id="status"></div>
         <div id="log" class="log" style="display: none;"></div>
-        <div id="preview" class="preview" style="display: none;"></div>
         <div id="downloadSection" style="display: none;"></div>
     </div>
 
@@ -248,7 +168,17 @@
         let fileData = null;
         let xmltvContent = '';
 
-        // Mappatura categorie Class CNBC -> Samsung TV+ (usando i codici dall'esempio)
+        // Configurazione fissa
+        const CONFIG = {
+            channelId: 'ClassCNBC',
+            channelName: 'Class CNBC',
+            timezone: '+01:00',
+            dateRange: 'tomorrow',  // FISSO
+            fillGaps: true,         // FISSO
+            iconUrl: 'https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Class+CNBC'
+        };
+
+        // Mappatura categorie
         const categoryMapping = {
             'Informazione': 'News',
             'Economia': 'Business', 
@@ -264,12 +194,12 @@
             'Film': 'Movie'
         };
 
-        // Mappatura rating italiani -> Samsung (valori numerici come nell'esempio)
+        // Mappatura rating
         const ratingMapping = {
-            'U': '0',     // Tutti
-            'T': '6',     // Maggiori di 6 anni
-            'VM14': '14', // Maggiori di 14 anni
-            'VM18': '18', // Maggiori di 18 anni
+            'U': '0',
+            'T': '6',
+            'VM14': '14',
+            'VM18': '18',
             '6': '6',
             '12': '12',
             '14': '14',
@@ -283,7 +213,6 @@
         const convertBtn = document.getElementById('convertBtn');
         const statusDiv = document.getElementById('status');
         const logDiv = document.getElementById('log');
-        const previewDiv = document.getElementById('preview');
         const downloadSection = document.getElementById('downloadSection');
 
         // Drag and drop handlers
@@ -348,15 +277,6 @@
                     addLog(`Foglio: ${sheetName}`);
                     addLog(`Righe totali: ${fileData.length}`);
                     
-                    // Debug: mostra alcune righe di esempio
-                    addLog('\n=== DEBUG: Prime 10 righe ===');
-                    for (let i = 0; i < Math.min(10, fileData.length); i++) {
-                        const row = fileData[i];
-                        if (row) {
-                            addLog(`Riga ${i}: [${row.length} col] ${JSON.stringify(row.slice(0, 3))}...`);
-                        }
-                    }
-                    
                 } catch (error) {
                     showStatus('❌ Errore nel leggere il file Excel', 'error');
                     addLog(`Errore: ${error.message}`);
@@ -371,30 +291,34 @@
                 return;
             }
 
-            addLog('Inizio conversione...');
+            addLog('\n🔧 CONFIGURAZIONE FISSA:');
+            addLog(`- Canale: ${CONFIG.channelName} (${CONFIG.channelId})`);
+            addLog(`- Periodo: ${CONFIG.dateRange}`);
+            addLog(`- Gap filling: ${CONFIG.fillGaps}`);
+            addLog(`- Timezone: ${CONFIG.timezone}`);
+            addLog('\nInizio conversione...');
             
             try {
-                const channelId = document.getElementById('channelId').value;
-                const channelName = document.getElementById('channelName').value;
-                const baseDate = document.getElementById('baseDate').value;
-                const timezone = document.getElementById('timezone').value;
+                // Genera data base (oggi)
+                const today = new Date();
+                const baseDate = today.getFullYear() + '-' + 
+                    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(today.getDate()).padStart(2, '0');
 
-                // Genera XMLTV
-                xmltvContent = generateXMLTV(fileData, channelId, channelName, baseDate, timezone);
+                // Genera XMLTV con configurazione fissa
+                xmltvContent = generateXMLTV(
+                    fileData, 
+                    CONFIG.channelId, 
+                    CONFIG.channelName, 
+                    baseDate, 
+                    CONFIG.timezone, 
+                    CONFIG.iconUrl, 
+                    CONFIG.dateRange, 
+                    CONFIG.fillGaps
+                );
                 
                 showStatus('✅ Conversione completata!', 'success');
-                
-                // Mostra preview
-                showPreview();
-                
-                // Mostra download
                 showDownload();
-                
-                // Prova upload automatico se abilitato
-                const uploadEnabled = document.getElementById('uploadEnabled').value === 'true';
-                if (uploadEnabled) {
-                    attemptUpload();
-                }
                 
             } catch (error) {
                 showStatus('❌ Errore durante la conversione', 'error');
@@ -404,44 +328,27 @@
 
         function generateXMLTV(data, channelId, channelName, baseDate, timezone, iconUrl, dateRange, fillGaps) {
             addLog('Generazione XMLTV...');
-            addLog(`Parametri: channelId=${channelId}, baseDate=${baseDate}, timezone=${timezone}, dateRange=${dateRange}, fillGaps=${fillGaps}`);
+            addLog(`PARAMETRI FISSI RICEVUTI:`);
+            addLog(`- channelId: ${channelId}`);
+            addLog(`- baseDate: ${baseDate}`);
+            addLog(`- timezone: ${timezone}`);
+            addLog(`- dateRange: ${dateRange}`);
+            addLog(`- fillGaps: ${fillGaps}`);
             
-            // Calcola le date target se necessario
-            let targetDates = null;
-            if (dateRange === 'tomorrow') {
-                const today = new Date();
-                const tomorrow = new Date(today);
-                tomorrow.setDate(today.getDate() + 1);
-                
-                // Usa solo la data senza orario per il confronto
-                const tomorrowDateStr = tomorrow.getFullYear() + '-' + 
-                    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
-                    String(tomorrow.getDate()).padStart(2, '0');
-                
-                targetDates = [tomorrowDateStr];
-                addLog(`FILTRO DOMANI: Oggi è ${today.toDateString()}`);
-                addLog(`FILTRO DOMANI: Cerco solo programmi del ${tomorrow.toDateString()} (${tomorrowDateStr})`);
-            } else if (dateRange === 'next2days') {
-                const today = new Date();
-                const tomorrow = new Date(today);
-                tomorrow.setDate(today.getDate() + 1);
-                const dayAfterTomorrow = new Date(today);
-                dayAfterTomorrow.setDate(today.getDate() + 2);
-                
-                const tomorrowDateStr = tomorrow.getFullYear() + '-' + 
-                    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
-                    String(tomorrow.getDate()).padStart(2, '0');
-                const dayAfterDateStr = dayAfterTomorrow.getFullYear() + '-' + 
-                    String(dayAfterTomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
-                    String(dayAfterTomorrow.getDate()).padStart(2, '0');
-                
-                targetDates = [tomorrowDateStr, dayAfterDateStr];
-                
-                addLog(`FILTRO 2 GIORNI: Oggi è ${today.toDateString()}`);
-                addLog(`FILTRO 2 GIORNI: Cerco programmi del ${tomorrow.toDateString()} e ${dayAfterTomorrow.toDateString()}`);
-            } else {
-                addLog('Estrazione: Tutti i giorni');
-            }
+            // Calcola domani
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            
+            const tomorrowDateStr = tomorrow.getFullYear() + '-' + 
+                String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(tomorrow.getDate()).padStart(2, '0');
+            
+            const targetDates = [tomorrowDateStr];
+            
+            addLog(`FILTRO DOMANI ATTIVO:`);
+            addLog(`- Oggi: ${today.toDateString()}`);
+            addLog(`- Domani: ${tomorrow.toDateString()} (${tomorrowDateStr})`);
             
             let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
             xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
@@ -455,10 +362,10 @@
             let currentDate = new Date(baseDate);
             let dayChangeCount = 0;
             let skippedRows = 0;
-            let filteredOutDays = 0;
+            let filteredOutPrograms = 0;
             let gapsFilledCount = 0;
             
-            // Array per raccogliere tutti i programmi e poi processarli
+            // Array per raccogliere tutti i programmi
             let allPrograms = [];
             
             addLog(`Data iniziale: ${currentDate.toISOString()}`);
@@ -467,7 +374,6 @@
             for (let i = 0; i < data.length; i++) {
                 const row = data[i];
                 
-                // Skip righe vuote
                 if (!row || row.length === 0) {
                     skippedRows++;
                     continue;
@@ -478,12 +384,10 @@
                     addLog(`Debug riga ${i}: [${row.length} col] Prima=${typeof row[0]} "${row[0]}" Seconda="${row[1] || 'N/A'}"`);
                 }
                 
-                // Se la riga ha solo una colonna, potrebbe essere un cambio di giorno
+                // Cambio di giorno
                 if (row.length === 1 && row[0]) {
                     try {
                         let dateToCheck = row[0];
-                        
-                        // Se è una stringa, prova a convertirla in Date
                         if (typeof dateToCheck === 'string') {
                             dateToCheck = new Date(dateToCheck);
                         }
@@ -499,63 +403,42 @@
                     continue;
                 }
                 
-                // Skip righe che non sembrano essere programmi (meno di 10 colonne)
+                // Skip righe che non sono programmi
                 if (row.length < 10) {
                     skippedRows++;
                     continue;
-                }
-                
-                // Controlla se questo giorno deve essere incluso
-                if (targetDates) {
-                    // Usa solo la data senza orario per il confronto
-                    const programDateStr = programTime.getFullYear() + '-' + 
-                        String(programTime.getMonth() + 1).padStart(2, '0') + '-' + 
-                        String(programTime.getDate()).padStart(2, '0');
-                    
-                    if (!targetDates.includes(programDateStr)) {
-                        if (programCount < 10) addLog(`Skip programma ${title} del ${programDateStr} (non nel filtro selezionato)`);
-                        filteredOutDays++;
-                        continue;
-                    } else {
-                        if (programCount < 10) addLog(`✓ Incluso programma ${title} del ${programDateStr}`);
-                    }
                 }
                 
                 // Parse dati programma
                 const timeObj = row[0];
                 const title = row[1];
                 const programId = row[2];
-                const category = row[6] || row[7]; // Prova entrambe le colonne
+                const category = row[6] || row[7];
                 const rating = row[13];
                 const shortDesc = row[15];
                 const longDesc = row[16];
                 
                 if (!title || !programId) {
                     skippedRows++;
-                    if (i < 50) addLog(`Skip riga ${i}: title="${title}" id="${programId}"`);
                     continue;
                 }
                 
-                // Estrai l'ora dall'oggetto
+                // Estrai l'ora
                 let programTime;
                 try {
                     let timeToUse = timeObj;
-                    
-                    // Se è una stringa, convertila in Date
                     if (typeof timeObj === 'string') {
                         timeToUse = new Date(timeObj);
                     }
                     
                     if (timeToUse instanceof Date && !isNaN(timeToUse.getTime())) {
-                        // Crea una nuova data con la data corrente e l'ora dall'Excel
                         programTime = new Date(currentDate);
                         programTime.setHours(timeToUse.getHours(), timeToUse.getMinutes(), timeToUse.getSeconds(), 0);
                         
                         if (programCount < 5) {
-                            addLog(`Programma ${programCount + 1}: "${title}" alle ${programTime.toTimeString()}`);
+                            addLog(`Programma ${programCount + 1}: "${title}" alle ${programTime.toISOString()}`);
                         }
                     } else {
-                        addLog(`Errore: timeObj non valido per "${title}": ${timeObj}`);
                         continue;
                     }
                 } catch (e) {
@@ -563,7 +446,24 @@
                     continue;
                 }
                 
-                // Aggiungi il programma all'array per processarlo dopo
+                // FILTRO: Solo domani
+                const programDateStr = programTime.getFullYear() + '-' + 
+                    String(programTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(programTime.getDate()).padStart(2, '0');
+                
+                if (!targetDates.includes(programDateStr)) {
+                    if (filteredOutPrograms < 10) {
+                        addLog(`❌ FILTRATO: "${title}" del ${programDateStr}`);
+                    }
+                    filteredOutPrograms++;
+                    continue;
+                } else {
+                    if (allPrograms.length < 10) {
+                        addLog(`✅ INCLUSO: "${title}" del ${programDateStr} alle ${programTime.toTimeString().substring(0,8)}`);
+                    }
+                }
+                
+                // Aggiungi il programma all'array
                 allPrograms.push({
                     startTime: programTime,
                     title: title,
@@ -571,25 +471,20 @@
                     category: category,
                     rating: rating,
                     shortDesc: shortDesc,
-                    longDesc: longDesc,
-                    originalIndex: i
+                    longDesc: longDesc
                 });
                 
                 programCount++;
             }
             
-            addLog(`\nFASE 1 completata: Raccolti ${allPrograms.length} programmi`);
+            addLog(`\nFASE 1 completata: Raccolti ${allPrograms.length} programmi di domani`);
             
-            // ORDINAMENTO: Ordina tutti i programmi per data e ora
-            addLog('\nORDINAMENTO: Ordino programmi per data e ora...');
-            allPrograms.sort((a, b) => {
-                const timeA = a.startTime.getTime();
-                const timeB = b.startTime.getTime();
-                return timeA - timeB;
-            });
+            // ORDINAMENTO
+            addLog('\nORDINAMENTO: Ordino programmi per orario...');
+            allPrograms.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
             addLog(`Ordinamento completato: ${allPrograms.length} programmi in ordine cronologico`);
             
-            // Debug: mostra i primi 10 programmi ordinati
+            // Debug primi programmi ordinati
             if (allPrograms.length > 0) {
                 addLog('\n=== PRIMI 10 PROGRAMMI ORDINATI ===');
                 for (let i = 0; i < Math.min(10, allPrograms.length); i++) {
@@ -599,7 +494,7 @@
                 }
             }
             
-            // FASE 2: Calcolo delle durate con riempimento gap
+            // FASE 2: Calcolo durate con gap filling
             if (fillGaps) {
                 addLog('\nFASE 2: Calcolo durate con riempimento gap...');
                 
@@ -608,29 +503,22 @@
                     let endTime;
                     
                     if (i + 1 < allPrograms.length) {
-                        // Non è l'ultimo programma - estendi fino all'inizio del successivo
+                        // Estendi fino al prossimo programma
                         const nextProgram = allPrograms[i + 1];
                         endTime = new Date(nextProgram.startTime);
                         
-                        // Controlla se c'era un gap
-                        const originalDuration = 30 * 60 * 1000; // 30 minuti di default
+                        const originalDuration = 30 * 60 * 1000; // 30 minuti
                         const originalEnd = new Date(currentProgram.startTime.getTime() + originalDuration);
                         
                         if (endTime > originalEnd) {
                             gapsFilledCount++;
                             const gapMinutes = Math.round((endTime - originalEnd) / (1000 * 60));
                             if (i < 10) {
-                                addLog(`Gap riempito per "${currentProgram.title}": +${gapMinutes} minuti (fino a ${endTime.toTimeString().substring(0,8)})`);
-                            }
-                        } else if (endTime < originalEnd) {
-                            // Il prossimo programma inizia prima della fine naturale - accorcia
-                            if (i < 10) {
-                                const shortenMinutes = Math.round((originalEnd - endTime) / (1000 * 60));
-                                addLog(`Programma accorciato "${currentProgram.title}": -${shortenMinutes} minuti`);
+                                addLog(`Gap riempito "${currentProgram.title}": +${gapMinutes} min (fino a ${endTime.toTimeString().substring(0,8)})`);
                             }
                         }
                     } else {
-                        // È l'ultimo programma - usa durata standard
+                        // Ultimo programma - durata standard
                         endTime = new Date(currentProgram.startTime);
                         endTime.setMinutes(endTime.getMinutes() + 30);
                     }
@@ -639,17 +527,13 @@
                     currentProgram.duration = Math.max(60, Math.floor((endTime - currentProgram.startTime) / 1000));
                 }
             } else {
-                addLog('\nFASE 2: Calcolo durate standard (senza riempimento gap)...');
-                
+                addLog('\nFASE 2: Durate standard (30 min)...');
                 for (let i = 0; i < allPrograms.length; i++) {
                     const currentProgram = allPrograms[i];
-                    
-                    // Usa durata standard di 30 minuti
                     const endTime = new Date(currentProgram.startTime);
                     endTime.setMinutes(endTime.getMinutes() + 30);
-                    
                     currentProgram.endTime = endTime;
-                    currentProgram.duration = 30 * 60; // 30 minuti in secondi
+                    currentProgram.duration = 30 * 60;
                 }
             }
             
@@ -659,7 +543,6 @@
             for (let i = 0; i < allPrograms.length; i++) {
                 const program = allPrograms[i];
                 
-                // Formatta date per XMLTV (ISO 8601 con timezone)
                 const formatXMLTVDate = (date) => {
                     const year = date.getFullYear();
                     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -667,20 +550,12 @@
                     const hours = String(date.getHours()).padStart(2, '0');
                     const minutes = String(date.getMinutes()).padStart(2, '0');
                     const seconds = String(date.getSeconds()).padStart(2, '0');
-                    
-                    // Converti timezone da "+0100" a "+01:00" se necessario
-                    let tz = timezone;
-                    if (tz === '+0100') tz = '+01:00';
-                    if (tz === '+0200') tz = '+02:00';
-                    if (tz === '+0000') tz = '+00:00';
-                    
-                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${tz}`;
+                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${timezone}`;
                 };
                 
                 const startFormatted = formatXMLTVDate(program.startTime);
                 const endFormatted = formatXMLTVDate(program.endTime);
                 
-                // Genera XML programma seguendo esattamente il formato dell'esempio
                 xml += `  <programme start="${startFormatted}" stop="${endFormatted}" channel="${channelId}">\n`;
                 xml += `    <episode-num system="assetID">${escapeXml(program.programId)}</episode-num>\n`;
                 xml += `    <title lang="it">${escapeXml(program.title)}</title>\n`;
@@ -691,36 +566,25 @@
                     xml += `    <desc lang="it">${escapeXml(program.shortDesc)}</desc>\n`;
                 }
                 
-                // Durata
                 xml += `    <length units="seconds">${program.duration}</length>\n`;
                 
-                // Rating (seguendo il formato dell'esempio)
                 if (program.rating && program.rating !== 'U' && program.rating.trim() !== '') {
                     const mappedRating = ratingMapping[program.rating] || '0';
                     xml += `    <rating system="Italy Parental Rating">\n`;
                     xml += `      <value>${mappedRating}</value>\n`;
                     xml += `    </rating>\n`;
                 } else {
-                    // Aggiungi rating di default come nell'esempio
                     xml += `    <rating system="Italy Parental Rating">\n`;
                     xml += `      <value>0</value>\n`;
                     xml += `    </rating>\n`;
                 }
                 
-                // Categoria
                 if (program.category && program.category.trim() !== '') {
                     const mappedCategory = categoryMapping[program.category] || program.category;
                     xml += `    <category lang="it">${escapeXml(mappedCategory)}</category>\n`;
                 }
                 
-                // Icon (nell'esempio è sempre presente)
-                if (iconUrl && iconUrl.trim() !== '') {
-                    xml += `    <icon src="${escapeXml(iconUrl)}" width="1920" height="1080"></icon>\n`;
-                } else {
-                    // Icona placeholder se non specificata
-                    xml += `    <icon src="https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Class+CNBC" width="1920" height="1080"></icon>\n`;
-                }
-                
+                xml += `    <icon src="${escapeXml(iconUrl)}" width="1920" height="1080"></icon>\n`;
                 xml += `  </programme>\n\n`;
                 
                 if ((i + 1) % 20 === 0) {
@@ -730,52 +594,33 @@
             
             xml += '</tv>';
             
-            addLog(`\n=== RIEPILOGO ===`);
-            let periodText = 'Tutti i giorni';
-            if (dateRange === 'tomorrow') periodText = 'Solo domani';
-            else if (dateRange === 'next2days') periodText = 'Prossimi 2 giorni';
+            // Verifica finale date
+            const uniqueDates = new Set();
+            allPrograms.forEach(p => {
+                const dateStr = p.startTime.getFullYear() + '-' + 
+                    String(p.startTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(p.startTime.getDate()).padStart(2, '0');
+                uniqueDates.add(dateStr);
+            });
             
-            addLog(`Modalità: ${periodText}`);
-            if (targetDates) {
-                addLog(`Date richieste: ${targetDates.join(', ')}`);
-            }
+            addLog(`\n=== RIEPILOGO FINALE ===`);
+            addLog(`Modalità: SOLO DOMANI (fissa)`);
             addLog(`Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
             if (fillGaps) {
                 addLog(`Gap riempiti: ${gapsFilledCount}`);
             }
-            addLog(`Ordinamento: CRONOLOGICO (tutti i programmi ordinati per data/ora)`);
-            addLog(`Cambi giorno trovati: ${dayChangeCount}`);
-            addLog(`Righe saltate: ${skippedRows}`);
-            addLog(`Programmi filtrati fuori: ${filteredOutDays}`);
+            addLog(`Date target: ${targetDates.join(', ')}`);
+            addLog(`Programmi filtrati fuori: ${filteredOutPrograms}`);
             addLog(`Programmi generati: ${allPrograms.length}`);
-            addLog(`Lunghezza XML finale: ${xml.length} caratteri`);
+            addLog(`🗓️ DATE NEL FILE: ${Array.from(uniqueDates).sort().join(', ')}`);
             
-            // Verifica finale delle date nei programmi generati
-            if (allPrograms.length > 0) {
-                const uniqueDates = new Set();
-                allPrograms.forEach(p => {
-                    const dateStr = p.startTime.getFullYear() + '-' + 
-                        String(p.startTime.getMonth() + 1).padStart(2, '0') + '-' + 
-                        String(p.startTime.getDate()).padStart(2, '0');
-                    uniqueDates.add(dateStr);
-                });
-                addLog(`\n🗓️ DATE EFFETTIVE NEL FILE GENERATO: ${Array.from(uniqueDates).sort().join(', ')}`);
-                
-                if (targetDates && uniqueDates.size > 0) {
-                    const extraDates = Array.from(uniqueDates).filter(d => !targetDates.includes(d));
-                    const missingDates = targetDates.filter(d => !uniqueDates.has(d));
-                    
-                    if (extraDates.length > 0) {
-                        addLog(`⚠️ DATE EXTRA NON RICHIESTE: ${extraDates.join(', ')}`);
-                    }
-                    if (missingDates.length > 0) {
-                        addLog(`⚠️ DATE MANCANTI: ${missingDates.join(', ')}`);
-                    }
-                    if (extraDates.length === 0 && missingDates.length === 0) {
-                        addLog(`✅ FILTRO PERFETTO: Solo le date richieste sono presenti`);
-                    }
-                }
+            if (uniqueDates.size === 1 && uniqueDates.has(tomorrowDateStr)) {
+                addLog(`✅ PERFETTO: Solo la data di domani è presente!`);
+            } else {
+                addLog(`⚠️ PROBLEMA: Date sbagliate nel file finale`);
             }
+            
+            addLog(`Lunghezza XML: ${xml.length} caratteri`);
             
             return xml;
         }
@@ -790,18 +635,6 @@
                 .replace(/'/g, '&#39;');
         }
 
-        function showPreview() {
-            const preview = xmltvContent.substring(0, 2000) + (xmltvContent.length > 2000 ? '\n...\n(Preview limitato ai primi 2000 caratteri)' : '');
-            previewDiv.innerHTML = `<h3>📋 Anteprima XMLTV:</h3><pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px;">${escapeHtml(preview)}</pre>`;
-            previewDiv.style.display = 'block';
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
         function showDownload() {
             if (!xmltvContent || xmltvContent.length < 100) {
                 addLog('ERRORE: Contenuto XML troppo piccolo o vuoto');
@@ -809,222 +642,28 @@
             }
             
             try {
-                const dateRange = document.getElementById('dateRange').value;
-                let suffix = '_full';
-                if (dateRange === 'tomorrow') suffix = '_tomorrow';
-                else if (dateRange === 'next2days') suffix = '_next2days';
-                
                 const blob = new Blob([xmltvContent], { type: 'application/xml;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
-                const filename = `classcnbc_epg_${new Date().toISOString().split('T')[0]}${suffix}.xml`;
-                
-                let periodDescription = '';
-                if (dateRange === 'tomorrow') {
-                    periodDescription = '📅 File contenente solo domani';
-                } else if (dateRange === 'next2days') {
-                    periodDescription = '📅 File contenente i prossimi 2 giorni';
-                } else {
-                    periodDescription = '📅 File contenente tutti i giorni disponibili';
-                }
+                const filename = `classcnbc_epg_tomorrow_test_${new Date().toISOString().split('T')[0]}.xml`;
                 
                 downloadSection.innerHTML = `
-                    <h3>📥 Download</h3>
-                    <a href="${url}" download="${filename}" class="download-link" onclick="addLog('Download avviato: ${filename}')">💾 Scarica XMLTV (${(blob.size / 1024).toFixed(1)} KB)</a>
+                    <h3>📥 Download File Test</h3>
+                    <a href="${url}" download="${filename}" class="download-link">💾 Scarica XMLTV Test (${(blob.size / 1024).toFixed(1)} KB)</a>
                     <p style="color: #666; font-size: 14px;">
-                        ${periodDescription}<br>
-                        ✅ Programmi ordinati cronologicamente<br>
-                        Il file è pronto per essere inviato a Samsung TV+
+                        🎯 File contenente SOLO i programmi di domani con gap riempiti<br>
+                        ✅ Ordinamento cronologico applicato
                     </p>
-                    <div style="margin-top: 10px;">
-                        <button class="btn" onclick="copyToClipboard()" style="background: #17a2b8;">📋 Copia XML negli Appunti</button>
-                        <button class="btn" onclick="showServerScript()" style="background: #ffc107; color: #212529; margin-left: 10px;">📄 Mostra Script Server</button>
-                        <button class="btn" onclick="attemptUpload()" style="background: #28a745; margin-left: 10px;">🚀 Riprova Upload</button>
-                    </div>
                 `;
                 downloadSection.style.display = 'block';
-                addLog(`File pronto per download: ${filename} (${blob.size} bytes)`);
+                addLog(`File test pronto: ${filename} (${blob.size} bytes)`);
             } catch (error) {
                 addLog(`Errore creazione download: ${error.message}`);
-                showStatus('❌ Errore nella creazione del file di download', 'error');
+                showStatus('❌ Errore nella creazione del file', 'error');
             }
-        }
-        
-        function copyToClipboard() {
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(xmltvContent).then(() => {
-                    addLog('XML copiato negli appunti');
-                    showStatus('✅ XML copiato negli appunti!', 'success');
-                }).catch(err => {
-                    addLog(`Errore copia: ${err.message}`);
-                });
-            } else {
-                // Fallback per browser più vecchi
-                const textArea = document.createElement('textarea');
-                textArea.value = xmltvContent;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    addLog('XML copiato negli appunti (fallback)');
-                    showStatus('✅ XML copiato negli appunti!', 'success');
-                } catch (err) {
-                    addLog(`Errore copia fallback: ${err.message}`);
-                }
-                document.body.removeChild(textArea);
-            }
-        }
-
-        async function attemptUpload() {
-            const uploadUrl = document.getElementById('uploadUrl').value;
-            const uploadUser = document.getElementById('uploadUser').value;
-            const uploadPass = document.getElementById('uploadPass').value;
-            
-            if (!uploadUrl.trim()) {
-                addLog('Upload saltato: URL endpoint non specificato');
-                return;
-            }
-            
-            addLog('Tentativo upload automatico...');
-            showStatus('🚀 Upload in corso...', 'info');
-            
-            try {
-                const dateRange = document.getElementById('dateRange').value;
-                const suffix = dateRange === 'next2days' ? '_next2days' : '_full';
-                const filename = `classcnbc_epg_${new Date().toISOString().split('T')[0]}${suffix}.xml`;
-                
-                // Crea FormData per il file
-                const formData = new FormData();
-                const blob = new Blob([xmltvContent], { type: 'application/xml;charset=utf-8' });
-                formData.append('file', blob, filename);
-                formData.append('filename', filename);
-                formData.append('channel', 'ClassCNBC');
-                
-                // Headers per autenticazione se fornita
-                const headers = {};
-                if (uploadUser && uploadPass) {
-                    headers['Authorization'] = 'Basic ' + btoa(uploadUser + ':' + uploadPass);
-                }
-                
-                const response = await fetch(uploadUrl, {
-                    method: 'POST',
-                    body: formData,
-                    headers: headers
-                });
-                
-                if (response.ok) {
-                    const result = await response.text();
-                    addLog(`✅ Upload completato: ${response.status} ${response.statusText}`);
-                    addLog(`Risposta server: ${result}`);
-                    showStatus('✅ File caricato con successo sul server!', 'success');
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-            } catch (error) {
-                addLog(`❌ Errore upload: ${error.message}`);
-                showStatus(`❌ Errore upload: ${error.message}`, 'error');
-                
-                // Suggerimenti in caso di errore
-                addLog('\n💡 Suggerimenti per risolvere:');
-                addLog('• Verifica che l\'URL endpoint sia corretto e raggiungibile');
-                addLog('• Controlla che il server accetti richieste POST con file');
-                addLog('• Verifica le credenziali username/password');
-                addLog('• Controlla la console browser per errori CORS');
-            }
-        }
-
-        // Script PHP di esempio per il server
-        function showServerScript() {
-            const phpScript = `<?php
-// upload_epg.php - Script di esempio per ricevere e caricare via FTP
-
-// Configurazione FTP
-$ftp_server = "your-ftp-server.com";
-$ftp_username = "your-ftp-username";
-$ftp_password = "your-ftp-password";
-$ftp_directory = "/path/to/epg/folder/";
-
-// Autenticazione HTTP Basic (opzionale)
-if (isset($_SERVER['PHP_AUTH_USER'])) {
-    $user = $_SERVER['PHP_AUTH_USER'];
-    $pass = $_SERVER['PHP_AUTH_PW'];
-    
-    // Verifica credenziali
-    if ($user !== 'your-username' || $pass !== 'your-password') {
-        http_response_code(401);
-        header('WWW-Authenticate: Basic realm="EPG Upload"');
-        exit('Unauthorized');
-    }
-}
-
-// Verifica che sia una richiesta POST con file
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['file'])) {
-    http_response_code(400);
-    exit('Bad Request: Expected POST with file');
-}
-
-$uploadedFile = $_FILES['file'];
-$filename = $_POST['filename'] ?? $uploadedFile['name'];
-
-// Verifica che sia un file XML
-if (pathinfo($filename, PATHINFO_EXTENSION) !== 'xml') {
-    http_response_code(400);
-    exit('Bad Request: Only XML files allowed');
-}
-
-// Connessione FTP
-$ftp_conn = ftp_connect($ftp_server);
-if (!$ftp_conn) {
-    http_response_code(500);
-    exit('FTP connection failed');
-}
-
-// Login FTP
-if (!ftp_login($ftp_conn, $ftp_username, $ftp_password)) {
-    http_response_code(500);
-    exit('FTP login failed');
-}
-
-// Modalità passiva
-ftp_pasv($ftp_conn, true);
-
-// Upload del file
-$remote_file = $ftp_directory . $filename;
-if (ftp_put($ftp_conn, $remote_file, $uploadedFile['tmp_name'], FTP_BINARY)) {
-    echo "File uploaded successfully: " . $filename;
-} else {
-    http_response_code(500);
-    exit('FTP upload failed');
-}
-
-// Chiudi connessione FTP
-ftp_close($ftp_conn);
-?>`;
-
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-                background: rgba(0,0,0,0.8); z-index: 1000; display: flex; 
-                align-items: center; justify-content: center; padding: 20px;
-            `;
-            
-            modal.innerHTML = `
-                <div style="background: white; border-radius: 10px; padding: 30px; max-width: 800px; max-height: 80vh; overflow-y: auto;">
-                    <h3>📄 Script PHP di Esempio per il Server</h3>
-                    <p>Salva questo script come <code>upload_epg.php</code> sul tuo server:</p>
-                    <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; border: 1px solid #ddd;">${phpScript}</pre>
-                    <div style="margin-top: 20px; text-align: center;">
-                        <button class="btn" onclick="this.parentElement.parentElement.parentElement.remove()" style="background: #6c757d;">Chiudi</button>
-                        <button class="btn" onclick="navigator.clipboard.writeText(\`${phpScript.replace(/`/g, '\\`')}\`).then(() => alert('Script copiato negli appunti!'))" style="background: #28a745; margin-left: 10px;">📋 Copia Script</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
         }
 
         // Auto-imposta la data di oggi
-        document.getElementById('baseDate').value = new Date().toISOString().split('T')[0];
+        addLog('🚀 Versione TEST caricata - Configurazione fissa attiva');
     </script>
 </body>
 </html>
