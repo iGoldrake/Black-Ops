@@ -41,6 +41,14 @@
             font-size: 18px;
             margin: 0 10px;
             transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .channel-btn img {
+            height: 30px;
+            width: auto;
+            object-fit: contain;
         }
         .channel-btn:hover {
             background: #dee2e6;
@@ -248,16 +256,18 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; color: #666; font-size: 14px;">
-            Versione 2.3.1 - Ultimo aggiornamento: 05/06/2025
+            Versione 2.3.3 - Ultimo aggiornamento: 05/06/2025
         </div>
         
         <div class="channel-selector">
             <h3>Seleziona il canale:</h3>
             <button class="channel-btn active" onclick="selectChannel('classcnbc')" id="btnClassCNBC">
-                📺 Class CNBC
+                <img src="https://upload.wikimedia.org/wikipedia/it/d/d2/Class_CNBC.png" alt="Class CNBC" />
+                Class CNBC
             </button>
             <button class="channel-btn" onclick="selectChannel('tvmoda')" id="btnTVModa">
-                👗 Class TV Moda
+                <img src="https://res.cloudinary.com/quickpublish/image/upload/Mediacenter/ChannelGraphicsLogoSmallcbf95edb-01c8-44f7-83ae-0278f8defb35.webp" alt="Class TV Moda" />
+                Class TV Moda
             </button>
         </div>
 
@@ -482,7 +492,7 @@
         // 5. Salva il file HTML
 
         // Versione software
-        const SOFTWARE_VERSION = "2.3.1";
+        const SOFTWARE_VERSION = "2.3.3";
         const LAST_UPDATE = "05/06/2025";
         
         // Array per memorizzare i format trovati nel file corrente
@@ -1241,7 +1251,24 @@
         let persistenceEnabled = false;
 
         // Funzioni per la persistenza opzionale
+        function isLocalStorageAvailable() {
+            try {
+                const test = '__localStorage_test__';
+                window.localStorage.setItem(test, test);
+                window.localStorage.removeItem(test);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
         function togglePersistence() {
+            if (!isLocalStorageAvailable()) {
+                showStatus('⚠️ localStorage non disponibile in questo ambiente', 'error');
+                document.getElementById('enablePersistence').checked = false;
+                return;
+            }
+            
             persistenceEnabled = document.getElementById('enablePersistence').checked;
             
             if (persistenceEnabled) {
@@ -1252,9 +1279,13 @@
             } else {
                 // Opzionale: rimuovi dal localStorage
                 if (confirm('Vuoi rimuovere anche i dati salvati nel browser?')) {
-                    localStorage.removeItem('epgConverter_tvModaFormatIcons');
-                    localStorage.removeItem('epgConverter_classCNBCFormatIcons');
-                    localStorage.removeItem('epgConverter_persistenceEnabled');
+                    try {
+                        localStorage.removeItem('epgConverter_tvModaFormatIcons');
+                        localStorage.removeItem('epgConverter_classCNBCFormatIcons');
+                        localStorage.removeItem('epgConverter_persistenceEnabled');
+                    } catch (e) {
+                        // Ignora errori
+                    }
                     showStatus('✅ Salvataggio automatico disattivato e dati rimossi', 'success');
                 } else {
                     showStatus('✅ Salvataggio automatico disattivato', 'success');
@@ -1263,23 +1294,31 @@
             }
             
             // Salva la preferenza
-            localStorage.setItem('epgConverter_persistenceEnabled', persistenceEnabled);
+            try {
+                localStorage.setItem('epgConverter_persistenceEnabled', persistenceEnabled);
+            } catch (e) {
+                // Ignora errori
+            }
         }
 
         function saveMappingsToLocalStorage() {
-            if (!persistenceEnabled) return;
+            if (!persistenceEnabled || !isLocalStorageAvailable()) return;
             
             try {
                 localStorage.setItem('epgConverter_tvModaFormatIcons', JSON.stringify(tvModaFormatIcons));
                 localStorage.setItem('epgConverter_classCNBCFormatIcons', JSON.stringify(classCNBCFormatIcons));
                 return true;
             } catch (e) {
-                console.error('Errore salvataggio localStorage:', e);
+                // Silently fail
                 return false;
             }
         }
 
         function loadMappingsFromLocalStorage() {
+            if (!isLocalStorageAvailable()) {
+                return;
+            }
+            
             try {
                 // Controlla se la persistenza era abilitata
                 const wasPersistenceEnabled = localStorage.getItem('epgConverter_persistenceEnabled') === 'true';
@@ -1302,7 +1341,7 @@
                     persistenceEnabled = true;
                 }
             } catch (e) {
-                console.error('Errore caricamento localStorage:', e);
+                // Silently fail - localStorage not available
             }
         }
 
