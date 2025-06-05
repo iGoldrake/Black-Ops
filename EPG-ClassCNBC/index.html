@@ -581,7 +581,10 @@
                 addLog(`\nProcesso ${sheetName} per ${targetDate.toLocaleDateString('it-IT')}...`);
                 
                 const worksheet = workbook.Sheets[sheetName];
-                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
+                // IMPORTANTE: Uso raw: true per mantenere i Date objects
+                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                
+                let programsInDay = 0;
                 
                 // Salta le prime righe di intestazione
                 for (let i = 3; i < data.length; i++) {
@@ -597,23 +600,47 @@
                     
                     // Estrai ora di inizio
                     let programTime;
-                    if (startTime instanceof Date) {
+                    if (startTime instanceof Date || Object.prototype.toString.call(startTime) === '[object Date]') {
                         programTime = new Date(targetDate);
-                        programTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
+                        programTime.setHours(startTime.getHours(), startTime.getMinutes(), startTime.getSeconds() || 0, 0);
+                        
+                        if (programsInDay < 5) {
+                            addLog(`  Programma: "${title}" alle ${programTime.getHours()}:${String(programTime.getMinutes()).padStart(2, '0')}`);
+                        }
+                    } else if (typeof startTime === 'string') {
+                        // Prova a parsare stringhe come "6/6/25 00:00"
+                        try {
+                            const tempDate = new Date(startTime);
+                            if (!isNaN(tempDate.getTime())) {
+                                programTime = new Date(targetDate);
+                                programTime.setHours(tempDate.getHours(), tempDate.getMinutes(), 0, 0);
+                            } else {
+                                addLog(`  Errore parsing ora (string) per "${title}": ${startTime}`);
+                                continue;
+                            }
+                        } catch (e) {
+                            addLog(`  Errore parsing ora per "${title}": ${e.message}`);
+                            continue;
+                        }
                     } else {
-                        addLog(`Errore parsing ora per "${title}"`);
+                        addLog(`  Tipo ora non riconosciuto per "${title}": ${typeof startTime}`);
                         continue;
                     }
                     
                     // Calcola durata
                     let durationMinutes = 30; // default
                     if (duration) {
-                        if (duration instanceof Date) {
+                        if (duration instanceof Date || Object.prototype.toString.call(duration) === '[object Date]') {
                             durationMinutes = duration.getHours() * 60 + duration.getMinutes();
                         } else if (typeof duration === 'string') {
-                            const match = duration.match(/(\d+):(\d+)/);
-                            if (match) {
-                                durationMinutes = parseInt(match[1]) * 60 + parseInt(match[2]);
+                            // Prova diversi formati: "0:10:00", "00:10", "10"
+                            const colonMatch = duration.match(/(\d+):(\d+)(?::(\d+))?/);
+                            if (colonMatch) {
+                                const hours = parseInt(colonMatch[1]) || 0;
+                                const minutes = parseInt(colonMatch[2]) || 0;
+                                durationMinutes = hours * 60 + minutes;
+                            } else if (/^\d+$/.test(duration)) {
+                                durationMinutes = parseInt(duration);
                             }
                         }
                     }
@@ -621,12 +648,17 @@
                     allPrograms.push({
                         startTime: programTime,
                         title: title,
-                        description: description,
+                        description: description || '',
                         duration: durationMinutes * 60, // in secondi
                         category: 'Fashion' // Categoria default per TV Moda
                     });
+                    
+                    programsInDay++;
                 }
+                
+                addLog(`  Trovati ${programsInDay} programmi in ${sheetName}`);
             }
+            
             
             addLog(`\nRaccolti ${allPrograms.length} programmi totali`);
             
@@ -636,6 +668,7 @@
             // Applica gap filling se richiesto
             if (fillGaps && allPrograms.length > 1) {
                 addLog('\nApplico gap filling...');
+                let gapsFilledCount = 0;
                 for (let i = 0; i < allPrograms.length - 1; i++) {
                     const current = allPrograms[i];
                     const next = allPrograms[i + 1];
@@ -645,9 +678,11 @@
                         const gap = (next.startTime - current.startTime) / 1000; // in secondi
                         if (gap > current.duration) {
                             current.duration = gap;
+                            gapsFilledCount++;
                         }
                     }
                 }
+                addLog(`Gap riempiti: ${gapsFilledCount}`);
             }
             
             // Genera XML
