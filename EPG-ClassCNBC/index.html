@@ -248,7 +248,7 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; color: #666; font-size: 14px;">
-            Versione 2.2.0 - Ultimo aggiornamento: 05/06/2025
+            Versione 2.2.1 - Ultimo aggiornamento: 05/06/2025
         </div>
         
         <div class="channel-selector">
@@ -318,7 +318,7 @@
                         <select id="dateRange">
                             <option value="all">Tutti i giorni disponibili</option>
                             <option value="today">Solo oggi</option>
-                            <option value="tomorrow">Solo domani</option>
+                            <option value="tomorrow" selected>Solo domani</option>
                             <option value="week">Prossimi 7 giorni</option>
                         </select>
                     </div>
@@ -482,7 +482,7 @@
         // 5. Salva il file HTML
 
         // Versione software
-        const SOFTWARE_VERSION = "2.2.0";
+        const SOFTWARE_VERSION = "2.2.1";
         const LAST_UPDATE = "05/06/2025";
         
         // Array per memorizzare i format trovati nel file corrente
