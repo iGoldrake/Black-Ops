@@ -1160,8 +1160,11 @@
                         <strong>${format}</strong>
                         <div class="icon-preview" style="background-image: url('${url}')"></div>
                     </div>
-                    <input type="text" value="${url}" onchange="updateFormatIcon('${format}', this.value)" />
+                    <input type="text" value="${url}" onchange="updateFormatIcon('${format}', this.value)" 
+                           style="padding: 5px; font-size: 12px;" 
+                           placeholder="Inserisci URL icona" />
                     <div class="icon-actions">
+                        <button class="btn btn-success btn-small" onclick="testIconUrl('${format}')">👁️ Test</button>
                         <button class="btn btn-danger btn-small" onclick="removeFormat('${format}')">🗑️</button>
                     </div>
                 `;
@@ -1172,7 +1175,29 @@
         function updateFormatIcon(format, newUrl) {
             const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
             formatIcons[format] = newUrl;
+            
+            // Aggiorna l'anteprima immediatamente
+            const iconList = document.getElementById('iconList');
+            const items = iconList.getElementsByClassName('icon-item');
+            for (let item of items) {
+                const formatName = item.querySelector('strong').textContent;
+                if (formatName === format) {
+                    const preview = item.querySelector('.icon-preview');
+                    preview.style.backgroundImage = `url('${newUrl}')`;
+                    break;
+                }
+            }
+            
             addLog(`Icona aggiornata per format "${format}"`);
+        }
+
+        function testIconUrl(format) {
+            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            const url = formatIcons[format];
+            
+            if (url) {
+                window.open(url, '_blank');
+            }
         }
 
         function removeFormat(format) {
