@@ -183,7 +183,8 @@
                     <label for="dateRange">Periodo di Estrazione:</label>
                     <select id="dateRange">
                         <option value="all">Tutto il file (tutti i giorni)</option>
-                        <option value="next2days">Solo prossimi 2 giorni (domani e dopodomani)</option>
+                        <option value="tomorrow">Solo domani</option>
+                        <option value="next2days">Prossimi 2 giorni (domani e dopodomani)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -403,7 +404,14 @@
             
             // Calcola le date target se necessario
             let targetDates = null;
-            if (dateRange === 'next2days') {
+            if (dateRange === 'tomorrow') {
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                
+                targetDates = [tomorrow.toDateString()];
+                addLog(`Filtro attivo: Solo ${tomorrow.toDateString()}`);
+            } else if (dateRange === 'next2days') {
                 const today = new Date();
                 const tomorrow = new Date(today);
                 tomorrow.setDate(today.getDate() + 1);
@@ -482,9 +490,9 @@
                     continue;
                 }
                 
-                // Controlla se questo giorno deve essere incluso (solo per dateRange='next2days')
+                // Controlla se questo giorno deve essere incluso
                 if (targetDates && !targetDates.includes(currentDate.toDateString())) {
-                    if (i < 50) addLog(`Skip giorno ${currentDate.toDateString()} (non nei prossimi 2 giorni)`);
+                    if (i < 50) addLog(`Skip giorno ${currentDate.toDateString()} (non nel filtro selezionato)`);
                     filteredOutDays++;
                     continue;
                 }
@@ -547,6 +555,11 @@
             }
             
             addLog(`\nFASE 1 completata: Raccolti ${allPrograms.length} programmi`);
+            
+            // ORDINAMENTO: Ordina tutti i programmi per data e ora
+            addLog('\nORDINAMENTO: Ordino programmi per data e ora...');
+            allPrograms.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+            addLog(`Ordinamento completato: ${allPrograms.length} programmi in ordine cronologico`);
             
             // FASE 2: Calcolo delle durate con riempimento gap
             if (fillGaps) {
@@ -674,11 +687,16 @@
             xml += '</tv>';
             
             addLog(`\n=== RIEPILOGO ===`);
-            addLog(`Modalità: ${dateRange === 'next2days' ? 'Solo prossimi 2 giorni' : 'Tutti i giorni'}`);
+            let periodText = 'Tutti i giorni';
+            if (dateRange === 'tomorrow') periodText = 'Solo domani';
+            else if (dateRange === 'next2days') periodText = 'Prossimi 2 giorni';
+            
+            addLog(`Modalità: ${periodText}`);
             addLog(`Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
             if (fillGaps) {
                 addLog(`Gap riempiti: ${gapsFilledCount}`);
             }
+            addLog(`Ordinamento: CRONOLOGICO (tutti i programmi ordinati per data/ora)`);
             addLog(`Cambi giorno trovati: ${dayChangeCount}`);
             addLog(`Righe saltate: ${skippedRows}`);
             if (targetDates) {
@@ -721,29 +739,35 @@
             
             try {
                 const dateRange = document.getElementById('dateRange').value;
-                const suffix = dateRange === 'next2days' ? '_next2days' : '_full';
+                let suffix = '_full';
+                if (dateRange === 'tomorrow') suffix = '_tomorrow';
+                else if (dateRange === 'next2days') suffix = '_next2days';
                 
                 const blob = new Blob([xmltvContent], { type: 'application/xml;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const filename = `classcnbc_epg_${new Date().toISOString().split('T')[0]}${suffix}.xml`;
                 
+                let periodDescription = '';
+                if (dateRange === 'tomorrow') {
+                    periodDescription = '📅 File contenente solo domani';
+                } else if (dateRange === 'next2days') {
+                    periodDescription = '📅 File contenente i prossimi 2 giorni';
+                } else {
+                    periodDescription = '📅 File contenente tutti i giorni disponibili';
+                }
+                
                 downloadSection.innerHTML = `
                     <h3>📥 Download</h3>
                     <a href="${url}" download="${filename}" class="download-link" onclick="addLog('Download avviato: ${filename}')">💾 Scarica XMLTV (${(blob.size / 1024).toFixed(1)} KB)</a>
                     <p style="color: #666; font-size: 14px;">
-                        ${dateRange === 'next2days' ? 
-                            '📅 File contenente solo i prossimi 2 giorni' : 
-                            '📅 File contenente tutti i giorni disponibili'
-                        }<br>
+                        ${periodDescription}<br>
+                        ✅ Programmi ordinati cronologicamente<br>
                         Il file è pronto per essere inviato a Samsung TV+
                     </p>
                     <div style="margin-top: 10px;">
                         <button class="btn" onclick="copyToClipboard()" style="background: #17a2b8;">📋 Copia XML negli Appunti</button>
                         <button class="btn" onclick="showServerScript()" style="background: #ffc107; color: #212529; margin-left: 10px;">📄 Mostra Script Server</button>
-                        ${dateRange === 'next2days' ? 
-                            '<button class="btn" onclick="attemptUpload()" style="background: #28a745; margin-left: 10px;">🚀 Riprova Upload</button>' : 
-                            '<button class="btn" onclick="attemptUpload()" style="background: #28a745; margin-left: 10px;">🚀 Riprova Upload</button>'
-                        }
+                        <button class="btn" onclick="attemptUpload()" style="background: #28a745; margin-left: 10px;">🚀 Riprova Upload</button>
                     </div>
                 `;
                 downloadSection.style.display = 'block';
