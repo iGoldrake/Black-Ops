@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Convertitore EPG Multi-Canale Excel a XMLTV</title>
     <style>
+        /* Core Styles */
         body {
             font-family: Arial, sans-serif;
             max-width: 1200px;
@@ -13,17 +14,21 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
+        
         .container {
             background: white;
             border-radius: 10px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
+        
         h1 {
             color: #333;
             text-align: center;
             margin-bottom: 30px;
         }
+        
+        /* Channel Selector */
         .channel-selector {
             text-align: center;
             margin-bottom: 30px;
@@ -31,6 +36,7 @@
             background: #f8f9fa;
             border-radius: 8px;
         }
+        
         .channel-btn {
             background: #e9ecef;
             color: #495057;
@@ -44,43 +50,28 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            position: relative;
         }
-        .channel-btn img {
-            height: 30px;
-            width: auto;
-            object-fit: contain;
-            max-width: 150px;
-        }
-        .channel-btn .logo-text {
-            font-weight: bold;
-            font-size: 20px;
-            margin-right: 10px;
-        }
+        
         .channel-btn.classcnbc-btn {
             background: #003366;
             color: white;
         }
+        
         .channel-btn.classcnbc-btn.active {
             background: #004488;
             border-color: #0066cc;
         }
+        
         .channel-btn.tvmoda-btn {
             background: #FF1493;
             color: white;
         }
+        
         .channel-btn.tvmoda-btn.active {
             background: #FF69B4;
             border-color: #FF1493;
         }
-        .channel-btn:hover {
-            background: #dee2e6;
-        }
-        .channel-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #5a6fd8;
-        }
+        
         .channel-info {
             background: #e8f5e8;
             border: 2px solid #28a745;
@@ -90,9 +81,12 @@
             text-align: center;
             display: none;
         }
+        
         .channel-info.active {
             display: block;
         }
+        
+        /* Upload Area */
         .upload-area {
             border: 2px dashed #ccc;
             border-radius: 10px;
@@ -102,17 +96,18 @@
             background: #fafafa;
             transition: all 0.3s ease;
         }
+        
         .upload-area:hover {
             border-color: #667eea;
             background: #f0f4ff;
         }
+        
         .upload-area.dragover {
             border-color: #667eea;
             background: #e8f0fe;
         }
-        input[type="file"] {
-            display: none;
-        }
+        
+        /* Buttons */
         .btn {
             background: #667eea;
             color: white;
@@ -123,32 +118,61 @@
             font-size: 16px;
             transition: background 0.3s ease;
         }
+        
         .btn:hover {
             background: #5a6fd8;
         }
+        
         .btn:disabled {
             background: #ccc;
             cursor: not-allowed;
         }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        /* Settings */
         .settings {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
         }
-        .settings h3 {
-            margin-top: 0;
-            color: #333;
-        }
+        
         .form-group {
             margin-bottom: 15px;
         }
+        
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
             color: #555;
         }
+        
         input[type="text"], select {
             width: 100%;
             padding: 8px;
@@ -156,18 +180,61 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
         .checkbox-group {
             margin: 20px 0;
         }
+        
         .checkbox-group label {
             display: inline-block;
             margin-left: 8px;
             font-weight: normal;
         }
+        
         input[type="checkbox"] {
             width: auto;
             margin-right: 5px;
         }
+        
+        /* Grid Layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Status & Log */
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
         .log {
             background: #1a1a1a;
             color: #00ff00;
@@ -179,6 +246,8 @@
             overflow-y: auto;
             margin: 20px 0;
         }
+        
+        /* Download */
         .download-link {
             display: inline-block;
             background: #28a745;
@@ -189,28 +258,13 @@
             margin: 10px 0;
             transition: background 0.3s ease;
         }
+        
         .download-link:hover {
             background: #1e7e34;
             color: white;
         }
-        .status {
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .status.success { background: #d4edda; color: #155724; }
-        .status.error { background: #f8d7da; color: #721c24; }
-        .status.info { background: #d1ecf1; color: #0c5460; }
-        .two-columns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        @media (max-width: 768px) {
-            .two-columns {
-                grid-template-columns: 1fr;
-            }
-        }
+        
+        /* Icon Manager */
         .icon-manager {
             background: #f0f4ff;
             border: 2px solid #667eea;
@@ -219,14 +273,17 @@
             margin: 20px 0;
             display: none;
         }
+        
         .icon-manager.active {
             display: block;
         }
+        
         .icon-list {
             max-height: 400px;
             overflow-y: auto;
             margin: 15px 0;
         }
+        
         .icon-item {
             display: grid;
             grid-template-columns: 200px 1fr auto;
@@ -235,9 +292,11 @@
             padding: 10px;
             border-bottom: 1px solid #ddd;
         }
+        
         .icon-item:last-child {
             border-bottom: none;
         }
+        
         .icon-preview {
             width: 40px;
             height: 23px;
@@ -247,47 +306,33 @@
             display: inline-block;
             margin-left: 10px;
         }
+        
         .add-format-section {
             background: #e8f5e8;
             padding: 15px;
             border-radius: 5px;
             margin-top: 15px;
         }
+        
         .icon-actions {
             display: flex;
             gap: 10px;
-        }
-        .btn-small {
-            padding: 5px 10px;
-            font-size: 14px;
-        }
-        .btn-danger {
-            background: #dc3545;
-        }
-        .btn-danger:hover {
-            background: #c82333;
-        }
-        .btn-success {
-            background: #28a745;
-        }
-        .btn-success:hover {
-            background: #218838;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
-        <div style="text-align: center; margin-top: -10px; margin-bottom: 20px; color: #666; font-size: 14px;">
-            Versione 2.3.4 - Ultimo aggiornamento: 05/06/2025
+        <div style="text-align:center;margin-top:-10px;margin-bottom:20px;color:#666;font-size:14px;">
+            Versione 2.4.0 - Ultimo aggiornamento: 05/06/2025
         </div>
         
         <div class="channel-selector">
             <h3>Seleziona il canale:</h3>
-            <button class="channel-btn classcnbc-btn active" onclick="selectChannel('classcnbc')" id="btnClassCNBC">
+            <button class="channel-btn classcnbc-btn active" onclick="app.selectChannel('classcnbc')" id="btnClassCNBC">
                 <span class="logo-text">CLASS CNBC</span>
             </button>
-            <button class="channel-btn tvmoda-btn" onclick="selectChannel('tvmoda')" id="btnTVModa">
+            <button class="channel-btn tvmoda-btn" onclick="app.selectChannel('tvmoda')" id="btnTVModa">
                 <span class="logo-text">CLASS TV MODA</span>
             </button>
         </div>
@@ -312,28 +357,24 @@
 
         <div class="settings">
             <h3>⚙️ Impostazioni</h3>
-            
             <div class="two-columns">
                 <div>
                     <div class="form-group">
                         <label for="channelId">ID Canale:</label>
                         <input type="text" id="channelId" value="ClassCNBC" />
                     </div>
-                    
                     <div class="form-group">
                         <label for="channelName">Nome Canale:</label>
                         <input type="text" id="channelName" value="Class CNBC" />
                     </div>
-                    
                     <div class="form-group">
                         <label for="iconUrl">URL Icona Base del Canale:</label>
-                        <input type="text" id="iconUrl" value="https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/" readonly style="background: #f0f0f0;" />
-                        <small style="display: block; color: #666; margin-top: 5px;">
+                        <input type="text" id="iconUrl" value="https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/" readonly style="background:#f0f0f0;" />
+                        <small style="display:block;color:#666;margin-top:5px;">
                             URL base per le icone. Ogni format avrà il suo file specifico (default: default.jpg)
                         </small>
                     </div>
                 </div>
-                
                 <div>
                     <div class="form-group">
                         <label for="timezone">Timezone:</label>
@@ -343,7 +384,6 @@
                             <option value="+02:00">+02:00</option>
                         </select>
                     </div>
-                    
                     <div class="form-group">
                         <label for="dateRange">Periodo da convertire:</label>
                         <select id="dateRange">
@@ -353,228 +393,218 @@
                             <option value="week">Prossimi 7 giorni</option>
                         </select>
                     </div>
-                    
                     <div class="checkbox-group">
                         <input type="checkbox" id="fillGaps" checked>
                         <label for="fillGaps">Riempi automaticamente i gap temporali</label>
                     </div>
                 </div>
             </div>
-            
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn btn-small" onclick="toggleIconManager()">
-                    🎨 Gestisci Icone Format
-                </button>
+            <div style="text-align:center;margin-top:20px;">
+                <button class="btn btn-small" onclick="app.toggleIconManager()">🎨 Gestisci Icone Format</button>
             </div>
         </div>
 
         <div class="icon-manager" id="iconManager">
             <h3>🎨 Gestione Icone Format</h3>
             <p>Modifica le associazioni format → icona per il canale selezionato</p>
-            
-            <div class="icon-list" id="iconList">
-                <!-- Popolato dinamicamente -->
-            </div>
-            
+            <div class="icon-list" id="iconList"></div>
             <div class="add-format-section">
                 <h4>➕ Aggiungi Nuovo Format</h4>
-                <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px;">
+                <div style="display:grid;grid-template-columns:1fr 2fr auto;gap:10px;">
                     <input type="text" id="newFormatName" placeholder="Nome format" />
                     <input type="text" id="newFormatIcon" placeholder="nome-file.jpg (default: default.jpg)" />
-                    <button class="btn btn-success btn-small" onclick="addNewFormat()">Aggiungi</button>
+                    <button class="btn btn-success btn-small" onclick="app.addNewFormat()">Aggiungi</button>
                 </div>
             </div>
-            
-            <div style="text-align: center; margin-top: 15px;">
-                <button class="btn btn-warning btn-small" onclick="scanForMissingFormats()" 
-                        style="background: #ffc107; color: #000;">
-                    🔍 Verifica Format Mancanti
-                </button>
-                <hr style="margin: 15px 0;">
-                <div style="background: #e8f0fe; padding: 10px; border-radius: 5px; margin: 10px 0;">
-                    <label style="font-weight: normal;">
-                        <input type="checkbox" id="enablePersistence" onchange="togglePersistence()">
-                        Abilita salvataggio automatico nel browser (localStorage)
-                    </label>
-                </div>
-                <button class="btn btn-small" onclick="exportIconMapping()">💾 Esporta Mappatura</button>
-                <button class="btn btn-small" onclick="importIconMapping()">📂 Importa Mappatura</button>
-                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)" />
+            <div style="text-align:center;margin-top:15px;">
+                <button class="btn btn-warning btn-small" onclick="app.scanForMissingFormats()">🔍 Verifica Format Mancanti</button>
+                <hr style="margin:15px 0;">
+                <button class="btn btn-small" onclick="app.exportIconMapping()">💾 Esporta Mappatura</button>
+                <button class="btn btn-small" onclick="app.importIconMapping()">📂 Importa Mappatura</button>
+                <input type="file" id="importFile" accept=".json" style="display:none;" onchange="app.handleImport(event)" />
             </div>
         </div>
 
-        <div class="icon-manager" id="missingFormatsManager" style="background: #fff3cd; border-color: #ffeaa7;">
-            <h3>⚠️ Format Mancanti nel Dizionario</h3>
-            <p>I seguenti format sono stati trovati nel file ma non hanno un'icona associata:</p>
-            
-            <div class="icon-list" id="missingFormatsList">
-                <!-- Popolato dinamicamente -->
-            </div>
-            
-            <div style="text-align: center; margin-top: 15px;">
-                <button class="btn btn-success" onclick="saveMissingFormats()">✅ Aggiungi al Dizionario</button>
-                <button class="btn btn-small" onclick="closeMissingFormats()">❌ Chiudi</button>
-            </div>
-        </div>
-
-        <button class="btn" id="convertBtn" onclick="convertFile()" disabled>🚀 Converti in XMLTV</button>
+        <button class="btn" id="convertBtn" onclick="app.convertFile()" disabled>🚀 Converti in XMLTV</button>
 
         <div id="status"></div>
-        <div id="log" class="log" style="display: none;"></div>
-        <div id="downloadSection" style="display: none;"></div>
+        <div id="log" class="log" style="display:none;"></div>
+        <div id="downloadSection" style="display:none;"></div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-        let fileData = null;
-        let xmltvContent = '';
-        let currentChannel = 'classcnbc';
-        let workbook = null;
-
-        // Configurazioni predefinite per canale
-        const channelConfigs = {
-            classcnbc: {
-                id: 'ClassCNBC',
-                name: 'Class CNBC',
-                icon: 'https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Class+CNBC'
-            },
-            tvmoda: {
-                id: 'ClassTVModa',
-                name: 'Class TV Moda',
-                icon: 'https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=Class+TV+Moda'
-            }
-        };
-
-        // Mappatura icone per format - TV Moda
-        const tvModaFormatIcons = {
-            "(UN)ACCESSING BACKSTAGE": "https://via.placeholder.com/1920x1080/8B008B/FFFFFF?text=Backstage",
-            "CATWALKS": "https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=Catwalks",
-            "CLASS TV MODA STORIES": "https://via.placeholder.com/1920x1080/DA70D6/FFFFFF?text=TV+Moda+Stories",
-            "DESIGN MAP": "https://via.placeholder.com/1920x1080/9370DB/FFFFFF?text=Design+Map",
-            "DISTRICTS": "https://via.placeholder.com/1920x1080/BA55D3/FFFFFF?text=Districts",
-            "FASHION NEWS": "https://via.placeholder.com/1920x1080/FF69B4/FFFFFF?text=Fashion+News",
-            "FASHION&BEYOND": "https://via.placeholder.com/1920x1080/DDA0DD/FFFFFF?text=Fashion+Beyond",
-            "FRONT ROW": "https://via.placeholder.com/1920x1080/EE82EE/FFFFFF?text=Front+Row",
-            "GREEN REVOLUTION FORWARD": "https://via.placeholder.com/1920x1080/32CD32/FFFFFF?text=Green+Revolution",
-            "SOUND OF FASHION": "https://via.placeholder.com/1920x1080/FF6347/FFFFFF?text=Sound+of+Fashion",
-            "SPOTLIGHT": "https://via.placeholder.com/1920x1080/FFD700/FFFFFF?text=Spotlight",
-            "VOICES": "https://via.placeholder.com/1920x1080/4169E1/FFFFFF?text=Voices",
-            "WHAT WOMEN WEAR": "https://via.placeholder.com/1920x1080/FF1493/FFFFFF?text=What+Women+Wear"
-        };
-
-        // Mappatura icone per format - Class CNBC
-        // NOTA: Per rendere permanenti le modifiche, esporta il JSON e sostituisci questo oggetto
-        const classCNBCFormatIcons = {
-            "Business Class": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Business+Class",
-            "Mercati in 10 minuti": "https://via.placeholder.com/1920x1080/0066CC/FFFFFF?text=Mercati+10min",
-            "Class Meteo": "https://via.placeholder.com/1920x1080/87CEEB/FFFFFF?text=Class+Meteo",
-            "Trading Room": "https://via.placeholder.com/1920x1080/FF4500/FFFFFF?text=Trading+Room",
-            "Tradingroom": "https://via.placeholder.com/1920x1080/FF4500/FFFFFF?text=Trading+Room",
-            "Borse Oggi": "https://via.placeholder.com/1920x1080/32CD32/FFFFFF?text=Borse+Oggi",
-            "Apertura Mercati": "https://via.placeholder.com/1920x1080/FFD700/FFFFFF?text=Apertura+Mercati",
-            "Market Driver": "https://via.placeholder.com/1920x1080/4169E1/FFFFFF?text=Market+Driver",
-            "Wall Street": "https://via.placeholder.com/1920x1080/FF6347/FFFFFF?text=Wall+Street",
-            "Chiusura Mercati": "https://via.placeholder.com/1920x1080/DC143C/FFFFFF?text=Chiusura+Mercati",
-            "Business Talk": "https://via.placeholder.com/1920x1080/008080/FFFFFF?text=Business+Talk",
-            "Class Life": "https://via.placeholder.com/1920x1080/9370DB/FFFFFF?text=Class+Life",
-            "Report": "https://via.placeholder.com/1920x1080/2F4F4F/FFFFFF?text=Report",
-            "Documentario": "https://via.placeholder.com/1920x1080/708090/FFFFFF?text=Documentario",
-            "Gli speciali settimanali di Class Cnbc": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Gli+speciali+settimanali+di+Class+Cnbc",
-            "4cLegal Academy Pt 5": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+5",
-            "Caffe' Affari": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Caffe+Affari",
-            "Analisi Tecnica": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Analisi+Tecnica",
-            "Linea Mercati": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Linea+Mercati",
-            "Growth Italia": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Growth+Italia",
-            "Gli speciali di Class Cnbc": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Gli+speciali+di+Class+Cnbc",
-            "Trading Nation": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Trading+Nation",
-            "Market Movers": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Market+Movers",
-            "Linea Mercati Wall Street": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Linea+Mercati+Wall+Street",
-            "Linea Mercati Notte": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Linea+Mercati+Notte",
-            "La giornata di Class Cnbc": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=La+giornata+di+Class+Cnbc",
-            "4cLegal Academy Pt 6": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+6",
-            "Fabi risponde": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Fabi+risponde",
-            "Speciale Mondi da scoprire Pt 4": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Speciale+Mondi+da+scoprire+Pt+4",
-            "BCE - annuncio tassi": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=BCE+-+annuncio+tassi",
-            "BCE - conferenza stampa": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=BCE+-+conferenza+stampa",
-            "The Floor": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=The+Floor",
-            "5 Giorni Sui Mercati": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=5+Giorni+Sui+Mercati",
-            "4cLegal Academy Pt 7": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+7",
-            "Gli speciali di ClassCnbc": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Gli+speciali+di+ClassCnbc",
-            "4cLegal Academy Pt 8": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+8",
-            "Speciale FED": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=Speciale+FED",
-            "4cLegal Academy Pt 9": "https://via.placeholder.com/1920x1080/003366/FFFFFF?text=4cLegal+Academy+Pt+9"
-        };
-        
-        // ISTRUZIONI PER RENDERE PERMANENTI LE MODIFICHE:
-        // 1. Fai le tue modifiche nell'interfaccia
-        // 2. Esporta il JSON
-        // 3. Apri il JSON e copia il contenuto di "formatIcons"
-        // 4. Sostituisci l'oggetto sopra con il tuo contenuto
-        // 5. Salva il file HTML
-
-        // Versione software
-        const SOFTWARE_VERSION = "2.3.4";
-        const LAST_UPDATE = "05/06/2025";
-        
-        // Array per memorizzare i format trovati nel file corrente
-        let detectedFormats = new Set();
-
-        // Funzione per ottenere l'icona corretta in base al format (case-insensitive)
-        function getIconForFormat(format, channel) {
-            if (!format) return channelConfigs[channel].baseIconUrl + 'default.jpg';
+    // EPG Converter Application - Modular Architecture
+    class EPGConverter {
+        constructor() {
+            this.SOFTWARE_VERSION = "2.4.0";
+            this.LAST_UPDATE = "05/06/2025";
+            this.fileData = null;
+            this.xmltvContent = '';
+            this.currentChannel = 'classcnbc';
+            this.workbook = null;
+            this.detectedFormats = new Set();
             
-            const formatIcons = channel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
+            this.config = {
+                channels: {
+                    classcnbc: {
+                        id: 'ClassCNBC',
+                        name: 'Class CNBC',
+                        baseIconUrl: 'https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/'
+                    },
+                    tvmoda: {
+                        id: 'ClassTVModa',
+                        name: 'Class TV Moda',
+                        baseIconUrl: 'https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassTVModa_IT_samsung/Images/'
+                    }
+                },
+                formatIcons: {
+                    tvmoda: this.getTVModaFormats(),
+                    classcnbc: this.getClassCNBCFormats()
+                },
+                categoryMapping: this.getCategoryMapping(),
+                ratingMapping: this.getRatingMapping()
+            };
             
-            // Normalizza il format per la ricerca case-insensitive
-            const normalizedFormat = format.trim().toUpperCase();
-            
-            // Cerca la chiave corrispondente (case-insensitive)
-            for (const [key, value] of Object.entries(formatIcons)) {
-                if (key.toUpperCase() === normalizedFormat) {
-                    // Combina la base URL con il nome del file
-                    return channelConfigs[channel].baseIconUrl + value;
-                }
-            }
-            
-            // Se non trovato, ritorna l'icona default del canale
-            return channelConfigs[channel].baseIconUrl + 'default.jpg';
+            this.init();
         }
-
-        // Mappatura categorie
-        const categoryMapping = {
-            'Informazione': 'News',
-            'Economia': 'Business', 
-            'Intrattenimento': 'Entertainment',
-            'Sport': 'Sports',
-            'Musica': 'Music',
-            'Documentario': 'Documentary',
-            'Cultura': 'Arts/Culture',
-            'Cucina': 'Cooking',
-            'Travel': 'Travel',
-            'Talk': 'Talk Show',
-            'Reality': 'Reality',
-            'Film': 'Movie',
-            'Fashion': 'Fashion',
-            'Lifestyle': 'Lifestyle'
-        };
-
-        // Mappatura rating
-        const ratingMapping = {
-            'U': '0',
-            'T': '6',
-            'VM14': '14',
-            'VM18': '18',
-            '6': '6',
-            '12': '12',
-            '14': '14',
-            '16': '16',
-            '18': '18'
-        };
-
-        function selectChannel(channel) {
-            currentChannel = channel;
+        
+        init() {
+            this.setupEventListeners();
+            this.addLog('🚀 Convertitore EPG Multi-Canale pronto all\'uso');
+            this.addLog('Seleziona il canale appropriato prima di caricare il file Excel');
+        }
+        
+        setupEventListeners() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
             
-            // Aggiorna UI
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.handleFile(files[0]);
+                }
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    this.handleFile(e.target.files[0]);
+                }
+            });
+        }
+        
+        getTVModaFormats() {
+            return {
+                "(UN)ACCESSING BACKSTAGE": "default.jpg",
+                "CATWALKS": "default.jpg",
+                "CLASS TV MODA STORIES": "default.jpg",
+                "DESIGN MAP": "default.jpg",
+                "DISTRICTS": "default.jpg",
+                "FASHION NEWS": "default.jpg",
+                "FASHION&BEYOND": "default.jpg",
+                "FRONT ROW": "default.jpg",
+                "GREEN REVOLUTION FORWARD": "default.jpg",
+                "SOUND OF FASHION": "default.jpg",
+                "SPOTLIGHT": "default.jpg",
+                "VOICES": "default.jpg",
+                "WHAT WOMEN WEAR": "default.jpg",
+                "Programmazione notturna": "default.jpg",
+                "Programmazione": "default.jpg"
+            };
+        }
+        
+        getClassCNBCFormats() {
+            return {
+                "Business Class": "default.jpg",
+                "Mercati in 10 minuti": "default.jpg",
+                "Class Meteo": "default.jpg",
+                "Trading Room": "default.jpg",
+                "Tradingroom": "default.jpg",
+                "Borse Oggi": "default.jpg",
+                "Apertura Mercati": "default.jpg",
+                "Market Driver": "default.jpg",
+                "Wall Street": "default.jpg",
+                "Chiusura Mercati": "default.jpg",
+                "Business Talk": "default.jpg",
+                "Class Life": "default.jpg",
+                "Report": "default.jpg",
+                "Documentario": "default.jpg",
+                "Gli speciali settimanali di Class Cnbc": "default.jpg",
+                "4cLegal Academy Pt 5": "default.jpg",
+                "Caffe' Affari": "default.jpg",
+                "Analisi Tecnica": "default.jpg",
+                "Linea Mercati": "default.jpg",
+                "Growth Italia": "default.jpg",
+                "Gli speciali di Class Cnbc": "default.jpg",
+                "Trading Nation": "default.jpg",
+                "Market Movers": "default.jpg",
+                "Linea Mercati Wall Street": "default.jpg",
+                "Linea Mercati Notte": "default.jpg",
+                "La giornata di Class Cnbc": "default.jpg",
+                "4cLegal Academy Pt 6": "default.jpg",
+                "Fabi risponde": "default.jpg",
+                "Speciale Mondi da scoprire Pt 4": "default.jpg",
+                "BCE - annuncio tassi": "default.jpg",
+                "BCE - conferenza stampa": "default.jpg",
+                "The Floor": "default.jpg",
+                "5 Giorni Sui Mercati": "default.jpg",
+                "4cLegal Academy Pt 7": "default.jpg",
+                "Gli speciali di ClassCnbc": "default.jpg",
+                "4cLegal Academy Pt 8": "default.jpg",
+                "Speciale FED": "default.jpg",
+                "4cLegal Academy Pt 9": "default.jpg",
+                "Programmazione notturna": "default.jpg",
+                "Programmazione": "default.jpg"
+            };
+        }
+        
+        getCategoryMapping() {
+            return {
+                'Informazione': 'News',
+                'Economia': 'Business',
+                'Intrattenimento': 'Entertainment',
+                'Sport': 'Sports',
+                'Musica': 'Music',
+                'Documentario': 'Documentary',
+                'Cultura': 'Arts/Culture',
+                'Cucina': 'Cooking',
+                'Travel': 'Travel',
+                'Talk': 'Talk Show',
+                'Reality': 'Reality',
+                'Film': 'Movie',
+                'Fashion': 'Fashion',
+                'Lifestyle': 'Lifestyle'
+            };
+        }
+        
+        getRatingMapping() {
+            return {
+                'U': '0',
+                'T': '6',
+                'VM14': '14',
+                'VM18': '18',
+                '6': '6',
+                '12': '12',
+                '14': '14',
+                '16': '16',
+                '18': '18'
+            };
+        }
+        
+        selectChannel(channel) {
+            this.currentChannel = channel;
+            
             document.querySelectorAll('.channel-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.channel-info').forEach(info => info.classList.remove('active'));
             
@@ -586,168 +616,138 @@
                 document.getElementById('infoTVModa').classList.add('active');
             }
             
-            // Aggiorna configurazioni predefinite
-            const config = channelConfigs[channel];
+            const config = this.config.channels[channel];
             document.getElementById('channelId').value = config.id;
             document.getElementById('channelName').value = config.name;
             document.getElementById('iconUrl').value = config.baseIconUrl;
             
-            // Aggiorna la lista delle icone se il pannello è aperto
             const iconManager = document.getElementById('iconManager');
             if (iconManager.classList.contains('active')) {
-                updateIconList();
+                this.updateIconList();
             }
             
-            addLog(`Canale selezionato: ${config.name}`);
+            this.addLog(`Canale selezionato: ${config.name}`);
         }
-
-        // Setup file upload
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const convertBtn = document.getElementById('convertBtn');
-        const statusDiv = document.getElementById('status');
-        const logDiv = document.getElementById('log');
-        const downloadSection = document.getElementById('downloadSection');
-
-        // Drag and drop handlers
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
-            }
-        });
-
-        function showStatus(message, type = 'info') {
+        
+        showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
             statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
         }
-
-        function addLog(message) {
+        
+        addLog(message) {
+            const logDiv = document.getElementById('log');
             logDiv.style.display = 'block';
             logDiv.innerHTML += message + '\n';
             logDiv.scrollTop = logDiv.scrollHeight;
         }
-
-        function handleFile(file) {
+        
+        handleFile(file) {
             if (!file.name.match(/\.(xlsx|xls)$/i)) {
-                showStatus('⚠️ Seleziona un file Excel (.xlsx o .xls)', 'error');
+                this.showStatus('⚠️ Seleziona un file Excel (.xlsx o .xls)', 'error');
                 return;
             }
-
+            
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 try {
-                    workbook = XLSX.read(e.target.result, { 
+                    this.workbook = XLSX.read(e.target.result, {
                         type: 'binary',
                         cellDates: true,
                         cellNF: false,
                         cellText: false
                     });
                     
-                    // Reset format rilevati
-                    detectedFormats.clear();
+                    this.detectedFormats.clear();
                     
-                    // Analizza il tipo di file e rileva i format
-                    if (currentChannel === 'tvmoda') {
-                        // TVModa ha fogli per giorni della settimana
-                        const expectedSheets = ['SABATO', 'DOMENICA', 'LUNEDI', 'MARTEDI', 'MERCOLEDI', 'GIOVEDI', 'VENERDI'];
-                        const hasWeekdaySheets = expectedSheets.some(sheet => workbook.SheetNames.includes(sheet));
-                        
-                        if (!hasWeekdaySheets) {
-                            showStatus('⚠️ File non compatibile con TV Moda. Assicurati di aver selezionato il canale corretto.', 'error');
-                            return;
-                        }
-                        
-                        // Scansiona tutti i format nel file
-                        for (const sheetName of workbook.SheetNames) {
-                            if (expectedSheets.includes(sheetName)) {
-                                const worksheet = workbook.Sheets[sheetName];
-                                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-                                
-                                for (let i = 3; i < data.length; i++) {
-                                    const row = data[i];
-                                    if (row && row[1] && typeof row[1] === 'string') {
-                                        detectedFormats.add(row[1].trim());
-                                    }
-                                }
-                            }
-                        }
-                        
-                        showStatus(`✅ File TV Moda caricato: ${file.name} (${workbook.SheetNames.length} fogli, ${detectedFormats.size} format unici trovati)`, 'success');
-                        addLog(`File TV Moda caricato con fogli: ${workbook.SheetNames.join(', ')}`);
-                        addLog(`Format unici trovati: ${detectedFormats.size}`);
+                    if (this.currentChannel === 'tvmoda') {
+                        this.handleTVModaFile(file);
                     } else {
-                        // ClassCNBC ha un singolo foglio
-                        const sheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[sheetName];
-                        fileData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-                        
-                        // Scansiona i format
-                        for (let i = 1; i < fileData.length; i++) {
-                            const row = fileData[i];
-                            if (row && row[1] && typeof row[1] === 'string' && row.length > 10) {
-                                detectedFormats.add(row[1].trim());
-                            }
-                        }
-                        
-                        showStatus(`✅ File Class CNBC caricato: ${file.name} (${fileData.length} righe, ${detectedFormats.size} format unici trovati)`, 'success');
-                        addLog(`File Class CNBC caricato: ${sheetName} con ${fileData.length} righe`);
-                        addLog(`Format unici trovati: ${detectedFormats.size}`);
+                        this.handleClassCNBCFile(file);
                     }
                     
-                    convertBtn.disabled = false;
+                    document.getElementById('convertBtn').disabled = false;
                     
                 } catch (error) {
-                    showStatus('❌ Errore nel leggere il file Excel', 'error');
-                    addLog(`Errore: ${error.message}`);
+                    this.showStatus('❌ Errore nel leggere il file Excel', 'error');
+                    this.addLog(`Errore: ${error.message}`);
                 }
             };
             reader.readAsBinaryString(file);
         }
-
-        function convertFile() {
-            if (!workbook && !fileData) {
-                showStatus('❌ Carica prima un file Excel', 'error');
+        
+        handleTVModaFile(file) {
+            const expectedSheets = ['SABATO', 'DOMENICA', 'LUNEDI', 'MARTEDI', 'MERCOLEDI', 'GIOVEDI', 'VENERDI'];
+            const hasWeekdaySheets = expectedSheets.some(sheet => this.workbook.SheetNames.includes(sheet));
+            
+            if (!hasWeekdaySheets) {
+                this.showStatus('⚠️ File non compatibile con TV Moda. Assicurati di aver selezionato il canale corretto.', 'error');
                 return;
             }
-
-            // Leggi i parametri dall'interfaccia
+            
+            for (const sheetName of this.workbook.SheetNames) {
+                if (expectedSheets.includes(sheetName)) {
+                    const worksheet = this.workbook.Sheets[sheetName];
+                    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                    
+                    for (let i = 3; i < data.length; i++) {
+                        const row = data[i];
+                        if (row && row[1] && typeof row[1] === 'string') {
+                            this.detectedFormats.add(row[1].trim());
+                        }
+                    }
+                }
+            }
+            
+            this.showStatus(`✅ File TV Moda caricato: ${file.name} (${this.workbook.SheetNames.length} fogli, ${this.detectedFormats.size} format unici trovati)`, 'success');
+            this.addLog(`File TV Moda caricato con fogli: ${this.workbook.SheetNames.join(', ')}`);
+            this.addLog(`Format unici trovati: ${this.detectedFormats.size}`);
+        }
+        
+        handleClassCNBCFile(file) {
+            const sheetName = this.workbook.SheetNames[0];
+            const worksheet = this.workbook.Sheets[sheetName];
+            this.fileData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+            
+            for (let i = 1; i < this.fileData.length; i++) {
+                const row = this.fileData[i];
+                if (row && row[1] && typeof row[1] === 'string' && row.length > 10) {
+                    this.detectedFormats.add(row[1].trim());
+                }
+            }
+            
+            this.showStatus(`✅ File Class CNBC caricato: ${file.name} (${this.fileData.length} righe, ${this.detectedFormats.size} format unici trovati)`, 'success');
+            this.addLog(`File Class CNBC caricato: ${sheetName} con ${this.fileData.length} righe`);
+            this.addLog(`Format unici trovati: ${this.detectedFormats.size}`);
+        }
+        
+        convertFile() {
+            if (!this.workbook && !this.fileData) {
+                this.showStatus('❌ Carica prima un file Excel', 'error');
+                return;
+            }
+            
             const channelId = document.getElementById('channelId').value.trim();
             const channelName = document.getElementById('channelName').value.trim();
             const timezone = document.getElementById('timezone').value;
             const dateRange = document.getElementById('dateRange').value;
             const fillGaps = document.getElementById('fillGaps').checked;
             const iconUrl = document.getElementById('iconUrl').value.trim();
-
-            addLog('\n🔧 CONFIGURAZIONE:');
-            addLog(`- Tipo canale: ${currentChannel}`);
-            addLog(`- Canale ID: ${channelId}`);
-            addLog(`- Nome Canale: ${channelName}`);
-            addLog(`- Timezone: ${timezone}`);
-            addLog(`- Periodo: ${dateRange}`);
-            addLog(`- Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
-            addLog('\nInizio conversione...');
+            
+            this.addLog('\n🔧 CONFIGURAZIONE:');
+            this.addLog(`- Tipo canale: ${this.currentChannel}`);
+            this.addLog(`- Canale ID: ${channelId}`);
+            this.addLog(`- Nome Canale: ${channelName}`);
+            this.addLog(`- Timezone: ${timezone}`);
+            this.addLog(`- Periodo: ${dateRange}`);
+            this.addLog(`- Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
+            this.addLog('\nInizio conversione...');
             
             try {
-                if (currentChannel === 'tvmoda') {
-                    xmltvContent = generateXMLTVForTVModa(
-                        workbook,
+                const converter = new XMLTVGenerator(this);
+                
+                if (this.currentChannel === 'tvmoda') {
+                    this.xmltvContent = converter.generateXMLTVForTVModa(
+                        this.workbook,
                         channelId,
                         channelName,
                         timezone,
@@ -756,60 +756,695 @@
                         fillGaps
                     );
                 } else {
-                    // Genera data base (oggi)
                     const today = new Date();
-                    const baseDate = today.getFullYear() + '-' + 
-                        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                    const baseDate = today.getFullYear() + '-' +
+                        String(today.getMonth() + 1).padStart(2, '0') + '-' +
                         String(today.getDate()).padStart(2, '0');
-
-                    xmltvContent = generateXMLTVForClassCNBC(
-                        fileData, 
-                        channelId, 
-                        channelName, 
-                        baseDate, 
-                        timezone, 
-                        iconUrl, 
-                        dateRange, 
+                    
+                    this.xmltvContent = converter.generateXMLTVForClassCNBC(
+                        this.fileData,
+                        channelId,
+                        channelName,
+                        baseDate,
+                        timezone,
+                        iconUrl,
+                        dateRange,
                         fillGaps
                     );
                 }
                 
-                showStatus('✅ Conversione completata!', 'success');
-                showDownload();
+                this.showStatus('✅ Conversione completata!', 'success');
+                this.showDownload();
                 
             } catch (error) {
-                showStatus('❌ Errore durante la conversione', 'error');
-                addLog(`Errore: ${error.message}`);
+                this.showStatus('❌ Errore durante la conversione', 'error');
+                this.addLog(`Errore: ${error.message}`);
                 console.error(error);
             }
         }
-
-        function generateXMLTVForTVModa(workbook, channelId, channelName, timezone, iconUrl, dateRange, fillGaps) {
-            addLog('Generazione XMLTV per TV Moda...');
+        
+        showDownload() {
+            if (!this.xmltvContent || this.xmltvContent.length < 100) {
+                this.addLog('ERRORE: Contenuto XML troppo piccolo o vuoto');
+                return;
+            }
+            
+            try {
+                const blob = new Blob([this.xmltvContent], { type: 'application/xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const filename = `${year}-${month}-${day}.xml`;
+                
+                const downloadSection = document.getElementById('downloadSection');
+                downloadSection.innerHTML = `
+                    <h3>📥 Download File</h3>
+                    <a href="${url}" download="${filename}" class="download-link">💾 Scarica XMLTV (${(blob.size / 1024).toFixed(1)} KB)</a>
+                    <p style="color:#666;font-size:14px;">
+                        File generato con successo<br>
+                        Canale: ${document.getElementById('channelName').value}<br>
+                        Periodo: ${document.getElementById('dateRange').selectedOptions[0].text}<br>
+                        Nome file: ${filename}
+                    </p>
+                `;
+                downloadSection.style.display = 'block';
+                this.addLog(`File pronto: ${filename} (${blob.size} bytes)`);
+            } catch (error) {
+                this.addLog(`Errore creazione download: ${error.message}`);
+                this.showStatus('❌ Errore nella creazione del file', 'error');
+            }
+        }
+        
+        toggleIconManager() {
+            const manager = document.getElementById('iconManager');
+            manager.classList.toggle('active');
+            if (manager.classList.contains('active')) {
+                this.updateIconList();
+            }
+        }
+        
+        updateIconList() {
+            const iconList = document.getElementById('iconList');
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            
+            iconList.innerHTML = '';
+            
+            Object.entries(formatIcons).forEach(([format, url]) => {
+                const item = document.createElement('div');
+                item.className = 'icon-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${format}</strong>
+                        <div class="icon-preview" style="background-image: url('${this.config.channels[this.currentChannel].baseIconUrl}${url}')"></div>
+                    </div>
+                    <input type="text" value="${url}" onchange="app.updateFormatIcon('${format}', this.value)" />
+                    <div class="icon-actions">
+                        <button class="btn btn-danger btn-small" onclick="app.removeFormat('${format}')">🗑️</button>
+                    </div>
+                `;
+                iconList.appendChild(item);
+            });
+        }
+        
+        updateFormatIcon(format, newUrl) {
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            formatIcons[format] = newUrl;
+            this.addLog(`Icona aggiornata per format "${format}"`);
+        }
+        
+        removeFormat(format) {
+            if (confirm(`Rimuovere il format "${format}"?`)) {
+                const formatIcons = this.config.formatIcons[this.currentChannel];
+                delete formatIcons[format];
+                this.updateIconList();
+                this.addLog(`Format "${format}" rimosso`);
+            }
+        }
+        
+        addNewFormat() {
+            const nameInput = document.getElementById('newFormatName');
+            const iconInput = document.getElementById('newFormatIcon');
+            
+            const name = nameInput.value.trim();
+            const icon = iconInput.value.trim() || 'default.jpg';
+            
+            if (!name) {
+                alert('Inserisci il nome del format');
+                return;
+            }
+            
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            formatIcons[name] = icon;
+            
+            nameInput.value = '';
+            iconInput.value = '';
+            
+            this.updateIconList();
+            this.addLog(`Nuovo format aggiunto: "${name}"`);
+        }
+        
+        scanForMissingFormats() {
+            if (this.detectedFormats.size === 0) {
+                alert('Carica prima un file Excel per verificare i format mancanti');
+                return;
+            }
+            
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            const missingFormats = [];
+            
+            for (const format of this.detectedFormats) {
+                const normalizedFormat = format.trim().toUpperCase();
+                let found = false;
+                
+                for (const key of Object.keys(formatIcons)) {
+                    if (key.toUpperCase() === normalizedFormat) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    missingFormats.push(format);
+                }
+            }
+            
+            if (missingFormats.length === 0) {
+                alert('✅ Tutti i format trovati nel file hanno un\'icona associata!');
+            } else {
+                alert(`⚠️ Format mancanti: ${missingFormats.length}\n\n${missingFormats.join('\n')}`);
+            }
+        }
+        
+        exportIconMapping() {
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            const data = {
+                channel: this.currentChannel,
+                channelName: this.config.channels[this.currentChannel].name,
+                formatIcons: formatIcons,
+                defaultIcon: this.config.channels[this.currentChannel].baseIconUrl + 'default.jpg',
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `format-icons-${this.currentChannel}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            this.addLog(`Mappatura icone esportata per ${this.config.channels[this.currentChannel].name}`);
+        }
+        
+        importIconMapping() {
+            document.getElementById('importFile').click();
+        }
+        
+        handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.formatIcons) {
+                        const formatIcons = this.config.formatIcons[this.currentChannel];
+                        
+                        Object.keys(formatIcons).forEach(key => delete formatIcons[key]);
+                        Object.assign(formatIcons, data.formatIcons);
+                        
+                        this.updateIconList();
+                        this.addLog(`Mappatura icone importata con successo (${Object.keys(data.formatIcons).length} format)`);
+                    } else {
+                        alert('File non valido: manca la sezione formatIcons');
+                    }
+                } catch (error) {
+                    alert('Errore nel leggere il file: ' + error.message);
+                    this.addLog(`Errore importazione: ${error.message}`);
+                }
+            };
+            reader.readAsText(file);
+            
+            event.target.value = '';
+        }
+    }
+    
+    // XMLTV Generator Module
+    class XMLTVGenerator {
+        constructor(app) {
+            this.app = app;
+        }
+        
+        escapeXml(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        
+        formatXMLTVDate(date, timezone) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${timezone}`;
+        }
+        
+        getIconForFormat(format, channel) {
+            if (!format) return this.app.config.channels[channel].baseIconUrl + 'default.jpg';
+            const formatIcons = this.app.config.formatIcons[channel];
+            const normalizedFormat = format.trim().toUpperCase();
+            
+            for (const [key, value] of Object.entries(formatIcons)) {
+                if (key.toUpperCase() === normalizedFormat) {
+                    return this.app.config.channels[channel].baseIconUrl + value;
+                }
+            }
+            
+            return this.app.config.channels[channel].baseIconUrl + 'default.jpg';
+        }
+        
+        generateXMLTVForTVModa(workbook, channelId, channelName, timezone, iconUrl, dateRange, fillGaps) {
+            this.app.addLog('Generazione XMLTV per TV Moda...');
             
             let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
             xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
-            
-            // Info canale
             xml += `  <channel id="${channelId}">\n`;
             xml += `    <display-name lang="it">${channelName}</display-name>\n`;
             xml += `  </channel>\n\n`;
             
-            // Array per tutti i programmi
-            let allPrograms = [];
+            const programs = this.parseTVModaPrograms(workbook, dateRange);
+            const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'tvmoda');
             
-            // Mappa giorni settimana
+            for (const program of processedPrograms) {
+                xml += this.generateProgrammeXML(program, channelId, timezone, 'tvmoda');
+            }
+            
+            xml += '</tv>';
+            
+            this.app.addLog(`\nGenerati ${processedPrograms.length} programmi XML`);
+            this.app.addLog(`Lunghezza XML: ${xml.length} caratteri`);
+            
+            return xml;
+        }
+        
+        generateXMLTVForClassCNBC(data, channelId, channelName, baseDate, timezone, iconUrl, dateRange, fillGaps) {
+            this.app.addLog('Generazione XMLTV per Class CNBC...');
+            
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
+            xml += `  <channel id="${channelId}">\n`;
+            xml += `    <display-name lang="it">${channelName}</display-name>\n`;
+            xml += `  </channel>\n\n`;
+            
+            const programs = this.parseClassCNBCPrograms(data, baseDate, dateRange);
+            const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'classcnbc');
+            
+            for (const program of processedPrograms) {
+                xml += this.generateProgrammeXML(program, channelId, timezone, 'classcnbc');
+            }
+            
+            xml += '</tv>';
+            
+            this.app.addLog(`\nGenerati ${processedPrograms.length} programmi XML`);
+            this.app.addLog(`Lunghezza XML: ${xml.length} caratteri`);
+            
+            return xml;
+        }
+        
+        parseTVModaPrograms(workbook, dateRange) {
             const weekdayMap = {
-                'DOMENICA': 0,
-                'LUNEDI': 1,
-                'MARTEDI': 2,
-                'MERCOLEDI': 3,
-                'GIOVEDI': 4,
-                'VENERDI': 5,
-                'SABATO': 6
+                'DOMENICA': 0, 'LUNEDI': 1, 'MARTEDI': 2, 'MERCOLEDI': 3,
+                'GIOVEDI': 4, 'VENERDI': 5, 'SABATO': 6
             };
             
-            // Calcola date target
+            const targetDates = this.getTargetDates(dateRange, workbook, weekdayMap);
+            const extendedDates = this.getExtendedDates(targetDates);
+            const allPrograms = [];
+            
+            for (const dateString of extendedDates) {
+                const currentDate = new Date(dateString);
+                const targetWeekday = currentDate.getDay();
+                const sheetName = Object.keys(weekdayMap).find(key => weekdayMap[key] === targetWeekday);
+                
+                if (!sheetName || !workbook.Sheets[sheetName]) continue;
+                
+                this.app.addLog(`\nProcesso ${sheetName} per ${currentDate.toLocaleDateString('it-IT')}...`);
+                
+                const worksheet = workbook.Sheets[sheetName];
+                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                
+                const dayPrograms = this.parseTVModaDayPrograms(data, currentDate);
+                allPrograms.push(...dayPrograms);
+                
+                this.app.addLog(`  Trovati ${dayPrograms.length} programmi in ${sheetName}`);
+            }
+            
+            return allPrograms;
+        }
+        
+        parseTVModaDayPrograms(data, currentDate) {
+            const programs = [];
+            
+            for (let i = 3; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length < 4) continue;
+                
+                const startTime = row[0];
+                const title = row[1];
+                const duration = row[2];
+                const description = row[3];
+                
+                if (!title || !startTime) continue;
+                
+                const programTime = this.parseTime(startTime, currentDate);
+                if (!programTime) continue;
+                
+                const durationMinutes = this.parseDuration(duration);
+                
+                programs.push({
+                    startTime: programTime,
+                    endTime: new Date(programTime.getTime() + durationMinutes * 60 * 1000),
+                    title: title,
+                    description: description || '',
+                    duration: durationMinutes * 60,
+                    category: 'Fashion',
+                    format: title
+                });
+            }
+            
+            return programs;
+        }
+        
+        parseClassCNBCPrograms(data, baseDate, dateRange) {
+            const allPrograms = [];
+            let currentDate = new Date(baseDate);
+            const extendedDates = this.getExtendedDatesForRange(dateRange);
+            
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                
+                if (!row || row.length === 0) continue;
+                
+                // Check for date change
+                if (row.length === 1 && row[0]) {
+                    const newDate = this.parseDate(row[0]);
+                    if (newDate) {
+                        currentDate = newDate;
+                        this.app.addLog(`Cambio giorno: ${currentDate.toDateString()}`);
+                    }
+                    continue;
+                }
+                
+                if (row.length < 10) continue;
+                
+                const program = this.parseClassCNBCProgram(row, currentDate);
+                if (program && this.isProgramInDateRange(program, extendedDates)) {
+                    allPrograms.push(program);
+                }
+            }
+            
+            return allPrograms;
+        }
+        
+        parseClassCNBCProgram(row, currentDate) {
+            const timeObj = row[0];
+            const title = row[1];
+            const programId = row[2];
+            const category = row[6] || row[7];
+            const rating = row[13];
+            const shortDesc = row[15];
+            const longDesc = row[16];
+            
+            if (!title || !programId) return null;
+            
+            const programTime = this.parseTime(timeObj, currentDate);
+            if (!programTime) return null;
+            
+            return {
+                startTime: programTime,
+                title: title,
+                programId: programId,
+                category: category,
+                rating: rating,
+                shortDesc: shortDesc,
+                longDesc: longDesc,
+                format: title
+            };
+        }
+        
+        processProgramsForOutput(allPrograms, dateRange, fillGaps, channel) {
+            // Sort programs by start time
+            allPrograms.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+            
+            // Calculate durations
+            this.calculateDurations(allPrograms, fillGaps);
+            
+            // Get target dates for output
+            const targetDates = this.getOutputTargetDates(dateRange);
+            
+            // Process each target date
+            const finalPrograms = [];
+            for (const targetDate of targetDates) {
+                const dayPrograms = this.processDayPrograms(allPrograms, targetDate, channel);
+                finalPrograms.push(...dayPrograms);
+            }
+            
+            return finalPrograms;
+        }
+        
+        processDayPrograms(allPrograms, targetDate, channel) {
+            const targetStart = new Date(targetDate);
+            targetStart.setHours(0, 0, 0, 0);
+            const targetEnd = new Date(targetDate);
+            targetEnd.setHours(23, 59, 59, 999);
+            
+            this.app.addLog(`\nProcesso programmi per ${targetDate.toLocaleDateString('it-IT')}...`);
+            
+            // Find programs that overlap with this day
+            const dayPrograms = allPrograms.filter(program => {
+                return (program.startTime >= targetStart && program.startTime <= targetEnd) ||
+                       (program.endTime >= targetStart && program.endTime <= targetEnd) ||
+                       (program.startTime < targetStart && program.endTime > targetEnd);
+            });
+            
+            this.app.addLog(`  Trovati ${dayPrograms.length} programmi che toccano questa giornata`);
+            
+            // Adjust programs to fit within the day
+            const adjustedPrograms = this.adjustProgramsForDay(dayPrograms, targetStart, targetEnd);
+            
+            // Fill gaps with filler content
+            const filledPrograms = this.fillGapsInDay(adjustedPrograms, targetStart, targetEnd, channel);
+            
+            const totalMinutes = filledPrograms.reduce((sum, p) => sum + (p.duration / 60), 0);
+            this.app.addLog(`  ✅ Copertura totale: ${totalMinutes.toFixed(0)} minuti (su 1440 attesi)`);
+            
+            return filledPrograms;
+        }
+        
+        adjustProgramsForDay(programs, targetStart, targetEnd) {
+            const adjusted = [];
+            
+            for (const program of programs) {
+                const adjustedProgram = { ...program };
+                
+                if (program.startTime < targetStart) {
+                    adjustedProgram.startTime = new Date(targetStart);
+                    adjustedProgram.wasAdjustedStart = true;
+                    this.app.addLog(`  Adattato inizio di "${program.title}" da ${program.startTime.toLocaleTimeString('it-IT')} a 00:00:00`);
+                }
+                
+                if (program.endTime > targetEnd) {
+                    adjustedProgram.endTime = new Date(targetEnd);
+                    adjustedProgram.endTime.setSeconds(59);
+                    adjustedProgram.wasAdjustedEnd = true;
+                    this.app.addLog(`  Adattato fine di "${program.title}" da ${program.endTime.toLocaleTimeString('it-IT')} a 23:59:59`);
+                }
+                
+                adjustedProgram.duration = Math.floor((adjustedProgram.endTime - adjustedProgram.startTime) / 1000);
+                
+                if (adjustedProgram.duration > 0) {
+                    adjusted.push(adjustedProgram);
+                }
+            }
+            
+            return adjusted.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+        }
+        
+        fillGapsInDay(programs, targetStart, targetEnd, channel) {
+            if (programs.length === 0) {
+                this.app.addLog(`  ⚠️ Nessun programma trovato - creo filler per l'intera giornata`);
+                return [this.createFillerProgram(targetStart, targetEnd, channel, true)];
+            }
+            
+            const filled = [];
+            let currentTime = new Date(targetStart);
+            
+            for (const program of programs) {
+                // Fill gap before program
+                if (program.startTime > currentTime) {
+                    const gapMinutes = (program.startTime - currentTime) / (1000 * 60);
+                    this.app.addLog(`  ⚠️ Buco di ${gapMinutes.toFixed(0)} minuti prima di "${program.title}"`);
+                    filled.push(this.createFillerProgram(currentTime, program.startTime, channel, false));
+                }
+                
+                filled.push(program);
+                currentTime = new Date(program.endTime);
+            }
+            
+            // Fill gap at end of day
+            if (currentTime < targetEnd) {
+                const gapMinutes = (targetEnd - currentTime) / (1000 * 60);
+                this.app.addLog(`  ⚠️ Buco di ${gapMinutes.toFixed(0)} minuti alla fine della giornata`);
+                
+                const fillerEnd = new Date(targetEnd);
+                fillerEnd.setSeconds(59);
+                filled.push(this.createFillerProgram(currentTime, fillerEnd, channel, false));
+            }
+            
+            return filled;
+        }
+        
+        createFillerProgram(startTime, endTime, channel, isFullDay) {
+            const title = isFullDay ? "Programmazione" : "Programmazione notturna";
+            return {
+                startTime: new Date(startTime),
+                endTime: new Date(endTime),
+                title: title,
+                programId: channel === 'classcnbc' ? (isFullDay ? "FILLER_DAY" : "FILLER_NIGHT") : undefined,
+                description: title,
+                duration: (endTime - startTime) / 1000,
+                category: channel === 'tvmoda' ? 'Fashion' : 'Informazione',
+                format: title,
+                isFiller: true
+            };
+        }
+        
+        generateProgrammeXML(program, channelId, timezone, channel) {
+            let xml = `  <programme start="${this.formatXMLTVDate(program.startTime, timezone)}" stop="${this.formatXMLTVDate(program.endTime, timezone)}" channel="${channelId}">\n`;
+            
+            if (program.programId) {
+                xml += `    <episode-num system="assetID">${this.escapeXml(program.programId)}</episode-num>\n`;
+            }
+            
+            xml += `    <title lang="it">${this.escapeXml(program.title)}</title>\n`;
+            
+            // Add description
+            const description = this.getDescription(program);
+            if (description) {
+                xml += `    <desc lang="it">${this.escapeXml(description)}</desc>\n`;
+            }
+            
+            xml += `    <length units="seconds">${program.duration}</length>\n`;
+            
+            // Add rating
+            const rating = this.getRating(program);
+            xml += `    <rating system="Italy Parental Rating">\n`;
+            xml += `      <value>${rating}</value>\n`;
+            xml += `    </rating>\n`;
+            
+            // Add category
+            if (program.category) {
+                const mappedCategory = this.app.config.categoryMapping[program.category] || program.category;
+                xml += `    <category lang="it">${this.escapeXml(mappedCategory)}</category>\n`;
+            }
+            
+            // Add icon
+            const formatIcon = this.getIconForFormat(program.format, channel);
+            xml += `    <icon src="${this.escapeXml(formatIcon)}" width="1920" height="1080"></icon>\n`;
+            xml += `  </programme>\n\n`;
+            
+            return xml;
+        }
+        
+        // Utility methods
+        parseTime(timeObj, baseDate) {
+            let programTime;
+            
+            try {
+                if (timeObj instanceof Date || Object.prototype.toString.call(timeObj) === '[object Date]') {
+                    programTime = new Date(baseDate);
+                    programTime.setHours(timeObj.getHours(), timeObj.getMinutes(), timeObj.getSeconds() || 0, 0);
+                } else if (typeof timeObj === 'string') {
+                    const tempDate = new Date(timeObj);
+                    if (!isNaN(tempDate.getTime())) {
+                        programTime = new Date(baseDate);
+                        programTime.setHours(tempDate.getHours(), tempDate.getMinutes(), 0, 0);
+                    }
+                }
+            } catch (e) {
+                return null;
+            }
+            
+            return programTime;
+        }
+        
+        parseDate(dateObj) {
+            try {
+                let date = dateObj;
+                if (typeof dateObj === 'string') {
+                    date = new Date(dateObj);
+                }
+                
+                if (date instanceof Date && !isNaN(date.getTime())) {
+                    return date;
+                }
+            } catch (e) {
+                return null;
+            }
+            return null;
+        }
+        
+        parseDuration(duration) {
+            let durationMinutes = 30; // default
+            
+            if (duration) {
+                if (duration instanceof Date || Object.prototype.toString.call(duration) === '[object Date]') {
+                    durationMinutes = duration.getHours() * 60 + duration.getMinutes();
+                } else if (typeof duration === 'string') {
+                    const colonMatch = duration.match(/(\d+):(\d+)(?::(\d+))?/);
+                    if (colonMatch) {
+                        const hours = parseInt(colonMatch[1]) || 0;
+                        const minutes = parseInt(colonMatch[2]) || 0;
+                        durationMinutes = hours * 60 + minutes;
+                    } else if (/^\d+$/.test(duration)) {
+                        durationMinutes = parseInt(duration);
+                    }
+                }
+            }
+            
+            return durationMinutes;
+        }
+        
+        calculateDurations(programs, fillGaps) {
+            if (!fillGaps || programs.length < 2) {
+                // Default 30 minute duration
+                programs.forEach(program => {
+                    if (!program.endTime) {
+                        program.endTime = new Date(program.startTime.getTime() + 30 * 60 * 1000);
+                        program.duration = 30 * 60;
+                    }
+                });
+                return;
+            }
+            
+            this.app.addLog('\nApplico gap filling...');
+            
+            for (let i = 0; i < programs.length; i++) {
+                const currentProgram = programs[i];
+                let endTime;
+                
+                if (i + 1 < programs.length) {
+                    const nextProgram = programs[i + 1];
+                    const currentDay = currentProgram.startTime.toDateString();
+                    const nextDay = nextProgram.startTime.toDateString();
+                    
+                    if (currentDay === nextDay) {
+                        endTime = new Date(nextProgram.startTime);
+                    } else {
+                        endTime = new Date(currentProgram.startTime);
+                        endTime.setMinutes(endTime.getMinutes() + 30);
+                    }
+                } else {
+                    endTime = new Date(currentProgram.startTime);
+                    endTime.setMinutes(endTime.getMinutes() + 30);
+                }
+                
+                currentProgram.endTime = endTime;
+                currentProgram.duration = Math.max(60, Math.floor((endTime - currentProgram.startTime) / 1000));
+            }
+        }
+        
+        getTargetDates(dateRange, workbook, weekdayMap) {
             const today = new Date();
             const targetDates = [];
             
@@ -826,13 +1461,12 @@
                     targetDates.push(date);
                 }
             } else {
-                // 'all' - processa tutti i fogli disponibili per le prossime settimane
-                for (let weekOffset = 0; weekOffset < 4; weekOffset++) { // 4 settimane
+                // 'all' - process all available sheets
+                for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
                     for (const sheetName of Object.keys(weekdayMap)) {
-                        if (workbook.Sheets[sheetName]) {
+                        if (workbook && workbook.Sheets[sheetName]) {
                             const targetWeekday = weekdayMap[sheetName];
                             const date = new Date(today);
-                            // Trova il prossimo giorno della settimana
                             const daysUntilTarget = (targetWeekday - today.getDay() + 7) % 7;
                             date.setDate(today.getDate() + daysUntilTarget + (weekOffset * 7));
                             targetDates.push(date);
@@ -841,892 +1475,110 @@
                 }
             }
             
-            addLog(`Date target: ${targetDates.map(d => d.toLocaleDateString('it-IT')).join(', ')}`);
-            
-            // Processa ogni foglio rilevante
-            for (const targetDate of targetDates) {
-                const targetWeekday = targetDate.getDay();
-                const sheetName = Object.keys(weekdayMap).find(key => weekdayMap[key] === targetWeekday);
-                
-                if (!sheetName || !workbook.Sheets[sheetName]) {
-                    addLog(`Foglio ${sheetName} non trovato per ${targetDate.toLocaleDateString('it-IT')}`);
-                    continue;
-                }
-                
-                addLog(`\nProcesso ${sheetName} per ${targetDate.toLocaleDateString('it-IT')}...`);
-                
-                const worksheet = workbook.Sheets[sheetName];
-                // IMPORTANTE: Uso raw: true per mantenere i Date objects
-                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-                
-                let programsInDay = 0;
-                
-                // Salta le prime righe di intestazione
-                for (let i = 3; i < data.length; i++) {
-                    const row = data[i];
-                    if (!row || row.length < 4) continue;
-                    
-                    const startTime = row[0];
-                    const title = row[1];
-                    const duration = row[2];
-                    const description = row[3];
-                    
-                    if (!title || !startTime) continue;
-                    
-                    // Estrai ora di inizio
-                    let programTime;
-                    if (startTime instanceof Date || Object.prototype.toString.call(startTime) === '[object Date]') {
-                        programTime = new Date(targetDate);
-                        programTime.setHours(startTime.getHours(), startTime.getMinutes(), startTime.getSeconds() || 0, 0);
-                        
-                        if (programsInDay < 5) {
-                            addLog(`  Programma: "${title}" alle ${programTime.getHours()}:${String(programTime.getMinutes()).padStart(2, '0')}`);
-                        }
-                    } else if (typeof startTime === 'string') {
-                        // Prova a parsare stringhe come "6/6/25 00:00"
-                        try {
-                            const tempDate = new Date(startTime);
-                            if (!isNaN(tempDate.getTime())) {
-                                programTime = new Date(targetDate);
-                                programTime.setHours(tempDate.getHours(), tempDate.getMinutes(), 0, 0);
-                            } else {
-                                addLog(`  Errore parsing ora (string) per "${title}": ${startTime}`);
-                                continue;
-                            }
-                        } catch (e) {
-                            addLog(`  Errore parsing ora per "${title}": ${e.message}`);
-                            continue;
-                        }
-                    } else {
-                        addLog(`  Tipo ora non riconosciuto per "${title}": ${typeof startTime}`);
-                        continue;
-                    }
-                    
-                    // Calcola durata
-                    let durationMinutes = 30; // default
-                    if (duration) {
-                        if (duration instanceof Date || Object.prototype.toString.call(duration) === '[object Date]') {
-                            durationMinutes = duration.getHours() * 60 + duration.getMinutes();
-                        } else if (typeof duration === 'string') {
-                            // Prova diversi formati: "0:10:00", "00:10", "10"
-                            const colonMatch = duration.match(/(\d+):(\d+)(?::(\d+))?/);
-                            if (colonMatch) {
-                                const hours = parseInt(colonMatch[1]) || 0;
-                                const minutes = parseInt(colonMatch[2]) || 0;
-                                durationMinutes = hours * 60 + minutes;
-                            } else if (/^\d+$/.test(duration)) {
-                                durationMinutes = parseInt(duration);
-                            }
-                        }
-                    }
-                    
-                    allPrograms.push({
-                        startTime: programTime,
-                        title: title,
-                        description: description || '',
-                        duration: durationMinutes * 60, // in secondi
-                        category: 'Fashion', // Categoria default per TV Moda
-                        format: title // Il titolo È il format per TV Moda
-                    });
-                    
-                    programsInDay++;
-                }
-                
-                addLog(`  Trovati ${programsInDay} programmi in ${sheetName}`);
-            }
-            
-            
-            addLog(`\nRaccolti ${allPrograms.length} programmi totali`);
-            
-            // Ordina per data/ora
-            allPrograms.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-            
-            // Applica gap filling se richiesto
-            if (fillGaps && allPrograms.length > 1) {
-                addLog('\nApplico gap filling...');
-                let gapsFilledCount = 0;
-                for (let i = 0; i < allPrograms.length - 1; i++) {
-                    const current = allPrograms[i];
-                    const next = allPrograms[i + 1];
-                    
-                    // Solo se sono nello stesso giorno
-                    if (current.startTime.toDateString() === next.startTime.toDateString()) {
-                        const gap = (next.startTime - current.startTime) / 1000; // in secondi
-                        if (gap > current.duration) {
-                            current.duration = gap;
-                            gapsFilledCount++;
-                        }
-                    }
-                }
-                addLog(`Gap riempiti: ${gapsFilledCount}`);
-            }
-            
-            // Genera XML
-            for (const program of allPrograms) {
-                const endTime = new Date(program.startTime.getTime() + program.duration * 1000);
-                
-                const formatXMLTVDate = (date) => {
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    const hours = String(date.getHours()).padStart(2, '0');
-                    const minutes = String(date.getMinutes()).padStart(2, '0');
-                    const seconds = String(date.getSeconds()).padStart(2, '0');
-                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${timezone}`;
-                };
-                
-                xml += `  <programme start="${formatXMLTVDate(program.startTime)}" stop="${formatXMLTVDate(endTime)}" channel="${channelId}">\n`;
-                xml += `    <title lang="it">${escapeXml(program.title)}</title>\n`;
-                
-                if (program.description && program.description.trim() !== '') {
-                    xml += `    <desc lang="it">${escapeXml(program.description)}</desc>\n`;
-                }
-                
-                xml += `    <length units="seconds">${program.duration}</length>\n`;
-                xml += `    <rating system="Italy Parental Rating">\n`;
-                xml += `      <value>0</value>\n`;
-                xml += `    </rating>\n`;
-                xml += `    <category lang="it">${program.category}</category>\n`;
-                
-                // Usa l'icona specifica per il format
-                const formatIcon = getIconForFormat(program.format, 'tvmoda');
-                xml += `    <icon src="${escapeXml(formatIcon)}" width="1920" height="1080"></icon>\n`;
-                xml += `  </programme>\n\n`;
-            }
-            
-            xml += '</tv>';
-            
-            addLog(`\nGenerati ${allPrograms.length} programmi XML`);
-            addLog(`Lunghezza XML: ${xml.length} caratteri`);
-            
-            return xml;
+            return targetDates;
         }
-
-        function generateXMLTVForClassCNBC(data, channelId, channelName, baseDate, timezone, iconUrl, dateRange, fillGaps) {
-            addLog('Generazione XMLTV per Class CNBC...');
+        
+        getExtendedDates(targetDates) {
+            const extendedDates = new Set();
             
-            // Calcola le date target in base alla selezione
+            for (const targetDate of targetDates) {
+                const dayBefore = new Date(targetDate);
+                dayBefore.setDate(targetDate.getDate() - 1);
+                extendedDates.add(dayBefore.toDateString());
+                extendedDates.add(targetDate.toDateString());
+                const dayAfter = new Date(targetDate);
+                dayAfter.setDate(targetDate.getDate() + 1);
+                extendedDates.add(dayAfter.toDateString());
+            }
+            
+            return extendedDates;
+        }
+        
+        getExtendedDatesForRange(dateRange) {
             const today = new Date();
-            const targetDates = [];
+            const dates = new Set();
+            
+            if (dateRange === 'today' || dateRange === 'tomorrow' || dateRange === 'week') {
+                const targetDates = this.getOutputTargetDates(dateRange);
+                for (const date of targetDates) {
+                    const dayBefore = new Date(date);
+                    dayBefore.setDate(date.getDate() - 1);
+                    dates.add(this.formatDateString(dayBefore));
+                    dates.add(this.formatDateString(date));
+                    const dayAfter = new Date(date);
+                    dayAfter.setDate(date.getDate() + 1);
+                    dates.add(this.formatDateString(dayAfter));
+                }
+            }
+            
+            return dates;
+        }
+        
+        getOutputTargetDates(dateRange) {
+            const today = new Date();
+            const dates = [];
             
             if (dateRange === 'today') {
-                const todayStr = today.getFullYear() + '-' + 
-                    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-                    String(today.getDate()).padStart(2, '0');
-                targetDates.push(todayStr);
+                dates.push(today);
             } else if (dateRange === 'tomorrow') {
                 const tomorrow = new Date(today);
                 tomorrow.setDate(today.getDate() + 1);
-                const tomorrowStr = tomorrow.getFullYear() + '-' + 
-                    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
-                    String(tomorrow.getDate()).padStart(2, '0');
-                targetDates.push(tomorrowStr);
+                dates.push(tomorrow);
             } else if (dateRange === 'week') {
                 for (let i = 0; i < 7; i++) {
                     const date = new Date(today);
                     date.setDate(today.getDate() + i);
-                    const dateStr = date.getFullYear() + '-' + 
-                        String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-                        String(date.getDate()).padStart(2, '0');
-                    targetDates.push(dateStr);
-                }
-            }
-            
-            addLog(`Date target: ${targetDates.length > 0 ? targetDates.join(', ') : 'TUTTE'}`);
-            
-            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-            xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
-            
-            // Info canale
-            xml += `  <channel id="${channelId}">\n`;
-            xml += `    <display-name lang="it">${channelName}</display-name>\n`;
-            xml += `  </channel>\n\n`;
-            
-            let programCount = 0;
-            let currentDate = new Date(baseDate);
-            let allPrograms = [];
-            
-            // FASE 1: Raccolta di tutti i programmi
-            for (let i = 0; i < data.length; i++) {
-                const row = data[i];
-                
-                if (!row || row.length === 0) continue;
-                
-                // Cambio di giorno
-                if (row.length === 1 && row[0]) {
-                    try {
-                        let dateToCheck = row[0];
-                        if (typeof dateToCheck === 'string') {
-                            dateToCheck = new Date(dateToCheck);
-                        }
-                        
-                        if (dateToCheck instanceof Date && !isNaN(dateToCheck.getTime())) {
-                            currentDate = new Date(dateToCheck);
-                            addLog(`Cambio giorno: ${currentDate.toDateString()}`);
-                        }
-                    } catch (e) {
-                        // Ignora errori di parsing
-                    }
-                    continue;
-                }
-                
-                // Skip righe che non sono programmi
-                if (row.length < 10) continue;
-                
-                // Parse dati programma
-                const timeObj = row[0];
-                const title = row[1];
-                const programId = row[2];
-                const category = row[6] || row[7];
-                const rating = row[13];
-                const shortDesc = row[15];
-                const longDesc = row[16];
-                
-                if (!title || !programId) continue;
-                
-                // Estrai l'ora
-                let programTime;
-                try {
-                    let timeToUse = timeObj;
-                    if (typeof timeObj === 'string') {
-                        timeToUse = new Date(timeObj);
-                    }
-                    
-                    if (timeToUse instanceof Date && !isNaN(timeToUse.getTime())) {
-                        programTime = new Date(currentDate);
-                        programTime.setHours(timeToUse.getHours(), timeToUse.getMinutes(), timeToUse.getSeconds(), 0);
-                    } else {
-                        continue;
-                    }
-                } catch (e) {
-                    continue;
-                }
-                
-                // FILTRO: Se ci sono date target, filtra
-                if (targetDates.length > 0) {
-                    const programDateStr = programTime.getFullYear() + '-' + 
-                        String(programTime.getMonth() + 1).padStart(2, '0') + '-' + 
-                        String(programTime.getDate()).padStart(2, '0');
-                    
-                    if (!targetDates.includes(programDateStr)) {
-                        continue;
-                    }
-                }
-                
-                // Aggiungi il programma all'array
-                allPrograms.push({
-                    startTime: programTime,
-                    title: title,
-                    programId: programId,
-                    category: category,
-                    rating: rating,
-                    shortDesc: shortDesc,
-                    longDesc: longDesc,
-                    format: title // Per ClassCNBC il titolo è anche il format
-                });
-                
-                programCount++;
-            }
-            
-            addLog(`\nRaccolti ${allPrograms.length} programmi`);
-            
-            // ORDINAMENTO
-            allPrograms.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-            
-            // FASE 2: Calcolo durate con gap filling
-            if (fillGaps && allPrograms.length > 1) {
-                addLog('\nApplico gap filling...');
-                
-                for (let i = 0; i < allPrograms.length; i++) {
-                    const currentProgram = allPrograms[i];
-                    let endTime;
-                    
-                    if (i + 1 < allPrograms.length) {
-                        const nextProgram = allPrograms[i + 1];
-                        const currentDay = currentProgram.startTime.toDateString();
-                        const nextDay = nextProgram.startTime.toDateString();
-                        
-                        if (currentDay === nextDay) {
-                            endTime = new Date(nextProgram.startTime);
-                        } else {
-                            endTime = new Date(currentProgram.startTime);
-                            endTime.setMinutes(endTime.getMinutes() + 30);
-                        }
-                    } else {
-                        endTime = new Date(currentProgram.startTime);
-                        endTime.setMinutes(endTime.getMinutes() + 30);
-                    }
-                    
-                    currentProgram.endTime = endTime;
-                    currentProgram.duration = Math.max(60, Math.floor((endTime - currentProgram.startTime) / 1000));
+                    dates.push(date);
                 }
             } else {
-                for (let i = 0; i < allPrograms.length; i++) {
-                    const currentProgram = allPrograms[i];
-                    const endTime = new Date(currentProgram.startTime);
-                    endTime.setMinutes(endTime.getMinutes() + 30);
-                    currentProgram.endTime = endTime;
-                    currentProgram.duration = 30 * 60;
+                // For 'all', return the next 7 days as default
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    dates.push(date);
                 }
             }
             
-            // FASE 3: Generazione XML
-            for (let i = 0; i < allPrograms.length; i++) {
-                const program = allPrograms[i];
-                
-                const formatXMLTVDate = (date) => {
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    const hours = String(date.getHours()).padStart(2, '0');
-                    const minutes = String(date.getMinutes()).padStart(2, '0');
-                    const seconds = String(date.getSeconds()).padStart(2, '0');
-                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${timezone}`;
-                };
-                
-                const startFormatted = formatXMLTVDate(program.startTime);
-                const endFormatted = formatXMLTVDate(program.endTime);
-                
-                xml += `  <programme start="${startFormatted}" stop="${endFormatted}" channel="${channelId}">\n`;
-                xml += `    <episode-num system="assetID">${escapeXml(program.programId)}</episode-num>\n`;
-                xml += `    <title lang="it">${escapeXml(program.title)}</title>\n`;
-                
-                if (program.longDesc && program.longDesc !== program.title && program.longDesc.trim() !== '') {
-                    xml += `    <desc lang="it">${escapeXml(program.longDesc)}</desc>\n`;
-                } else if (program.shortDesc && program.shortDesc !== program.title && program.shortDesc.trim() !== '') {
-                    xml += `    <desc lang="it">${escapeXml(program.shortDesc)}</desc>\n`;
-                }
-                
-                xml += `    <length units="seconds">${program.duration}</length>\n`;
-                
-                if (program.rating && program.rating !== 'U' && program.rating.trim() !== '') {
-                    const mappedRating = ratingMapping[program.rating] || '0';
-                    xml += `    <rating system="Italy Parental Rating">\n`;
-                    xml += `      <value>${mappedRating}</value>\n`;
-                    xml += `    </rating>\n`;
-                } else {
-                    xml += `    <rating system="Italy Parental Rating">\n`;
-                    xml += `      <value>0</value>\n`;
-                    xml += `    </rating>\n`;
-                }
-                
-                if (program.category && program.category.trim() !== '') {
-                    const mappedCategory = categoryMapping[program.category] || program.category;
-                    xml += `    <category lang="it">${escapeXml(mappedCategory)}</category>\n`;
-                }
-                
-                // Usa l'icona specifica per il format
-                const formatIcon = getIconForFormat(program.format, 'classcnbc');
-                xml += `    <icon src="${escapeXml(formatIcon)}" width="1920" height="1080"></icon>\n`;
-                xml += `  </programme>\n\n`;
-            }
-            
-            xml += '</tv>';
-            
-            addLog(`\nGenerati ${allPrograms.length} programmi XML`);
-            addLog(`Lunghezza XML: ${xml.length} caratteri`);
-            
-            return xml;
+            return dates;
         }
-
-        function escapeXml(text) {
-            if (!text) return '';
-            return text.toString()
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
-        function showDownload() {
-            if (!xmltvContent || xmltvContent.length < 100) {
-                addLog('ERRORE: Contenuto XML troppo piccolo o vuoto');
-                return;
-            }
-            
-            try {
-                const blob = new Blob([xmltvContent], { type: 'application/xml;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                
-                // Genera il nome del file nel formato AAAA-MM-GG.xml
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                const filename = `${year}-${month}-${day}.xml`;
-                
-                downloadSection.innerHTML = `
-                    <h3>📥 Download File</h3>
-                    <a href="${url}" download="${filename}" class="download-link">💾 Scarica XMLTV (${(blob.size / 1024).toFixed(1)} KB)</a>
-                    <p style="color: #666; font-size: 14px;">
-                        File generato con successo<br>
-                        Canale: ${document.getElementById('channelName').value}<br>
-                        Periodo: ${document.getElementById('dateRange').selectedOptions[0].text}<br>
-                        Nome file: ${filename}
-                    </p>
-                `;
-                downloadSection.style.display = 'block';
-                addLog(`File pronto: ${filename} (${blob.size} bytes)`);
-            } catch (error) {
-                addLog(`Errore creazione download: ${error.message}`);
-                showStatus('❌ Errore nella creazione del file', 'error');
-            }
-        }
-
-        // Flag per abilitare/disabilitare la persistenza
-        let persistenceEnabled = false;
-
-        // Funzioni per la persistenza opzionale
-        function isLocalStorageAvailable() {
-            try {
-                const test = '__localStorage_test__';
-                window.localStorage.setItem(test, test);
-                window.localStorage.removeItem(test);
-                return true;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function togglePersistence() {
-            if (!isLocalStorageAvailable()) {
-                showStatus('⚠️ localStorage non disponibile in questo ambiente', 'error');
-                document.getElementById('enablePersistence').checked = false;
-                return;
-            }
-            
-            persistenceEnabled = document.getElementById('enablePersistence').checked;
-            
-            if (persistenceEnabled) {
-                // Salva lo stato corrente
-                saveMappingsToLocalStorage();
-                showStatus('✅ Salvataggio automatico attivato', 'success');
-                addLog('Persistenza localStorage abilitata');
-            } else {
-                // Opzionale: rimuovi dal localStorage
-                if (confirm('Vuoi rimuovere anche i dati salvati nel browser?')) {
-                    try {
-                        localStorage.removeItem('epgConverter_tvModaFormatIcons');
-                        localStorage.removeItem('epgConverter_classCNBCFormatIcons');
-                        localStorage.removeItem('epgConverter_persistenceEnabled');
-                    } catch (e) {
-                        // Ignora errori
-                    }
-                    showStatus('✅ Salvataggio automatico disattivato e dati rimossi', 'success');
-                } else {
-                    showStatus('✅ Salvataggio automatico disattivato', 'success');
-                }
-                addLog('Persistenza localStorage disabilitata');
-            }
-            
-            // Salva la preferenza
-            try {
-                localStorage.setItem('epgConverter_persistenceEnabled', persistenceEnabled);
-            } catch (e) {
-                // Ignora errori
-            }
-        }
-
-        function saveMappingsToLocalStorage() {
-            if (!persistenceEnabled || !isLocalStorageAvailable()) return;
-            
-            try {
-                localStorage.setItem('epgConverter_tvModaFormatIcons', JSON.stringify(tvModaFormatIcons));
-                localStorage.setItem('epgConverter_classCNBCFormatIcons', JSON.stringify(classCNBCFormatIcons));
-                return true;
-            } catch (e) {
-                // Silently fail
-                return false;
-            }
-        }
-
-        function loadMappingsFromLocalStorage() {
-            if (!isLocalStorageAvailable()) {
-                return;
-            }
-            
-            try {
-                // Controlla se la persistenza era abilitata
-                const wasPersistenceEnabled = localStorage.getItem('epgConverter_persistenceEnabled') === 'true';
-                
-                if (wasPersistenceEnabled) {
-                    const savedTvModa = localStorage.getItem('epgConverter_tvModaFormatIcons');
-                    const savedClassCNBC = localStorage.getItem('epgConverter_classCNBCFormatIcons');
-                    
-                    if (savedTvModa) {
-                        Object.assign(tvModaFormatIcons, JSON.parse(savedTvModa));
-                        addLog('Caricate mappature TV Moda da localStorage');
-                    }
-                    if (savedClassCNBC) {
-                        Object.assign(classCNBCFormatIcons, JSON.parse(savedClassCNBC));
-                        addLog('Caricate mappature Class CNBC da localStorage');
-                    }
-                    
-                    // Ripristina lo stato della checkbox
-                    document.getElementById('enablePersistence').checked = true;
-                    persistenceEnabled = true;
-                }
-            } catch (e) {
-                // Silently fail - localStorage not available
-            }
-        }
-
-        // Modifica le funzioni esistenti per salvare automaticamente se abilitato
-        const originalUpdateFormatIcon = updateFormatIcon;
-        function updateFormatIcon(format, newUrl) {
-            originalUpdateFormatIcon(format, newUrl);
-            saveMappingsToLocalStorage();
-        }
-
-        const originalAddNewFormat = addNewFormat;
-        function addNewFormat() {
-            originalAddNewFormat();
-            saveMappingsToLocalStorage();
-        }
-
-        const originalRemoveFormat = removeFormat;
-        function removeFormat(format) {
-            originalRemoveFormat(format);
-            saveMappingsToLocalStorage();
-        }
-
-        const originalSaveMissingFormats = saveMissingFormats;
-        function saveMissingFormats() {
-            originalSaveMissingFormats();
-            saveMappingsToLocalStorage();
-        }
-        function scanForMissingFormats() {
-            if (!workbook && !fileData) {
-                showStatus('⚠️ Carica prima un file Excel per verificare i format', 'error');
-                return;
-            }
-
-            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-            const missingFormats = [];
-
-            // Trova i format non presenti nel dizionario
-            for (const format of detectedFormats) {
-                let found = false;
-                // Ricerca case-insensitive
-                for (const key of Object.keys(formatIcons)) {
-                    if (key.toUpperCase() === format.toUpperCase()) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    missingFormats.push(format);
-                }
-            }
-
-            if (missingFormats.length === 0) {
-                showStatus('✅ Tutti i format nel file hanno un\'icona associata!', 'success');
-                addLog('Nessun format mancante rilevato');
-                return;
-            }
-
-            // Mostra la maschera per i format mancanti
-            showMissingFormatsDialog(missingFormats);
-        }
-
-        function showMissingFormatsDialog(missingFormats) {
-            const dialog = document.getElementById('missingFormatsManager');
-            const list = document.getElementById('missingFormatsList');
-            
-            list.innerHTML = '';
-            
-            missingFormats.forEach((format, index) => {
-                const defaultFilename = 'default.jpg';
-                const baseUrl = channelConfigs[currentChannel].baseIconUrl;
-                
-                const item = document.createElement('div');
-                item.className = 'icon-item';
-                item.innerHTML = `
-                    <div>
-                        <strong>${format}</strong>
-                        <div class="icon-preview" style="background-image: url('${baseUrl + defaultFilename}')"></div>
-                    </div>
-                    <input type="text" 
-                           id="missingFormat_${index}" 
-                           value="${defaultFilename}" 
-                           style="padding: 5px; font-size: 12px;" 
-                           placeholder="nome-file.jpg" 
-                           data-format="${format}" />
-                    <div class="icon-actions">
-                        <button class="btn btn-success btn-small" onclick="testMissingIconUrl(${index})">👁️ Test</button>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-            
-            dialog.classList.add('active');
-            addLog(`Trovati ${missingFormats.length} format mancanti nel dizionario`);
-            showStatus(`⚠️ ${missingFormats.length} format non hanno un'icona associata`, 'info');
-        }
-
-        function testMissingIconUrl(index) {
-            const input = document.getElementById(`missingFormat_${index}`);
-            const baseUrl = channelConfigs[currentChannel].baseIconUrl;
-            if (input && input.value) {
-                window.open(baseUrl + input.value, '_blank');
-            }
-        }
-
-        function saveMissingFormats() {
-            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-            const inputs = document.querySelectorAll('#missingFormatsList input[type="text"]');
-            let addedCount = 0;
-            
-            inputs.forEach(input => {
-                const format = input.getAttribute('data-format');
-                const filename = input.value.trim();
-                if (format && filename) {
-                    formatIcons[format] = filename;
-                    addedCount++;
-                }
-            });
-            
-            if (addedCount > 0) {
-                updateIconList();
-                closeMissingFormats();
-                showStatus(`✅ Aggiunti ${addedCount} format al dizionario`, 'success');
-                addLog(`Aggiunti ${addedCount} nuovi format al dizionario ${currentChannel}`);
-                saveMappingsToLocalStorage();
-            }
-        }
-
-        function closeMissingFormats() {
-            const dialog = document.getElementById('missingFormatsManager');
-            dialog.classList.remove('active');
-        }
-
-        // Funzioni per la gestione delle icone
-        function toggleIconManager() {
-            const manager = document.getElementById('iconManager');
-            manager.classList.toggle('active');
-            if (manager.classList.contains('active')) {
-                updateIconList();
-            }
-        }
-
-        function updateIconList() {
-            const iconList = document.getElementById('iconList');
-            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-            const baseUrl = channelConfigs[currentChannel].baseIconUrl;
-            
-            iconList.innerHTML = '';
-            
-            Object.entries(formatIcons).forEach(([format, filename]) => {
-                const item = document.createElement('div');
-                item.className = 'icon-item';
-                item.innerHTML = `
-                    <div>
-                        <strong>${format}</strong>
-                        <div class="icon-preview" style="background-image: url('${baseUrl + filename}')"></div>
-                    </div>
-                    <input type="text" value="${filename}" onchange="updateFormatIcon('${format}', this.value)" 
-                           style="padding: 5px; font-size: 12px;" 
-                           placeholder="nome-file.jpg" />
-                    <div class="icon-actions">
-                        <button class="btn btn-success btn-small" onclick="testIconUrl('${format}')">👁️ Test</button>
-                        <button class="btn btn-danger btn-small" onclick="removeFormat('${format}')">🗑️</button>
-                    </div>
-                `;
-                iconList.appendChild(item);
-            });
-        }
-
-        function updateFormatIcon(format, newUrl) {
-            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-            formatIcons[format] = newUrl;
-            
-            // Aggiorna l'anteprima immediatamente
-            const iconList = document.getElementById('iconList');
-            const items = iconList.getElementsByClassName('icon-item');
-            for (let item of items) {
-                const formatName = item.querySelector('strong').textContent;
-                if (formatName === format) {
-                    const preview = item.querySelector('.icon-preview');
-                    preview.style.backgroundImage = `url('${newUrl}')`;
-                    break;
-                }
-            }
-            
-            addLog(`Icona aggiornata per format "${format}"`);
-        }
-
-        function testIconUrl(format) {
-            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-            const filename = formatIcons[format];
-            const baseUrl = channelConfigs[currentChannel].baseIconUrl;
-            
-            if (filename) {
-                window.open(baseUrl + filename, '_blank');
-            }
-        }
-
-        function removeFormat(format) {
-            if (confirm(`Rimuovere il format "${format}"?`)) {
-                const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-                delete formatIcons[format];
-                updateIconList();
-                addLog(`Format "${format}" rimosso`);
-            }
-        }
-
-        function addNewFormat() {
-            const nameInput = document.getElementById('newFormatName');
-            const iconInput = document.getElementById('newFormatIcon');
-            
-            const name = nameInput.value.trim();
-            const filename = iconInput.value.trim() || 'default.jpg';
-            
-            if (!name) {
-                alert('Inserisci il nome del format');
-                return;
-            }
-            
-            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-            formatIcons[name] = filename;
-            
-            nameInput.value = '';
-            iconInput.value = '';
-            
-            updateIconList();
-            addLog(`Nuovo format aggiunto: "${name}" -> ${filename}`);
-            saveMappingsToLocalStorage();
-        }
-
-        function exportIconMapping() {
-            const formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-            const data = {
-                channel: currentChannel,
-                channelName: channelConfigs[currentChannel].name,
-                formatIcons: formatIcons,
-                defaultIcon: channelConfigs[currentChannel].icon,
-                exportDate: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `format-icons-${currentChannel}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            addLog(`Mappatura icone esportata per ${channelConfigs[currentChannel].name}`);
-        }
-
-        function importIconMapping() {
-            document.getElementById('importFile').click();
-        }
-
-        function handleImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    if (data.formatIcons) {
-                        // Verifica quale canale stiamo importando
-                        const importChannel = data.channel || currentChannel;
-                        let formatIcons;
-                        let targetChannelName;
-                        
-                        if (importChannel === 'tvmoda') {
-                            formatIcons = tvModaFormatIcons;
-                            targetChannelName = 'TV Moda';
-                        } else if (importChannel === 'classcnbc') {
-                            formatIcons = classCNBCFormatIcons;
-                            targetChannelName = 'Class CNBC';
-                        } else {
-                            // Se non specificato, usa il canale corrente
-                            formatIcons = currentChannel === 'tvmoda' ? tvModaFormatIcons : classCNBCFormatIcons;
-                            targetChannelName = currentChannel === 'tvmoda' ? 'TV Moda' : 'Class CNBC';
-                        }
-                        
-                        // Salva una copia del dizionario precedente per confronto
-                        const oldIcons = {...formatIcons};
-                        const beforeCount = Object.keys(oldIcons).length;
-                        
-                        // Conta le differenze
-                        let newFormats = 0;
-                        let modifiedFormats = 0;
-                        let removedFormats = 0;
-                        
-                        // Controlla format modificati e nuovi
-                        for (const [format, url] of Object.entries(data.formatIcons)) {
-                            if (oldIcons[format]) {
-                                if (oldIcons[format] !== url) {
-                                    modifiedFormats++;
-                                    addLog(`🔄 Modificato: "${format}"`);
-                                }
-                            } else {
-                                newFormats++;
-                                addLog(`➕ Nuovo: "${format}"`);
-                            }
-                        }
-                        
-                        // Controlla format rimossi
-                        for (const format of Object.keys(oldIcons)) {
-                            if (!data.formatIcons[format]) {
-                                removedFormats++;
-                                addLog(`➖ Rimosso: "${format}"`);
-                            }
-                        }
-                        
-                        // SOSTITUISCI COMPLETAMENTE il dizionario
-                        Object.keys(formatIcons).forEach(key => delete formatIcons[key]);
-                        Object.assign(formatIcons, data.formatIcons);
-                        
-                        const afterCount = Object.keys(formatIcons).length;
-                        
-                        updateIconList();
-                        
-                        // Messaggio dettagliato
-                        let statusMessage = `✅ Import ${targetChannelName}: ${afterCount} format totali`;
-                        if (newFormats > 0) statusMessage += ` (+${newFormats} nuovi)`;
-                        if (modifiedFormats > 0) statusMessage += ` (${modifiedFormats} modificati)`;
-                        if (removedFormats > 0) statusMessage += ` (-${removedFormats} rimossi)`;
-                        
-                        showStatus(statusMessage, 'success');
-                        addLog(`\n📥 RIEPILOGO IMPORT:`);
-                        addLog(`- Canale: ${targetChannelName}`);
-                        addLog(`- Format totali: ${afterCount}`);
-                        addLog(`- Nuovi: ${newFormats}`);
-                        addLog(`- Modificati: ${modifiedFormats}`);
-                        addLog(`- Rimossi: ${removedFormats}`);
-                        
-                        // Se abbiamo importato per un canale diverso da quello corrente, avvisa
-                        if (importChannel !== currentChannel) {
-                            addLog(`⚠️ Nota: Importati format per ${importChannel} mentre il canale corrente è ${currentChannel}`);
-                        }
-                    } else {
-                        alert('File non valido: manca la sezione formatIcons');
-                    }
-                } catch (error) {
-                    alert('Errore nel leggere il file: ' + error.message);
-                    addLog(`Errore importazione: ${error.message}`);
-                }
-            };
-            reader.readAsText(file);
-            
-            // Reset input file per permettere di reimportare lo stesso file
-            event.target.value = '';
-        }
-
-        // Log iniziale
-        addLog('🚀 Convertitore EPG Multi-Canale pronto all\'uso');
-        addLog(`📌 Versione ${SOFTWARE_VERSION} (${LAST_UPDATE})`);
-        addLog('Seleziona il canale appropriato prima di caricare il file Excel');
         
-        // Carica mappature salvate se la persistenza è abilitata
-        loadMappingsFromLocalStorage();
+        formatDateString(date) {
+            return date.getFullYear() + '-' +
+                String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                String(date.getDate()).padStart(2, '0');
+        }
+        
+        isProgramInDateRange(program, extendedDates) {
+            if (extendedDates.size === 0) return true;
+            
+            const programDateStr = this.formatDateString(program.startTime);
+            return extendedDates.has(programDateStr);
+        }
+        
+        getDescription(program) {
+            if (program.longDesc && program.longDesc !== program.title && program.longDesc.trim() !== '') {
+                return program.longDesc;
+            } else if (program.shortDesc && program.shortDesc !== program.title && program.shortDesc.trim() !== '') {
+                return program.shortDesc;
+            } else if (program.description && program.description.trim() !== '') {
+                return program.description;
+            } else if (program.isFiller) {
+                return program.description || program.title;
+            }
+            return null;
+        }
+        
+        getRating(program) {
+            if (program.rating && program.rating !== 'U' && program.rating.trim() !== '') {
+                return this.app.config.ratingMapping[program.rating] || '0';
+            }
+            return '0';
+        }
+    }
+    
+    // Initialize the application
+    const app = new EPGConverter();
+    
     </script>
 </body>
 </html>
