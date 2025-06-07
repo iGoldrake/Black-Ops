@@ -324,7 +324,7 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align:center;margin-top:-10px;margin-bottom:20px;color:#666;font-size:14px;">
-            Versione 2.4.0 - Ultimo aggiornamento: 05/06/2025
+            Versione 2.5.0 - Ultimo aggiornamento: 07/06/2025
         </div>
         
         <div class="channel-selector">
@@ -377,12 +377,15 @@
                 </div>
                 <div>
                     <div class="form-group">
-                        <label for="timezone">Timezone:</label>
+                        <label for="timezone">Timezone di input (conversione automatica in UTC):</label>
                         <select id="timezone">
-                            <option value="+01:00">+01:00 (Italia)</option>
-                            <option value="+00:00">+00:00 (UTC)</option>
-                            <option value="+02:00">+02:00</option>
+                            <option value="1">+01:00 (Italia/CET)</option>
+                            <option value="0">+00:00 (UTC/GMT)</option>
+                            <option value="2">+02:00 (Italia Estate/CEST)</option>
                         </select>
+                        <small style="display:block;color:#666;margin-top:5px;">
+                            Gli orari nel file Excel verranno convertiti da questa timezone a UTC
+                        </small>
                     </div>
                     <div class="form-group">
                         <label for="dateRange">Periodo da convertire:</label>
@@ -437,8 +440,8 @@
     // EPG Converter Application - Modular Architecture
     class EPGConverter {
         constructor() {
-            this.SOFTWARE_VERSION = "2.4.0";
-            this.LAST_UPDATE = "05/06/2025";
+            this.SOFTWARE_VERSION = "2.5.0";
+            this.LAST_UPDATE = "07/06/2025";
             this.fileData = null;
             this.xmltvContent = '';
             this.currentChannel = 'classcnbc';
@@ -728,7 +731,7 @@
             
             const channelId = document.getElementById('channelId').value.trim();
             const channelName = document.getElementById('channelName').value.trim();
-            const timezone = document.getElementById('timezone').value;
+            const timezoneOffset = parseInt(document.getElementById('timezone').value);
             const dateRange = document.getElementById('dateRange').value;
             const fillGaps = document.getElementById('fillGaps').checked;
             const iconUrl = document.getElementById('iconUrl').value.trim();
@@ -737,7 +740,8 @@
             this.addLog(`- Tipo canale: ${this.currentChannel}`);
             this.addLog(`- Canale ID: ${channelId}`);
             this.addLog(`- Nome Canale: ${channelName}`);
-            this.addLog(`- Timezone: ${timezone}`);
+            this.addLog(`- Timezone input: UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset}`);
+            this.addLog(`- Output: UTC (conversione automatica)`);
             this.addLog(`- Periodo: ${dateRange}`);
             this.addLog(`- Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
             this.addLog('\nInizio conversione...');
@@ -750,7 +754,7 @@
                         this.workbook,
                         channelId,
                         channelName,
-                        timezone,
+                        timezoneOffset,
                         iconUrl,
                         dateRange,
                         fillGaps
@@ -766,7 +770,7 @@
                         channelId,
                         channelName,
                         baseDate,
-                        timezone,
+                        timezoneOffset,
                         iconUrl,
                         dateRange,
                         fillGaps
@@ -989,14 +993,19 @@
                 .replace(/'/g, '&#39;');
         }
         
-        formatXMLTVDate(date, timezone) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${timezone}`;
+        formatXMLTVDate(date, timezoneOffset) {
+            // Convert to UTC by subtracting the timezone offset
+            const utcDate = new Date(date.getTime() - (timezoneOffset * 60 * 60 * 1000));
+            
+            const year = utcDate.getUTCFullYear();
+            const month = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(utcDate.getUTCDate()).padStart(2, '0');
+            const hours = String(utcDate.getUTCHours()).padStart(2, '0');
+            const minutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
+            
+            // Always return UTC format (+0000)
+            return `${year}${month}${day}${hours}${minutes}${seconds} +0000`;
         }
         
         getIconForFormat(format, channel) {
@@ -1013,8 +1022,9 @@
             return this.app.config.channels[channel].baseIconUrl + 'default.jpg';
         }
         
-        generateXMLTVForTVModa(workbook, channelId, channelName, timezone, iconUrl, dateRange, fillGaps) {
+        generateXMLTVForTVModa(workbook, channelId, channelName, timezoneOffset, iconUrl, dateRange, fillGaps) {
             this.app.addLog('Generazione XMLTV per TV Moda...');
+            this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
             
             let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
             xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
@@ -1026,7 +1036,7 @@
             const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'tvmoda');
             
             for (const program of processedPrograms) {
-                xml += this.generateProgrammeXML(program, channelId, timezone, 'tvmoda');
+                xml += this.generateProgrammeXML(program, channelId, timezoneOffset, 'tvmoda');
             }
             
             xml += '</tv>';
@@ -1037,8 +1047,9 @@
             return xml;
         }
         
-        generateXMLTVForClassCNBC(data, channelId, channelName, baseDate, timezone, iconUrl, dateRange, fillGaps) {
+        generateXMLTVForClassCNBC(data, channelId, channelName, baseDate, timezoneOffset, iconUrl, dateRange, fillGaps) {
             this.app.addLog('Generazione XMLTV per Class CNBC...');
+            this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
             
             let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
             xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
@@ -1050,7 +1061,7 @@
             const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'classcnbc');
             
             for (const program of processedPrograms) {
-                xml += this.generateProgrammeXML(program, channelId, timezone, 'classcnbc');
+                xml += this.generateProgrammeXML(program, channelId, timezoneOffset, 'classcnbc');
             }
             
             xml += '</tv>';
@@ -1309,8 +1320,8 @@
             };
         }
         
-        generateProgrammeXML(program, channelId, timezone, channel) {
-            let xml = `  <programme start="${this.formatXMLTVDate(program.startTime, timezone)}" stop="${this.formatXMLTVDate(program.endTime, timezone)}" channel="${channelId}">\n`;
+        generateProgrammeXML(program, channelId, timezoneOffset, channel) {
+            let xml = `  <programme start="${this.formatXMLTVDate(program.startTime, timezoneOffset)}" stop="${this.formatXMLTVDate(program.endTime, timezoneOffset)}" channel="${channelId}">\n`;
             
             if (program.programId) {
                 xml += `    <episode-num system="assetID">${this.escapeXml(program.programId)}</episode-num>\n`;
