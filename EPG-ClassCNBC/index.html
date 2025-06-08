@@ -324,7 +324,7 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align:center;margin-top:-10px;margin-bottom:20px;color:#666;font-size:14px;">
-            Versione 2.5.1 - Ultimo aggiornamento: 08/06/2025
+            Versione 2.5.2 - Ultimo aggiornamento: 08/06/2025
         </div>
         
         <div class="channel-selector">
@@ -440,7 +440,7 @@
     // EPG Converter Application - Modular Architecture
     class EPGConverter {
         constructor() {
-            this.SOFTWARE_VERSION = "2.5.1";
+            this.SOFTWARE_VERSION = "2.5.2";
             this.LAST_UPDATE = "08/06/2025";
             this.fileData = null;
             this.xmltvContent = '';
@@ -744,6 +744,8 @@
             this.addLog(`- Output: UTC (conversione automatica)`);
             this.addLog(`- Periodo: ${dateRange}`);
             this.addLog(`- Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
+            this.addLog('\n⚠️ NOTA: Gli orari nel file XML saranno in UTC.');
+            this.addLog(`  Un programma alle 01:00 italiane (UTC+${timezoneOffset}) apparirà come 23:00 UTC del giorno precedente.`);
             this.addLog('\nInizio conversione...');
             
             try {
@@ -1079,23 +1081,31 @@
             };
             
             const targetDates = this.getTargetDates(dateRange, workbook, weekdayMap);
-            const extendedDates = this.getExtendedDates(targetDates);
             const allPrograms = [];
+            const processedProgramKeys = new Set(); // Per evitare duplicati
             
-            for (const dateString of extendedDates) {
-                const currentDate = new Date(dateString);
-                const targetWeekday = currentDate.getDay();
+            // NON estendere le date per TV Moda - processa solo i giorni target
+            for (const targetDate of targetDates) {
+                const targetWeekday = targetDate.getDay();
                 const sheetName = Object.keys(weekdayMap).find(key => weekdayMap[key] === targetWeekday);
                 
                 if (!sheetName || !workbook.Sheets[sheetName]) continue;
                 
-                this.app.addLog(`\nProcesso ${sheetName} per ${currentDate.toLocaleDateString('it-IT')}...`);
+                this.app.addLog(`\nProcesso ${sheetName} per ${targetDate.toLocaleDateString('it-IT')}...`);
                 
                 const worksheet = workbook.Sheets[sheetName];
                 const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
                 
-                const dayPrograms = this.parseTVModaDayPrograms(data, currentDate);
-                allPrograms.push(...dayPrograms);
+                const dayPrograms = this.parseTVModaDayPrograms(data, targetDate);
+                
+                // Aggiungi solo programmi non ancora processati
+                for (const program of dayPrograms) {
+                    const key = `${program.startTime.getTime()}_${program.title}`;
+                    if (!processedProgramKeys.has(key)) {
+                        processedProgramKeys.add(key);
+                        allPrograms.push(program);
+                    }
+                }
                 
                 this.app.addLog(`  Trovati ${dayPrograms.length} programmi in ${sheetName}`);
             }
@@ -1197,7 +1207,7 @@
             // Sort programs by start time
             allPrograms.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
             
-            // Calculate durations
+            // Calculate durations BEFORE splitting by day
             this.calculateDurations(allPrograms, fillGaps);
             
             // Get target dates for output
@@ -1205,9 +1215,19 @@
             
             // Process each target date
             const finalPrograms = [];
+            const processedKeys = new Set(); // Evita duplicati nell'output finale
+            
             for (const targetDate of targetDates) {
                 const dayPrograms = this.processDayPrograms(allPrograms, targetDate, channel);
-                finalPrograms.push(...dayPrograms);
+                
+                // Aggiungi solo programmi non duplicati
+                for (const program of dayPrograms) {
+                    const key = `${program.startTime.getTime()}_${program.title}`;
+                    if (!processedKeys.has(key)) {
+                        processedKeys.add(key);
+                        finalPrograms.push(program);
+                    }
+                }
             }
             
             return finalPrograms;
