@@ -676,6 +676,9 @@
                     .attr('font-size', '11px')
                     .attr('fill', '#666')
                     .text(`Copertura: ${coveragePercent}% delle 24h`);
+            }
+            
+            // Group overlapping programs into rows
             const rows = [];
             programs.forEach(program => {
                 let placed = false;
@@ -1408,7 +1411,7 @@
 
         // Show info
         function showInfo() {
-            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nModalità UTC - Nessuna conversione timezone\n\nFunzionalità:\n- Visualizzazione timeline 24 ore in UTC\n- Tutti gli orari mostrati sono in UTC\n- Timeline fissa 00:00-23:59 UTC\n- Modifica programmi inline\n- Rilevamento sovrapposizioni e buchi\n- Attualizzazione date palinsesto\n- Analisi distribuzione format\n- Export XMLTV modificato\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nModalità UTC - Nessuna conversione timezone\n\nFunzionalità:\n- Visualizzazione timeline 24 ore in UTC\n- Tutti gli orari mostrati sono in UTC\n- Timeline fissa 00:00-23:59 UTC\n- Indicatore copertura palinsesto\n- Modifica programmi inline\n- Rilevamento sovrapposizioni e buchi\n- Attualizzazione date palinsesto\n- Analisi distribuzione format\n- Export XMLTV modificato\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
     </script>
 </body>
