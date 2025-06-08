@@ -488,13 +488,12 @@
                 option.value = dateKey;
                 
                 // Count programs for this day
-                const dayStart = new Date(date);
-                dayStart.setHours(0, 0, 0, 0);
-                const dayEnd = new Date(date);
-                dayEnd.setHours(23, 59, 59, 999);
+                const [year, month, day] = dateKey.split('-').map(Number);
+                const dayStart = new Date(year, month - 1, day, 0, 0, 0, 0);
+                const dayEnd = new Date(year, month - 1, day, 23, 59, 59, 999);
                 
                 const programCount = currentPrograms.filter(p => {
-                    return (p.start <= dayEnd && p.stop >= dayStart);
+                    return (p.start < dayEnd && p.stop > dayStart);
                 }).length;
                 
                 option.textContent = `${formatDate(date)} (${programCount} programmi)`;
@@ -553,23 +552,33 @@
 
         function loadDay() {
             const dayValue = document.getElementById('daySelector').value;
-            selectedDay = new Date(dayValue + 'T00:00:00'); // Local midnight
+            console.log('Selected day value:', dayValue);
+            
+            // Create date at midnight local time
+            const [year, month, day] = dayValue.split('-').map(Number);
+            selectedDay = new Date(year, month - 1, day, 0, 0, 0, 0);
             
             // Set boundaries for the selected day in local time
             const startOfDay = new Date(selectedDay);
-            startOfDay.setHours(0, 0, 0, 0);
             const endOfDay = new Date(selectedDay);
             endOfDay.setHours(23, 59, 59, 999);
             
             console.log('Loading day:', formatDate(selectedDay));
             console.log('Day boundaries (local):', startOfDay.toString(), 'to', endOfDay.toString());
+            console.log('Day boundaries (ISO):', startOfDay.toISOString(), 'to', endOfDay.toISOString());
             
             // Filter programs that appear in this local day
             // A program appears in a day if ANY part of it airs during that day
             const dayPrograms = currentPrograms.filter(p => {
                 // Program overlaps with this day if it starts before the day ends
                 // AND ends after the day starts
-                return p.start < endOfDay && p.stop > startOfDay;
+                const overlaps = p.start < endOfDay && p.stop > startOfDay;
+                
+                if (overlaps && dayPrograms.length < 5) {
+                    console.log(`Program "${p.title}" overlaps: start ${p.start.toString()}, stop ${p.stop.toString()}`);
+                }
+                
+                return overlaps;
             });
             
             console.log(`Found ${dayPrograms.length} programs for ${formatDate(selectedDay)}`);
@@ -577,10 +586,11 @@
             // Sort by start time
             dayPrograms.sort((a, b) => a.start - b.start);
             
-            // Log first few programs for debugging
-            dayPrograms.slice(0, 5).forEach((p, i) => {
-                console.log(`  ${i + 1}. ${p.title}: ${formatTime(p.start)} - ${formatTime(p.stop)}`);
-            });
+            // Log first and last programs for debugging
+            if (dayPrograms.length > 0) {
+                console.log(`First program: ${dayPrograms[0].title} at ${formatTime(dayPrograms[0].start)}`);
+                console.log(`Last program: ${dayPrograms[dayPrograms.length-1].title} at ${formatTime(dayPrograms[dayPrograms.length-1].start)}`);
+            }
             
             // Draw timeline
             drawTimeline(dayPrograms);
