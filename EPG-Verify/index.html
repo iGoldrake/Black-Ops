@@ -23,7 +23,11 @@
         .dark .text-gray-700 { color: #cbd5e1; }
         .dark .border-gray-200 { border-color: #475569; }
         input[type="datetime-local"] { color-scheme: light dark; }
-        .program-tooltip { pointer-events: none; }
+        .program-tooltip { 
+            pointer-events: none; 
+            position: fixed;
+            z-index: 9999;
+        }
         .editable-cell { cursor: text; }
         .editable-cell:hover { background: rgba(59, 130, 246, 0.1); }
     </style>
@@ -288,8 +292,8 @@
         });
 
         // Version
-        const APP_VERSION = '1.1';
-        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Now with timezone support`);
+        const APP_VERSION = '1.2';
+        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Improved timezone handling`);
 
         // Global state
         let xmlDoc = null;
@@ -411,11 +415,21 @@
         function parsePrograms() {
             const programmes = xmlDoc.querySelectorAll('programme');
             currentPrograms = [];
-            const days = new Map(); // Use Map to store local date strings
+            const daysMap = new Map(); // Map to track unique days
             
             programmes.forEach(prog => {
-                const start = parseXMLTVDate(prog.getAttribute('start'));
-                const stop = parseXMLTVDate(prog.getAttribute('stop'));
+                const startUTC = parseXMLTVDate(prog.getAttribute('start'));
+                const stopUTC = parseXMLTVDate(prog.getAttribute('stop'));
+                
+                // Log first few programs to debug
+                if (currentPrograms.length < 3) {
+                    console.log('Program:', prog.querySelector('title')?.textContent);
+                    console.log('  Start UTC:', prog.getAttribute('start'));
+                    console.log('  Start Local:', startUTC.toString());
+                    console.log('  Stop UTC:', prog.getAttribute('stop'));
+                    console.log('  Stop Local:', stopUTC.toString());
+                }
+                
                 const title = prog.querySelector('title')?.textContent || '';
                 const desc = prog.querySelector('desc')?.textContent || '';
                 const category = prog.querySelector('category')?.textContent || '';
@@ -424,28 +438,36 @@
                 const episodeNum = prog.querySelector('episode-num')?.textContent || '';
                 
                 const program = {
-                    start,
-                    stop,
+                    start: startUTC,
+                    stop: stopUTC,
                     title,
                     desc,
                     category,
                     rating,
                     icon,
                     episodeNum,
-                    duration: (stop - start) / 1000, // seconds
+                    duration: (stopUTC - startUTC) / 1000, // seconds
                     element: prog
                 };
                 
                 currentPrograms.push(program);
                 
-                // Group by LOCAL date, not UTC date
-                const localDateStr = start.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-                days.set(localDateStr, start);
+                // Create a date key for the LOCAL date when the program STARTS
+                const localStartDate = new Date(start);
+                localStartDate.setHours(0, 0, 0, 0);
+                const dateKey = localStartDate.toISOString().split('T')[0];
                 
-                // Also add the stop date if it's different (program crosses midnight)
-                const stopDateStr = stop.toLocaleDateString('en-CA');
-                if (stopDateStr !== localDateStr) {
-                    days.set(stopDateStr, stop);
+                if (!daysMap.has(dateKey)) {
+                    daysMap.set(dateKey, localStartDate);
+                }
+                
+                // If program spans multiple days, add those days too
+                const localEndDate = new Date(stop);
+                localEndDate.setHours(0, 0, 0, 0);
+                const endDateKey = localEndDate.toISOString().split('T')[0];
+                
+                if (endDateKey !== dateKey && !daysMap.has(endDateKey)) {
+                    daysMap.set(endDateKey, localEndDate);
                 }
                 
                 // Assign color to format
@@ -455,21 +477,25 @@
                 }
             });
             
-            // Populate day selector with local dates
+            // Populate day selector with unique days
             const daySelector = document.getElementById('daySelector');
             daySelector.innerHTML = '';
-            const sortedDays = Array.from(days.entries())
+            
+            // Sort days
+            const sortedDays = Array.from(daysMap.entries())
                 .sort((a, b) => a[1] - b[1]);
             
-            sortedDays.forEach(([dateStr, date]) => {
+            console.log('Found days:', sortedDays.map(d => d[0]));
+            
+            sortedDays.forEach(([dateKey, date]) => {
                 const option = document.createElement('option');
-                option.value = dateStr;
-                option.textContent = formatDate(new Date(dateStr + 'T00:00:00'));
+                option.value = dateKey;
+                option.textContent = formatDate(date);
                 daySelector.appendChild(option);
             });
             
             if (sortedDays.length > 0) {
-                selectedDay = new Date(sortedDays[0][0] + 'T00:00:00');
+                selectedDay = sortedDays[0][1];
                 loadDay();
             }
         }
@@ -499,22 +525,30 @@
 
         function loadDay() {
             const dayValue = document.getElementById('daySelector').value;
-            selectedDay = new Date(dayValue + 'T00:00:00');
+            selectedDay = new Date(dayValue + 'T12:00:00'); // Use noon to avoid DST issues
             
-            // Set end of selected day in local time
+            // Set boundaries for the selected day in local time
             const startOfDay = new Date(selectedDay);
             startOfDay.setHours(0, 0, 0, 0);
             const endOfDay = new Date(selectedDay);
             endOfDay.setHours(23, 59, 59, 999);
             
-            // Filter programs that are visible in the selected local day
+            console.log('Loading day:', formatDate(selectedDay));
+            console.log('Day boundaries:', startOfDay, 'to', endOfDay);
+            
+            // Filter programs that appear in this local day
             const dayPrograms = currentPrograms.filter(p => {
-                // Program is visible if it starts or ends during this local day,
-                // or if it spans the entire day
-                return (p.start >= startOfDay && p.start <= endOfDay) ||
-                       (p.stop >= startOfDay && p.stop <= endOfDay) ||
-                       (p.start < startOfDay && p.stop > endOfDay);
+                // Include if program starts during this day
+                const startsInDay = p.start >= startOfDay && p.start <= endOfDay;
+                // Include if program ends during this day  
+                const endsInDay = p.stop >= startOfDay && p.stop <= endOfDay;
+                // Include if program spans the entire day
+                const spansDay = p.start < startOfDay && p.stop > endOfDay;
+                
+                return startsInDay || endsInDay || spansDay;
             });
+            
+            console.log(`Found ${dayPrograms.length} programs for ${formatDate(selectedDay)}`);
             
             // Sort by start time
             dayPrograms.sort((a, b) => a.start - b.start);
@@ -588,9 +622,10 @@
                 const g = svg.append('g')
                     .attr('class', 'program-block')
                     .attr('transform', `translate(${x},${programY})`)
+                    .style('cursor', 'pointer')
                     .on('click', () => showProgramDetails(program))
-                    .on('mouseover', (event) => showTooltip(event, program))
-                    .on('mouseout', hideTooltip);
+                    .on('mouseenter', function(event) { showTooltip(event, program); })
+                    .on('mouseleave', hideTooltip);
                 
                 // Program block
                 g.append('rect')
@@ -884,19 +919,41 @@
 
         function showTooltip(event, program) {
             const tooltip = document.getElementById('tooltip');
+            const rect = event.currentTarget.getBoundingClientRect();
+            
             tooltip.innerHTML = `
                 <div class="font-semibold">${program.title}</div>
                 <div class="text-xs">${formatTime(program.start)} - ${formatTime(program.stop)}</div>
                 <div class="text-xs">Durata: ${formatDuration(program.duration)}</div>
                 ${program.category ? `<div class="text-xs">Categoria: ${program.category}</div>` : ''}
             `;
-            tooltip.style.left = event.pageX + 10 + 'px';
-            tooltip.style.top = event.pageY - 10 + 'px';
+            
+            // Position tooltip above the element to avoid interference
+            const tooltipWidth = 200; // Approximate width
+            const tooltipHeight = 80; // Approximate height
+            
+            let left = rect.left + rect.width / 2 - tooltipWidth / 2;
+            let top = rect.top - tooltipHeight - 10;
+            
+            // Keep tooltip within viewport
+            if (left < 10) left = 10;
+            if (left + tooltipWidth > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipWidth - 10;
+            }
+            
+            // If tooltip would go above viewport, show it below
+            if (top < 10) {
+                top = rect.bottom + 10;
+            }
+            
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
             tooltip.classList.remove('hidden');
         }
 
         function hideTooltip() {
-            document.getElementById('tooltip').classList.add('hidden');
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.add('hidden');
         }
 
         function showToast(message, type = 'info') {
