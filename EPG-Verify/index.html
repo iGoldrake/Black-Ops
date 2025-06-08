@@ -37,7 +37,7 @@
                         <i data-lucide="tv" class="w-8 h-8"></i>
                         XMLTV Viewer & Editor Pro
                     </h1>
-                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.3</p>
+                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.4</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-2 rounded hover:bg-gray-100">
@@ -287,8 +287,8 @@
         });
 
         // Version
-        const APP_VERSION = '1.3';
-        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Fixed tooltip, UTC handling & performance`);
+        const APP_VERSION = '1.4';
+        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Fixed date handling and file loading`);
 
         // Global state
         let xmlDoc = null;
@@ -354,25 +354,31 @@
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
 
+        // Handle button click inside dropZone
         dropZone.addEventListener('click', (e) => {
-            // Prevent double trigger when clicking the button
-            if (e.target.tagName !== 'BUTTON') {
+            // If clicking on the dropzone itself (not the button), open file dialog
+            if (!e.target.closest('button')) {
                 fileInput.click();
             }
         });
+        
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('border-blue-400', 'bg-blue-50');
         });
+        
         dropZone.addEventListener('dragleave', () => {
             dropZone.classList.remove('border-blue-400', 'bg-blue-50');
         });
+        
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('border-blue-400', 'bg-blue-50');
             const file = e.dataTransfer.files[0];
             if (file && file.name.endsWith('.xml')) {
                 loadFile(file);
+            } else if (file) {
+                showToast('Seleziona un file XML valido', 'error');
             }
         });
 
@@ -801,6 +807,7 @@
             
             // Update axis to 24h display
             svg.attr('width', width).attr('height', height);
+        }
 
         // Fixed tooltip implementation
         let currentTooltipTimeout = null;
