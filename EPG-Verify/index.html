@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer & Editor Professional v1.6</title>
+    <title>XMLTV Viewer & Editor Professional v1.7 - UTC Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -22,9 +22,16 @@
         .dark .text-gray-900 { color: #e2e8f0; }
         .dark .text-gray-700 { color: #cbd5e1; }
         .dark .border-gray-200 { border-color: #475569; }
-        input[type="datetime-local"] { color-scheme: light dark; }
         .editable-cell { cursor: text; }
         .editable-cell:hover { background: rgba(59, 130, 246, 0.1); }
+        .utc-badge { 
+            background: #3b82f6; 
+            color: white; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -37,7 +44,7 @@
                         <i data-lucide="tv" class="w-8 h-8"></i>
                         XMLTV Viewer & Editor Pro
                     </h1>
-                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.6</p>
+                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.7 <span class="utc-badge">UTC Mode</span></p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-2 rounded hover:bg-gray-100">
@@ -78,7 +85,9 @@
                         <p class="text-sm text-gray-600">
                             <span id="programCount">-</span> programmi
                         </p>
-                        <p class="text-xs text-gray-500 mt-1">Fuso orario: Europa/Roma (UTC+1/+2)</p>
+                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            <span class="utc-badge">UTC</span> Tutti gli orari sono in UTC
+                        </p>
                     </div>
                     <div>
                         <h3 class="font-semibold text-gray-700 mb-2">Azioni</h3>
@@ -100,7 +109,7 @@
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                 <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
                     <i data-lucide="clock" class="w-5 h-5"></i>
-                    Timeline Giornaliera <span id="timelineDate" class="text-sm font-normal text-gray-600"></span>
+                    Timeline Giornaliera <span class="utc-badge">UTC</span>
                 </h3>
                 <div class="mb-2 flex items-center gap-4">
                     <button onclick="zoomIn()" class="p-2 hover:bg-gray-100 rounded" title="Zoom In">
@@ -135,7 +144,7 @@
                         <p class="font-semibold" id="detailFormat">-</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600">Orario</p>
+                        <p class="text-sm text-gray-600 flex items-center gap-1">Orario <span class="utc-badge text-xs">UTC</span></p>
                         <p class="font-semibold" id="detailTime">-</p>
                     </div>
                     <div>
@@ -180,8 +189,8 @@
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-2 text-left">Ora Inizio</th>
-                                <th class="px-4 py-2 text-left">Ora Fine</th>
+                                <th class="px-4 py-2 text-left">Ora Inizio <span class="utc-badge text-xs">UTC</span></th>
+                                <th class="px-4 py-2 text-left">Ora Fine <span class="utc-badge text-xs">UTC</span></th>
                                 <th class="px-4 py-2 text-left">Durata</th>
                                 <th class="px-4 py-2 text-left">Titolo/Format</th>
                                 <th class="px-4 py-2 text-left">Categoria</th>
@@ -277,8 +286,8 @@
         });
 
         // Version
-        const APP_VERSION = '1.6';
-        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Single day view with proper UTC handling`);
+        const APP_VERSION = '1.7';
+        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - UTC Mode (No timezone conversion)`);
 
         // Global state
         let xmlDoc = null;
@@ -286,8 +295,6 @@
         let currentChannelId = '';
         let currentChannelName = '';
         let scheduleDate = null;
-        let timelineStartDate = null;
-        let timelineEndDate = null;
         let zoomLevel = 1;
         let formatColors = {};
         let colorIndex = 0;
@@ -385,6 +392,14 @@
                     document.getElementById('channelName').textContent = currentChannelName;
                     document.getElementById('channelId').textContent = `ID: ${currentChannelId}`;
                     
+                    // Get schedule date from TV element
+                    const tvElement = xmlDoc.querySelector('tv');
+                    const tvDate = tvElement ? tvElement.getAttribute('date') : null;
+                    if (tvDate) {
+                        scheduleDate = parseScheduleDate(tvDate);
+                        console.log('Schedule date from TV element:', scheduleDate);
+                    }
+                    
                     // Parse programs
                     parsePrograms();
                     
@@ -406,6 +421,12 @@
             reader.readAsText(file);
         }
 
+        function parseScheduleDate(dateStr) {
+            // Parse date string in format YYYY-MM-DD
+            const [year, month, day] = dateStr.split('-').map(Number);
+            return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+        }
+
         function parsePrograms() {
             const programmes = xmlDoc.querySelectorAll('programme');
             console.log('Found programmes:', programmes.length);
@@ -423,16 +444,16 @@
                         return;
                     }
                     
-                    const startUTC = parseXMLTVDate(startStr);
-                    const stopUTC = parseXMLTVDate(stopStr);
+                    const startUTC = parseXMLTVDateUTC(startStr);
+                    const stopUTC = parseXMLTVDateUTC(stopStr);
                     
                     // Debug first few programs
                     if (index < 3) {
                         console.log(`Program ${index}:`, prog.querySelector('title')?.textContent);
                         console.log('  Start string:', startStr);
-                        console.log('  Start Local:', startUTC.toString());
+                        console.log('  Start UTC:', startUTC.toISOString());
                         console.log('  Stop string:', stopStr);
-                        console.log('  Stop Local:', stopUTC.toString());
+                        console.log('  Stop UTC:', stopUTC.toISOString());
                     }
                     
                     const title = prog.querySelector('title')?.textContent || '';
@@ -478,60 +499,29 @@
             // Sort programs by start time
             currentPrograms.sort((a, b) => a.start - b.start);
             
-            // Determine the main schedule date
-            // Count programs by date
-            const dateCounts = {};
-            currentPrograms.forEach(p => {
-                const dateKey = p.start.toISOString().split('T')[0];
-                dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
-            });
-            
-            // Find the date with most programs
-            let maxCount = 0;
-            let mainDateKey = null;
-            Object.entries(dateCounts).forEach(([dateKey, count]) => {
-                if (count > maxCount) {
-                    maxCount = count;
-                    mainDateKey = dateKey;
-                }
-            });
-            
-            console.log('Date counts:', dateCounts);
-            console.log('Main date:', mainDateKey, 'with', maxCount, 'programs');
-            
-            // Set schedule date
-            scheduleDate = new Date(mainDateKey + 'T00:00:00');
-            
-            // Determine timeline boundaries
-            // Start from midnight of the main day
-            timelineStartDate = new Date(scheduleDate);
-            timelineStartDate.setHours(0, 0, 0, 0);
-            
-            // End at the stop time of the last program
-            const lastProgram = currentPrograms[currentPrograms.length - 1];
-            timelineEndDate = new Date(lastProgram.stop);
-            
-            // If timeline is less than 24 hours, extend to 24 hours
-            const timelineHours = (timelineEndDate - timelineStartDate) / (1000 * 60 * 60);
-            if (timelineHours < 24) {
-                timelineEndDate = new Date(timelineStartDate);
-                timelineEndDate.setHours(23, 59, 59, 999);
+            // If schedule date not set from TV element, derive from first program
+            if (!scheduleDate && currentPrograms.length > 0) {
+                const firstProgram = currentPrograms[0];
+                scheduleDate = new Date(Date.UTC(
+                    firstProgram.start.getUTCFullYear(),
+                    firstProgram.start.getUTCMonth(),
+                    firstProgram.start.getUTCDate(),
+                    0, 0, 0
+                ));
+                console.log('Schedule date derived from first program:', scheduleDate);
             }
             
-            console.log('Timeline boundaries:', timelineStartDate.toString(), 'to', timelineEndDate.toString());
-            
             // Update UI
-            document.getElementById('scheduleDate').textContent = formatDate(scheduleDate);
+            document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
             document.getElementById('programCount').textContent = currentPrograms.length;
-            document.getElementById('timelineDate').textContent = 
-                `(${formatTime(timelineStartDate)} - ${formatTime(timelineEndDate)})`;
             
             // Load programs
             loadPrograms();
         }
 
-        function parseXMLTVDate(dateStr) {
+        function parseXMLTVDateUTC(dateStr) {
             // XMLTV format: YYYYMMDDHHmmss +0000
+            // We work directly in UTC, no conversion
             const year = parseInt(dateStr.substr(0, 4));
             const month = parseInt(dateStr.substr(4, 2)) - 1;
             const day = parseInt(dateStr.substr(6, 2));
@@ -540,31 +530,43 @@
             const second = parseInt(dateStr.substr(12, 2));
             
             // Create UTC date
-            const utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
-            
-            // Return date object (automatically converted to local timezone)
-            return utcDate;
+            return new Date(Date.UTC(year, month, day, hour, minute, second));
         }
 
         function formatXMLTVDate(date) {
-            // Convert local date to UTC for XML format
+            // Format date for XMLTV in UTC
             const pad = (n) => String(n).padStart(2, '0');
             return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}` +
                    `${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())} +0000`;
         }
 
         function loadPrograms() {
-            // Draw timeline with all programs
-            drawTimeline(currentPrograms);
+            // Filter programs for the schedule date
+            const dayStart = new Date(scheduleDate);
+            const dayEnd = new Date(scheduleDate);
+            dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+            
+            console.log('Filtering programs for UTC day:', dayStart.toISOString(), 'to', dayEnd.toISOString());
+            
+            const dayPrograms = currentPrograms.filter(p => {
+                // Include programs that start on this day OR are still running from previous day
+                return (p.start >= dayStart && p.start < dayEnd) || 
+                       (p.start < dayStart && p.stop > dayStart);
+            });
+            
+            console.log('Programs for this day:', dayPrograms.length);
+            
+            // Draw timeline with filtered programs
+            drawTimeline(dayPrograms);
             
             // Update table
-            updateProgramTable(currentPrograms);
+            updateProgramTable(dayPrograms);
             
             // Update analytics
-            updateAnalytics(currentPrograms);
+            updateAnalytics(dayPrograms);
             
             // Check for problems
-            checkProblems(currentPrograms);
+            checkProblems(dayPrograms);
         }
 
         function drawTimeline(programs) {
@@ -578,31 +580,22 @@
             
             svg.attr('width', width).attr('height', height);
             
-            // Time scale based on timeline boundaries
-            const xScale = d3.scaleTime()
-                .domain([timelineStartDate, timelineEndDate])
-                .range([margin.left, width - margin.right]);
+            // Fixed 24-hour timeline for the schedule date in UTC
+            const dayStart = new Date(scheduleDate);
+            const dayEnd = new Date(scheduleDate);
+            dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
             
-            // Calculate appropriate tick interval based on timeline duration
-            const timelineHours = (timelineEndDate - timelineStartDate) / (1000 * 60 * 60);
-            let tickInterval;
-            if (timelineHours <= 24) {
-                tickInterval = d3.timeHour.every(zoomLevel > 2 ? 1 : 2);
-            } else {
-                tickInterval = d3.timeHour.every(Math.ceil(timelineHours / 24) * (zoomLevel > 2 ? 1 : 2));
-            }
+            const xScale = d3.scaleTime()
+                .domain([dayStart, dayEnd])
+                .range([margin.left, width - margin.right]);
             
             // Draw time axis
             const xAxis = d3.axisBottom(xScale)
-                .ticks(tickInterval)
+                .ticks(d3.timeHour.every(zoomLevel > 2 ? 1 : 2))
                 .tickFormat(d => {
-                    const hours = d.getHours();
-                    const minutes = d.getMinutes();
-                    // Show date change indicator
-                    if (hours === 0 && minutes === 0 && d > timelineStartDate) {
-                        return d3.timeFormat('%d/%m %H:%M')(d);
-                    }
-                    return d3.timeFormat('%H:%M')(d);
+                    const hours = d.getUTCHours();
+                    const minutes = d.getUTCMinutes();
+                    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
                 });
             
             svg.append('g')
@@ -619,36 +612,6 @@
                     .tickFormat(''))
                 .style('stroke-dasharray', '2,2')
                 .style('opacity', 0.3);
-            
-            // Add midnight line if timeline crosses midnight
-            const midnights = [];
-            const currentMidnight = new Date(timelineStartDate);
-            currentMidnight.setHours(24, 0, 0, 0);
-            while (currentMidnight < timelineEndDate) {
-                midnights.push(new Date(currentMidnight));
-                currentMidnight.setDate(currentMidnight.getDate() + 1);
-            }
-            
-            midnights.forEach(midnight => {
-                const x = xScale(midnight);
-                svg.append('line')
-                    .attr('x1', x)
-                    .attr('y1', margin.top)
-                    .attr('x2', x)
-                    .attr('y2', height - margin.bottom)
-                    .attr('stroke', '#ef4444')
-                    .attr('stroke-width', 2)
-                    .attr('stroke-dasharray', '5,5');
-                
-                svg.append('text')
-                    .attr('x', x)
-                    .attr('y', margin.top - 5)
-                    .attr('text-anchor', 'middle')
-                    .attr('fill', '#ef4444')
-                    .attr('font-size', '10px')
-                    .attr('font-weight', 'bold')
-                    .text('MEZZANOTTE');
-            });
             
             // Group overlapping programs into rows
             const rows = [];
@@ -688,8 +651,12 @@
             const baseY = margin.top + 10;
             
             programs.forEach((program, index) => {
-                const x = xScale(program.start);
-                const width = Math.max(1, xScale(program.stop) - x);
+                // Clip program to day boundaries for display
+                const displayStart = program.start < dayStart ? dayStart : program.start;
+                const displayEnd = program.stop > dayEnd ? dayEnd : program.stop;
+                
+                const x = xScale(displayStart);
+                const width = Math.max(1, xScale(displayEnd) - x);
                 const y = baseY + (program.row || 0) * (programHeight + rowGap);
                 
                 const g = svg.append('g')
@@ -712,7 +679,8 @@
                     .attr('rx', 4)
                     .attr('fill', formatColors[program.title] || '#6B7280')
                     .attr('stroke', hasOverlap ? '#ff0000' : '#fff')
-                    .attr('stroke-width', hasOverlap ? 3 : 1);
+                    .attr('stroke-width', hasOverlap ? 3 : 1)
+                    .attr('opacity', program.start < dayStart || program.stop > dayEnd ? 0.7 : 1);
                 
                 // Program title
                 if (width > 30) {
@@ -742,7 +710,7 @@
                             .attr('y', programHeight - 5)
                             .attr('fill', 'white')
                             .attr('font-size', '10px')
-                            .text(`${formatTime(program.start)} - ${formatTime(program.stop)}`);
+                            .text(`${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`);
                     }
                 }
                 
@@ -756,6 +724,26 @@
                         .attr('font-size', '14px')
                         .text('⚠️');
                 }
+                
+                // Indicator for programs extending beyond day
+                if (program.start < dayStart) {
+                    g.append('text')
+                        .attr('x', 5)
+                        .attr('y', 10)
+                        .attr('fill', 'yellow')
+                        .attr('font-size', '10px')
+                        .attr('font-weight', 'bold')
+                        .text('◄');
+                }
+                if (program.stop > dayEnd) {
+                    g.append('text')
+                        .attr('x', width - 10)
+                        .attr('y', 10)
+                        .attr('fill', 'yellow')
+                        .attr('font-size', '10px')
+                        .attr('font-weight', 'bold')
+                        .text('►');
+                }
             });
             
             // Check for gaps
@@ -766,29 +754,35 @@
                 if (lastEnd && program.start > lastEnd) {
                     const gap = program.start - lastEnd;
                     if (gap > 60000) { // More than 1 minute
-                        const x = xScale(lastEnd);
-                        const width = xScale(program.start) - x;
-                        
-                        svg.append('rect')
-                            .attr('x', x)
-                            .attr('y', baseY)
-                            .attr('width', width)
-                            .attr('height', programHeight)
-                            .attr('class', 'gap-indicator')
-                            .attr('opacity', 0.5);
-                        
-                        // Add gap duration text
-                        const gapMinutes = Math.floor(gap / 60000);
-                        if (width > 40) {
-                            svg.append('text')
-                                .attr('x', x + width/2)
-                                .attr('y', baseY + programHeight/2)
-                                .attr('text-anchor', 'middle')
-                                .attr('dy', '.35em')
-                                .attr('fill', 'white')
-                                .attr('font-weight', 'bold')
-                                .attr('font-size', '12px')
-                                .text(`GAP ${gapMinutes}min`);
+                        // Only show gap if it's within the current day
+                        if (lastEnd < dayEnd && program.start > dayStart) {
+                            const gapStart = lastEnd < dayStart ? dayStart : lastEnd;
+                            const gapEnd = program.start > dayEnd ? dayEnd : program.start;
+                            
+                            const x = xScale(gapStart);
+                            const width = xScale(gapEnd) - x;
+                            
+                            svg.append('rect')
+                                .attr('x', x)
+                                .attr('y', baseY)
+                                .attr('width', width)
+                                .attr('height', programHeight)
+                                .attr('class', 'gap-indicator')
+                                .attr('opacity', 0.5);
+                            
+                            // Add gap duration text
+                            const gapMinutes = Math.floor(gap / 60000);
+                            if (width > 40) {
+                                svg.append('text')
+                                    .attr('x', x + width/2)
+                                    .attr('y', baseY + programHeight/2)
+                                    .attr('text-anchor', 'middle')
+                                    .attr('dy', '.35em')
+                                    .attr('fill', 'white')
+                                    .attr('font-weight', 'bold')
+                                    .attr('font-size', '12px')
+                                    .text(`GAP ${gapMinutes}min`);
+                            }
                         }
                     }
                 }
@@ -810,7 +804,7 @@
             const tooltip = document.getElementById('tooltip');
             tooltip.innerHTML = `
                 <div class="font-semibold">${program.title}</div>
-                <div class="text-xs">${formatTime(program.start)} - ${formatTime(program.stop)}</div>
+                <div class="text-xs">${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)} UTC</div>
                 <div class="text-xs">Durata: ${formatDuration(program.duration)}</div>
                 ${program.category ? `<div class="text-xs">Categoria: ${program.category}</div>` : ''}
             `;
@@ -835,7 +829,7 @@
             document.getElementById('programDetails').style.display = 'block';
             document.getElementById('detailTitle').textContent = program.title;
             document.getElementById('detailFormat').textContent = program.title;
-            document.getElementById('detailTime').textContent = `${formatTime(program.start)} - ${formatTime(program.stop)}`;
+            document.getElementById('detailTime').textContent = `${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`;
             document.getElementById('detailDuration').textContent = formatDuration(program.duration);
             document.getElementById('detailCategory').textContent = program.category || '-';
             document.getElementById('detailRating').textContent = program.rating || '0';
@@ -864,14 +858,17 @@
                 const row = document.createElement('tr');
                 row.className = 'border-b hover:bg-gray-50';
                 
+                const startTimeStr = `${program.start.getUTCHours().toString().padStart(2, '0')}:${program.start.getUTCMinutes().toString().padStart(2, '0')}`;
+                const stopTimeStr = `${program.stop.getUTCHours().toString().padStart(2, '0')}:${program.stop.getUTCMinutes().toString().padStart(2, '0')}`;
+                
                 row.innerHTML = `
                     <td class="px-4 py-2">
-                        <input type="time" value="${program.start.toTimeString().substr(0, 5)}" 
+                        <input type="time" value="${startTimeStr}" 
                                onchange="updateProgramTime(${index}, 'start', this.value)"
                                class="px-2 py-1 border rounded">
                     </td>
                     <td class="px-4 py-2">
-                        <input type="time" value="${program.stop.toTimeString().substr(0, 5)}" 
+                        <input type="time" value="${stopTimeStr}" 
                                onchange="updateProgramTime(${index}, 'stop', this.value)"
                                class="px-2 py-1 border rounded">
                     </td>
@@ -1019,13 +1016,15 @@
         }
 
         // Utility functions
-        function formatDate(date) {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        function formatDateUTC(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
             return date.toLocaleDateString('it-IT', options);
         }
 
-        function formatTime(date) {
-            return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        function formatTimeUTC(date) {
+            const hours = date.getUTCHours().toString().padStart(2, '0');
+            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
         }
 
         function formatDuration(seconds) {
@@ -1082,6 +1081,10 @@
 
         // Edit functions
         function editCell(cell, programIndex, field) {
+            const dayPrograms = getCurrentDayPrograms();
+            const program = dayPrograms[programIndex];
+            if (!program) return;
+            
             const currentValue = cell.textContent;
             const input = document.createElement('input');
             input.type = 'text';
@@ -1092,29 +1095,26 @@
                 const newValue = input.value.trim();
                 cell.textContent = newValue || '-';
                 
-                const program = currentPrograms[programIndex];
-                if (program) {
-                    program[field] = newValue;
-                    
-                    // Update XML
-                    const elem = program.element.querySelector(field);
-                    if (elem) {
-                        elem.textContent = newValue;
-                    } else if (field === 'category' && newValue) {
-                        const catElem = xmlDoc.createElement('category');
-                        catElem.setAttribute('lang', 'it');
-                        catElem.textContent = newValue;
-                        program.element.appendChild(catElem);
+                program[field] = newValue;
+                
+                // Update XML
+                const elem = program.element.querySelector(field);
+                if (elem) {
+                    elem.textContent = newValue;
+                } else if (field === 'category' && newValue) {
+                    const catElem = xmlDoc.createElement('category');
+                    catElem.setAttribute('lang', 'it');
+                    catElem.textContent = newValue;
+                    program.element.appendChild(catElem);
+                }
+                
+                // Reload if title changed
+                if (field === 'title') {
+                    if (!formatColors[newValue]) {
+                        formatColors[newValue] = formatColors[program.title] || colors[colorIndex % colors.length];
+                        colorIndex++;
                     }
-                    
-                    // Reload if title changed
-                    if (field === 'title') {
-                        if (!formatColors[newValue]) {
-                            formatColors[newValue] = formatColors[program.title] || colors[colorIndex % colors.length];
-                            colorIndex++;
-                        }
-                        loadPrograms();
-                    }
+                    loadPrograms();
                 }
             };
             
@@ -1133,16 +1133,18 @@
         }
 
         function updateProgramTime(programIndex, timeType, newTime) {
-            const program = currentPrograms[programIndex];
+            const dayPrograms = getCurrentDayPrograms();
+            const program = dayPrograms[programIndex];
             if (!program) return;
             
             const [hours, minutes] = newTime.split(':').map(Number);
             const newDate = new Date(program[timeType === 'start' ? 'start' : 'stop']);
-            newDate.setHours(hours, minutes, 0, 0);
+            newDate.setUTCHours(hours, minutes, 0, 0);
             
-            // If the time crosses midnight, adjust the date
-            if (timeType === 'stop' && newDate < program.start) {
-                newDate.setDate(newDate.getDate() + 1);
+            // Ensure stop time is after start time
+            if (timeType === 'stop' && newDate <= program.start) {
+                // If stop time is before or equal to start, assume it's next day
+                newDate.setUTCDate(newDate.getUTCDate() + 1);
             }
             
             if (timeType === 'start') {
@@ -1162,29 +1164,48 @@
         function deleteProgram(programIndex) {
             if (!confirm('Eliminare questo programma?')) return;
             
-            const program = currentPrograms[programIndex];
+            const dayPrograms = getCurrentDayPrograms();
+            const program = dayPrograms[programIndex];
             if (!program) return;
             
             // Remove from XML
             program.element.remove();
             
-            // Remove from array
-            currentPrograms.splice(programIndex, 1);
+            // Remove from global array
+            const globalIndex = currentPrograms.indexOf(program);
+            if (globalIndex > -1) {
+                currentPrograms.splice(globalIndex, 1);
+            }
             
             loadPrograms();
             showToast('Programma eliminato', 'success');
         }
 
+        function getCurrentDayPrograms() {
+            const dayStart = new Date(scheduleDate);
+            const dayEnd = new Date(scheduleDate);
+            dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+            
+            return currentPrograms.filter(p => {
+                return (p.start >= dayStart && p.start < dayEnd) || 
+                       (p.start < dayStart && p.stop > dayStart);
+            }).sort((a, b) => a.start - b.start);
+        }
+
         function addProgram() {
-            // Find last program
-            const lastProgram = currentPrograms[currentPrograms.length - 1];
-            const newStart = lastProgram ? new Date(lastProgram.stop) : new Date(scheduleDate);
-            if (!lastProgram) {
-                newStart.setHours(20, 0, 0, 0);
+            const dayPrograms = getCurrentDayPrograms();
+            const lastProgram = dayPrograms[dayPrograms.length - 1];
+            
+            let newStart;
+            if (lastProgram) {
+                newStart = new Date(lastProgram.stop);
+            } else {
+                newStart = new Date(scheduleDate);
+                newStart.setUTCHours(20, 0, 0, 0);
             }
             
             const newStop = new Date(newStart);
-            newStop.setMinutes(newStop.getMinutes() + 30);
+            newStop.setUTCMinutes(newStop.getUTCMinutes() + 30);
             
             // Create new program element
             const programme = xmlDoc.createElement('programme');
@@ -1250,9 +1271,11 @@
         }
 
         function actualizeSchedule() {
-            const newStartDate = new Date(document.getElementById('newStartDate').value);
-            const oldStartDate = scheduleDate;
-            const dayDiff = Math.floor((newStartDate - oldStartDate) / (1000 * 60 * 60 * 24));
+            const newStartDateStr = document.getElementById('newStartDate').value;
+            const [year, month, day] = newStartDateStr.split('-').map(Number);
+            const newStartDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+            
+            const dayDiff = Math.floor((newStartDate - scheduleDate) / (1000 * 60 * 60 * 24));
             
             if (dayDiff === 0) {
                 showToast('La data selezionata è la stessa', 'info');
@@ -1263,9 +1286,9 @@
             // Update all program dates
             currentPrograms.forEach(program => {
                 const newStart = new Date(program.start);
-                newStart.setDate(newStart.getDate() + dayDiff);
+                newStart.setUTCDate(newStart.getUTCDate() + dayDiff);
                 const newStop = new Date(program.stop);
-                newStop.setDate(newStop.getDate() + dayDiff);
+                newStop.setUTCDate(newStop.getUTCDate() + dayDiff);
                 
                 program.start = newStart;
                 program.stop = newStop;
@@ -1279,24 +1302,7 @@
             
             // Update schedule date
             scheduleDate = newStartDate;
-            
-            // Update timeline boundaries
-            timelineStartDate = new Date(scheduleDate);
-            timelineStartDate.setHours(0, 0, 0, 0);
-            
-            const lastProgram = currentPrograms[currentPrograms.length - 1];
-            timelineEndDate = new Date(lastProgram.stop);
-            
-            const timelineHours = (timelineEndDate - timelineStartDate) / (1000 * 60 * 60);
-            if (timelineHours < 24) {
-                timelineEndDate = new Date(timelineStartDate);
-                timelineEndDate.setHours(23, 59, 59, 999);
-            }
-            
-            // Update UI
-            document.getElementById('scheduleDate').textContent = formatDate(scheduleDate);
-            document.getElementById('timelineDate').textContent = 
-                `(${formatTime(timelineStartDate)} - ${formatTime(timelineEndDate)})`;
+            document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
             
             // Reload programs
             loadPrograms();
@@ -1337,11 +1343,7 @@
 
         // Show info
         function showInfo() {
-            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const utcOffset = new Date().getTimezoneOffset() / -60;
-            const offsetStr = utcOffset >= 0 ? `+${utcOffset}` : `${utcOffset}`;
-            
-            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nFunzionalità:\n- Visualizzazione timeline singolo giorno\n- Conversione automatica UTC → fuso orario locale\n- Gestione programmi che attraversano la mezzanotte\n- Modifica programmi inline\n- Rilevamento sovrapposizioni e buchi\n- Attualizzazione date palinsesto\n- Analisi distribuzione format\n- Export XMLTV modificato\n\nFuso orario rilevato: ${userTimezone} (UTC${offsetStr})\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nModalità UTC - Nessuna conversione timezone\n\nFunzionalità:\n- Visualizzazione timeline 24 ore in UTC\n- Tutti gli orari mostrati sono in UTC\n- Timeline fissa 00:00-23:59 UTC\n- Modifica programmi inline\n- Rilevamento sovrapposizioni e buchi\n- Attualizzazione date palinsesto\n- Analisi distribuzione format\n- Export XMLTV modificato\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
     </script>
 </body>
