@@ -570,7 +570,7 @@
             const height = 150;
             const margin = { top: 20, right: 20, bottom: 30, left: 20 };
             
-            svg.attr('width', width);
+            svg.attr('width', width).attr('height', height);
             
             // Time scale for the selected day in LOCAL time
             const startOfDay = new Date(selectedDay);
@@ -602,9 +602,33 @@
                 .style('stroke-dasharray', '2,2')
                 .style('opacity', 0.3);
             
+            // Group overlapping programs into rows
+            const rows = [];
+            programs.forEach(program => {
+                let placed = false;
+                for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+                    const row = rows[rowIndex];
+                    // Check if program fits in this row without overlap
+                    const fits = !row.some(p => 
+                        (program.start < p.stop && program.stop > p.start)
+                    );
+                    if (fits) {
+                        row.push(program);
+                        placed = true;
+                        program.row = rowIndex;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    rows.push([program]);
+                    program.row = rows.length - 1;
+                }
+            });
+            
             // Draw programs
-            const programHeight = 60;
-            const programY = margin.top + 10;
+            const programHeight = 50;
+            const rowGap = 5;
+            const baseY = margin.top + 10;
             
             programs.forEach((program, index) => {
                 // Clip program to day boundaries
@@ -612,15 +636,21 @@
                 const programEnd = program.stop > endOfDay ? endOfDay : program.stop;
                 
                 const x = xScale(programStart);
-                const width = xScale(programEnd) - x;
+                const width = Math.max(1, xScale(programEnd) - x);
+                const y = baseY + (program.row || 0) * (programHeight + rowGap);
                 
                 const g = svg.append('g')
                     .attr('class', 'program-block')
-                    .attr('transform', `translate(${x},${programY})`)
+                    .attr('transform', `translate(${x},${y})`)
                     .style('cursor', 'pointer')
                     .on('click', () => showProgramDetails(program))
                     .on('mouseenter', (event) => showTooltip(event, program))
                     .on('mouseleave', hideTooltip);
+                
+                // Highlight overlapping programs
+                const hasOverlap = programs.some((p, i) => 
+                    i !== index && p.start < program.stop && p.stop > program.start
+                );
                 
                 // Program block
                 g.append('rect')
@@ -628,8 +658,8 @@
                     .attr('height', programHeight)
                     .attr('rx', 4)
                     .attr('fill', formatColors[program.title] || '#6B7280')
-                    .attr('stroke', '#fff')
-                    .attr('stroke-width', 2);
+                    .attr('stroke', hasOverlap ? '#ff0000' : '#fff')
+                    .attr('stroke-width', hasOverlap ? 3 : 2);
                 
                 // Add opacity if program extends beyond day boundaries
                 if (program.start < startOfDay || program.stop > endOfDay) {
@@ -637,10 +667,10 @@
                 }
                 
                 // Program title
-                if (width > 40) {
+                if (width > 30) {
                     g.append('text')
                         .attr('x', 5)
-                        .attr('y', programHeight / 2)
+                        .attr('y', programHeight / 2 - 5)
                         .attr('dy', '.35em')
                         .attr('fill', 'white')
                         .attr('font-size', '12px')
@@ -658,51 +688,41 @@
                         });
                     
                     // Add time label
-                    g.append('text')
-                        .attr('x', 5)
-                        .attr('y', programHeight - 5)
-                        .attr('fill', 'white')
-                        .attr('font-size', '10px')
-                        .text(`${formatTime(program.start)} - ${formatTime(program.stop)}`);
+                    if (width > 80) {
+                        g.append('text')
+                            .attr('x', 5)
+                            .attr('y', programHeight - 8)
+                            .attr('fill', 'white')
+                            .attr('font-size', '10px')
+                            .text(`${formatTime(program.start)} - ${formatTime(program.stop)}`);
+                    }
                 }
                 
-                // Icon indicator
-                if (program.icon && width > 60) {
-                    const iconSize = 20;
-                    g.append('rect')
-                        .attr('x', width - iconSize - 5)
-                        .attr('y', 5)
-                        .attr('width', iconSize)
-                        .attr('height', iconSize)
-                        .attr('fill', 'white')
-                        .attr('rx', 2);
-                    
+                // Warning icon for overlaps
+                if (hasOverlap && width > 30) {
                     g.append('text')
-                        .attr('x', width - iconSize/2 - 5)
-                        .attr('y', 15)
+                        .attr('x', width - 20)
+                        .attr('y', programHeight / 2)
                         .attr('text-anchor', 'middle')
-                        .attr('font-size', '12px')
-                        .text('📺');
+                        .attr('font-size', '16px')
+                        .text('⚠️');
                 }
             });
             
-            // Check for gaps between consecutive programs
-            for (let i = 0; i < programs.length - 1; i++) {
-                const current = programs[i];
-                const next = programs[i + 1];
-                
-                // Only check gaps within the same day
-                if (current.stop < next.start && 
-                    current.stop.toDateString() === next.start.toDateString()) {
-                    
-                    const gap = next.start - current.stop;
+            // Check for gaps between consecutive programs (considering overlaps)
+            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
+            let lastEnd = null;
+            
+            sortedPrograms.forEach(program => {
+                if (lastEnd && program.start > lastEnd) {
+                    const gap = program.start - lastEnd;
                     if (gap > 60000) { // More than 1 minute
-                        const x = xScale(current.stop);
-                        const width = xScale(next.start) - x;
+                        const x = xScale(lastEnd);
+                        const width = xScale(program.start) - x;
                         
                         svg.append('rect')
                             .attr('x', x)
-                            .attr('y', programY)
+                            .attr('y', baseY)
                             .attr('width', width)
                             .attr('height', programHeight)
                             .attr('class', 'gap-indicator')
@@ -712,14 +732,19 @@
                         const gapMinutes = Math.floor(gap / 60000);
                         svg.append('text')
                             .attr('x', x + width/2)
-                            .attr('y', programY + programHeight/2)
+                            .attr('y', baseY + programHeight/2)
                             .attr('text-anchor', 'middle')
                             .attr('fill', 'white')
                             .attr('font-weight', 'bold')
                             .text(`GAP ${gapMinutes}min`);
                     }
                 }
-            }
+                
+                // Update lastEnd to be the maximum end time seen so far
+                if (!lastEnd || program.stop > lastEnd) {
+                    lastEnd = program.stop;
+                }
+            });
         }
 
         // Fixed tooltip implementation
@@ -886,37 +911,55 @@
             report.innerHTML = '';
             const problems = [];
             
-            // Check for gaps
-            for (let i = 0; i < programs.length - 1; i++) {
-                const gap = programs[i + 1].start - programs[i].stop;
-                if (gap > 1000) {
-                    const gapMinutes = Math.floor(gap / 60000);
-                    problems.push({
-                        type: 'gap',
-                        severity: 'error',
-                        message: `Buco di ${gapMinutes} minuti tra "${programs[i].title}" e "${programs[i + 1].title}"`
-                    });
+            // Check for overlaps
+            for (let i = 0; i < programs.length; i++) {
+                for (let j = i + 1; j < programs.length; j++) {
+                    if (programs[i].stop > programs[j].start && programs[i].start < programs[j].stop) {
+                        const overlapStart = Math.max(programs[i].start, programs[j].start);
+                        const overlapEnd = Math.min(programs[i].stop, programs[j].stop);
+                        const overlapMinutes = Math.floor((overlapEnd - overlapStart) / 60000);
+                        
+                        problems.push({
+                            type: 'overlap',
+                            severity: 'error',
+                            message: `⚠️ SOVRAPPOSIZIONE di ${overlapMinutes} minuti tra "${programs[i].title}" (${formatTime(programs[i].start)}-${formatTime(programs[i].stop)}) e "${programs[j].title}" (${formatTime(programs[j].start)}-${formatTime(programs[j].stop)})`
+                        });
+                    }
                 }
             }
             
-            // Check for overlaps
-            for (let i = 0; i < programs.length - 1; i++) {
-                if (programs[i].stop > programs[i + 1].start) {
-                    problems.push({
-                        type: 'overlap',
-                        severity: 'error',
-                        message: `Sovrapposizione tra "${programs[i].title}" e "${programs[i + 1].title}"`
-                    });
+            // Check for gaps
+            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
+            for (let i = 0; i < sortedPrograms.length - 1; i++) {
+                // Find the next program that doesn't overlap with current
+                let nextNonOverlapping = null;
+                for (let j = i + 1; j < sortedPrograms.length; j++) {
+                    if (sortedPrograms[j].start >= sortedPrograms[i].stop) {
+                        nextNonOverlapping = sortedPrograms[j];
+                        break;
+                    }
+                }
+                
+                if (nextNonOverlapping) {
+                    const gap = nextNonOverlapping.start - sortedPrograms[i].stop;
+                    if (gap > 60000) { // More than 1 minute
+                        const gapMinutes = Math.floor(gap / 60000);
+                        problems.push({
+                            type: 'gap',
+                            severity: gapMinutes > 30 ? 'error' : 'warning',
+                            message: `Buco di ${gapMinutes} minuti tra "${sortedPrograms[i].title}" (${formatTime(sortedPrograms[i].stop)}) e "${nextNonOverlapping.title}" (${formatTime(nextNonOverlapping.start)})`
+                        });
+                    }
                 }
             }
             
             // Check for missing icons
             programs.forEach(p => {
-                if (!p.icon || p.icon.includes('placeholder')) {
+                if (!p.icon || p.icon.includes('placeholder') || p.icon.includes('default.jpg')) {
                     problems.push({
                         type: 'icon',
                         severity: 'warning',
-                        message: `Icona mancante per "${p.title}"`
+                        message: `Icona mancante o default per "${p.title}"`
                     });
                 }
             });
@@ -924,12 +967,47 @@
             if (problems.length === 0) {
                 report.innerHTML = '<p class="text-green-600">✅ Nessun problema rilevato</p>';
             } else {
-                problems.forEach(p => {
+                // Group problems by type
+                const overlaps = problems.filter(p => p.type === 'overlap');
+                const gaps = problems.filter(p => p.type === 'gap');
+                const icons = problems.filter(p => p.type === 'icon');
+                
+                if (overlaps.length > 0) {
                     const div = document.createElement('div');
-                    div.className = `p-2 rounded ${p.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'}`;
-                    div.innerHTML = `<span class="font-semibold">${p.severity === 'error' ? '❌' : '⚠️'}</span> ${p.message}`;
+                    div.className = 'mb-3';
+                    div.innerHTML = `<h4 class="font-semibold text-red-700 mb-1">❌ Sovrapposizioni (${overlaps.length})</h4>`;
+                    overlaps.forEach(p => {
+                        const item = document.createElement('div');
+                        item.className = 'p-2 rounded bg-red-50 text-red-700 text-sm mb-1';
+                        item.textContent = p.message;
+                        div.appendChild(item);
+                    });
                     report.appendChild(div);
-                });
+                }
+                
+                if (gaps.length > 0) {
+                    const div = document.createElement('div');
+                    div.className = 'mb-3';
+                    div.innerHTML = `<h4 class="font-semibold text-yellow-700 mb-1">⚠️ Buchi nel palinsesto (${gaps.length})</h4>`;
+                    gaps.forEach(p => {
+                        const item = document.createElement('div');
+                        item.className = `p-2 rounded text-sm mb-1 ${p.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'}`;
+                        item.textContent = p.message;
+                        div.appendChild(item);
+                    });
+                    report.appendChild(div);
+                }
+                
+                if (icons.length > 0) {
+                    const div = document.createElement('div');
+                    div.className = 'mb-3';
+                    div.innerHTML = `<h4 class="font-semibold text-blue-700 mb-1">ℹ️ Icone mancanti (${icons.length})</h4>`;
+                    const item = document.createElement('div');
+                    item.className = 'p-2 rounded bg-blue-50 text-blue-700 text-sm';
+                    item.textContent = `${icons.length} programmi con icone mancanti o default`;
+                    div.appendChild(item);
+                    report.appendChild(div);
+                }
             }
         }
 
