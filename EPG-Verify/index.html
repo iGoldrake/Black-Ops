@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer & Editor Professional v1.0</title>
+    <title>XMLTV Viewer & Editor Professional v1.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -23,11 +23,25 @@
         .dark .text-gray-700 { color: #cbd5e1; }
         .dark .border-gray-200 { border-color: #475569; }
         input[type="datetime-local"] { color-scheme: light dark; }
+        
+        /* Fixed tooltip styles */
         .program-tooltip { 
-            pointer-events: none; 
             position: fixed;
             z-index: 9999;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            opacity: 0;
         }
+        .program-tooltip.visible {
+            opacity: 1;
+        }
+        
+        /* Prevent tooltip interference with SVG elements */
+        .timeline-svg {
+            position: relative;
+            z-index: 1;
+        }
+        
         .editable-cell { cursor: text; }
         .editable-cell:hover { background: rgba(59, 130, 246, 0.1); }
     </style>
@@ -42,7 +56,7 @@
                         <i data-lucide="tv" class="w-8 h-8"></i>
                         XMLTV Viewer & Editor Pro
                     </h1>
-                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.0</p>
+                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.3</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-2 rounded hover:bg-gray-100">
@@ -69,7 +83,7 @@
 
         <!-- Main Content (hidden until file loaded) -->
         <div id="mainContent" class="hidden">
-            // Channel Info & Controls -->
+            <!-- Channel Info & Controls -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -90,7 +104,7 @@
                                 <i data-lucide="chevron-right" class="w-5 h-5"></i>
                             </button>
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">Fuso orario: Europa/Roma (UTC+1/+2)</p>
+                        <p class="text-xs text-gray-500 mt-1" id="timezoneInfo">Fuso orario: Europa/Roma (UTC+1/+2)</p>
                     </div>
                     <div>
                         <h3 class="font-semibold text-gray-700 mb-2">Azioni</h3>
@@ -127,7 +141,7 @@
                     <span class="text-sm text-gray-600">Usa la rotella del mouse per zoom</span>
                 </div>
                 <div class="timeline-container border rounded-lg p-4" id="timelineContainer">
-                    <svg id="timeline" width="100%" height="150"></svg>
+                    <svg id="timeline" class="timeline-svg" width="100%" height="150"></svg>
                 </div>
             </div>
 
@@ -249,51 +263,14 @@
         <!-- Toast Container -->
         <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-        <!-- Tooltip -->
-        <div id="tooltip" class="program-tooltip fixed bg-gray-900 text-white p-3 rounded shadow-lg text-sm hidden z-40"></div>
+        <!-- Fixed Tooltip -->
+        <div id="tooltip" class="program-tooltip bg-gray-900 text-white p-3 rounded shadow-lg text-sm"></div>
     </div>
 
     <script>
-        // Fallback icons in case Lucide doesn't load
-        window.addEventListener('DOMContentLoaded', function() {
-            // Try to initialize Lucide icons after DOM is loaded
-            setTimeout(() => {
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                } else {
-                    // Replace Lucide icon placeholders with emoji
-                    document.querySelectorAll('[data-lucide]').forEach(el => {
-                        const iconMap = {
-                            'tv': '📺',
-                            'moon': '🌙',
-                            'info': 'ℹ️',
-                            'upload': '📤',
-                            'chevron-left': '◀',
-                            'chevron-right': '▶',
-                            'calendar': '📅',
-                            'download': '💾',
-                            'clock': '🕐',
-                            'zoom-in': '🔍+',
-                            'zoom-out': '🔍-',
-                            'maximize-2': '⛶',
-                            'tv-2': '📺',
-                            'edit': '✏️',
-                            'plus': '➕',
-                            'pie-chart': '📊',
-                            'alert-triangle': '⚠️',
-                            'trash-2': '🗑️'
-                        };
-                        const iconName = el.getAttribute('data-lucide');
-                        el.textContent = iconMap[iconName] || '•';
-                        el.style.fontStyle = 'normal';
-                    });
-                }
-            }, 100);
-        });
-
         // Version
-        const APP_VERSION = '1.2';
-        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Improved timezone handling`);
+        const APP_VERSION = '1.3';
+        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Fixed tooltip, improved timezone handling & performance`);
 
         // Global state
         let xmlDoc = null;
@@ -304,6 +281,11 @@
         let zoomLevel = 1;
         let formatColors = {};
         let colorIndex = 0;
+        let tooltipTimeout = null;
+
+        // Performance optimization: cache parsed programs
+        let programCache = new Map();
+        let dayProgramsCache = new Map();
 
         // Format dictionaries
         const formatIcons = {
@@ -349,10 +331,51 @@
         const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
         // Initialize Lucide icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        } else {
-            console.warn('Lucide not loaded, using emoji fallbacks');
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                } else {
+                    // Fallback to emoji
+                    document.querySelectorAll('[data-lucide]').forEach(el => {
+                        const iconMap = {
+                            'tv': '📺',
+                            'moon': '🌙',
+                            'info': 'ℹ️',
+                            'upload': '📤',
+                            'chevron-left': '◀',
+                            'chevron-right': '▶',
+                            'calendar': '📅',
+                            'download': '💾',
+                            'clock': '🕐',
+                            'zoom-in': '🔍+',
+                            'zoom-out': '🔍-',
+                            'maximize-2': '⛶',
+                            'tv-2': '📺',
+                            'edit': '✏️',
+                            'plus': '➕',
+                            'pie-chart': '📊',
+                            'alert-triangle': '⚠️',
+                            'trash-2': '🗑️'
+                        };
+                        const iconName = el.getAttribute('data-lucide');
+                        el.textContent = iconMap[iconName] || '•';
+                        el.style.fontStyle = 'normal';
+                    });
+                }
+            }, 100);
+
+            // Update timezone info
+            updateTimezoneInfo();
+        });
+
+        // Update timezone information
+        function updateTimezoneInfo() {
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const now = new Date();
+            const utcOffset = -now.getTimezoneOffset() / 60;
+            const offsetStr = utcOffset >= 0 ? `+${utcOffset}` : `${utcOffset}`;
+            document.getElementById('timezoneInfo').textContent = `Fuso orario: ${userTimezone} (UTC${offsetStr})`;
         }
 
         // File handling
@@ -390,13 +413,28 @@
                     const parser = new DOMParser();
                     xmlDoc = parser.parseFromString(e.target.result, 'text/xml');
                     
+                    // Check for parsing errors
+                    const parserError = xmlDoc.querySelector('parsererror');
+                    if (parserError) {
+                        throw new Error('Errore nel parsing XML: ' + parserError.textContent);
+                    }
+                    
                     // Parse channel info
                     const channel = xmlDoc.querySelector('channel');
+                    if (!channel) {
+                        throw new Error('Nessun canale trovato nel file XML');
+                    }
+                    
                     currentChannelId = channel.getAttribute('id');
-                    currentChannelName = channel.querySelector('display-name').textContent;
+                    const displayName = channel.querySelector('display-name');
+                    currentChannelName = displayName ? displayName.textContent : currentChannelId;
                     
                     document.getElementById('channelName').textContent = currentChannelName;
                     document.getElementById('channelId').textContent = `ID: ${currentChannelId}`;
+                    
+                    // Clear caches
+                    programCache.clear();
+                    dayProgramsCache.clear();
                     
                     // Parse programs
                     parsePrograms();
@@ -407,77 +445,97 @@
                     showToast('File caricato con successo', 'success');
                 } catch (error) {
                     showToast('Errore nel caricamento del file: ' + error.message, 'error');
+                    console.error('Load error:', error);
                 }
             };
             reader.readAsText(file);
         }
 
         function parsePrograms() {
+            const startTime = performance.now();
+            
             const programmes = xmlDoc.querySelectorAll('programme');
             currentPrograms = [];
-            const daysMap = new Map(); // Map to track unique days
+            const daysMap = new Map();
             
-            programmes.forEach(prog => {
-                const startUTC = parseXMLTVDate(prog.getAttribute('start'));
-                const stopUTC = parseXMLTVDate(prog.getAttribute('stop'));
-                
-                // Log first few programs to debug
-                if (currentPrograms.length < 3) {
-                    console.log('Program:', prog.querySelector('title')?.textContent);
-                    console.log('  Start UTC:', prog.getAttribute('start'));
-                    console.log('  Start Local:', startUTC.toString());
-                    console.log('  Stop UTC:', prog.getAttribute('stop'));
-                    console.log('  Stop Local:', stopUTC.toString());
-                }
-                
-                const title = prog.querySelector('title')?.textContent || '';
-                const desc = prog.querySelector('desc')?.textContent || '';
-                const category = prog.querySelector('category')?.textContent || '';
-                const rating = prog.querySelector('rating value')?.textContent || '0';
-                const icon = prog.querySelector('icon')?.getAttribute('src') || '';
-                const episodeNum = prog.querySelector('episode-num')?.textContent || '';
-                
-                const program = {
-                    start: startUTC,
-                    stop: stopUTC,
-                    title,
-                    desc,
-                    category,
-                    rating,
-                    icon,
-                    episodeNum,
-                    duration: (stopUTC - startUTC) / 1000, // seconds
-                    element: prog
-                };
-                
-                currentPrograms.push(program);
-                
-                // Create a date key for the LOCAL date when the program STARTS
-                const localStartDate = new Date(start);
-                localStartDate.setHours(0, 0, 0, 0);
-                const dateKey = localStartDate.toISOString().split('T')[0];
-                
-                if (!daysMap.has(dateKey)) {
-                    daysMap.set(dateKey, localStartDate);
-                }
-                
-                // If program spans multiple days, add those days too
-                const localEndDate = new Date(stop);
-                localEndDate.setHours(0, 0, 0, 0);
-                const endDateKey = localEndDate.toISOString().split('T')[0];
-                
-                if (endDateKey !== dateKey && !daysMap.has(endDateKey)) {
-                    daysMap.set(endDateKey, localEndDate);
-                }
-                
-                // Assign color to format
-                if (!formatColors[title]) {
-                    formatColors[title] = colors[colorIndex % colors.length];
-                    colorIndex++;
+            programmes.forEach((prog, index) => {
+                try {
+                    const startStr = prog.getAttribute('start');
+                    const stopStr = prog.getAttribute('stop');
+                    
+                    if (!startStr || !stopStr) {
+                        console.warn(`Programma ${index} senza orari validi`);
+                        return;
+                    }
+                    
+                    const startUTC = parseXMLTVDate(startStr);
+                    const stopUTC = parseXMLTVDate(stopStr);
+                    
+                    // Validate dates
+                    if (!startUTC || !stopUTC || isNaN(startUTC.getTime()) || isNaN(stopUTC.getTime())) {
+                        console.warn(`Programma ${index} con date non valide`);
+                        return;
+                    }
+                    
+                    // Debug first few programs
+                    if (currentPrograms.length < 3) {
+                        console.log(`Program ${index}:`, prog.querySelector('title')?.textContent);
+                        console.log('  Start:', startStr, '→', startUTC.toString());
+                        console.log('  Stop:', stopStr, '→', stopUTC.toString());
+                    }
+                    
+                    const title = prog.querySelector('title')?.textContent || '';
+                    const desc = prog.querySelector('desc')?.textContent || '';
+                    const category = prog.querySelector('category')?.textContent || '';
+                    const rating = prog.querySelector('rating value')?.textContent || '0';
+                    const icon = prog.querySelector('icon')?.getAttribute('src') || '';
+                    const episodeNum = prog.querySelector('episode-num')?.textContent || '';
+                    
+                    const program = {
+                        start: startUTC,
+                        stop: stopUTC,
+                        title,
+                        desc,
+                        category,
+                        rating,
+                        icon,
+                        episodeNum,
+                        duration: (stopUTC - startUTC) / 1000, // seconds
+                        element: prog,
+                        index: index
+                    };
+                    
+                    currentPrograms.push(program);
+                    
+                    // Track days based on LOCAL time
+                    const localStartDate = new Date(startUTC);
+                    localStartDate.setHours(0, 0, 0, 0);
+                    const dateKey = formatDateKey(localStartDate);
+                    
+                    if (!daysMap.has(dateKey)) {
+                        daysMap.set(dateKey, localStartDate);
+                    }
+                    
+                    // If program spans midnight, add the end day too
+                    const localEndDate = new Date(stopUTC);
+                    localEndDate.setHours(0, 0, 0, 0);
+                    const endDateKey = formatDateKey(localEndDate);
+                    
+                    if (endDateKey !== dateKey && !daysMap.has(endDateKey)) {
+                        daysMap.set(endDateKey, localEndDate);
+                    }
+                    
+                    // Assign color to format
+                    if (!formatColors[title]) {
+                        formatColors[title] = colors[colorIndex % colors.length];
+                        colorIndex++;
+                    }
+                } catch (err) {
+                    console.error(`Errore parsing programma ${index}:`, err);
                 }
             });
             
-            // Populate day selector with unique days
+            // Populate day selector
             const daySelector = document.getElementById('daySelector');
             daySelector.innerHTML = '';
             
@@ -485,6 +543,7 @@
             const sortedDays = Array.from(daysMap.entries())
                 .sort((a, b) => a[1] - b[1]);
             
+            console.log(`Parsed ${currentPrograms.length} programs in ${(performance.now() - startTime).toFixed(2)}ms`);
             console.log('Found days:', sortedDays.map(d => d[0]));
             
             sortedDays.forEach(([dateKey, date]) => {
@@ -500,32 +559,74 @@
             }
         }
 
+        function formatDateKey(date) {
+            return date.toISOString().split('T')[0];
+        }
+
         function parseXMLTVDate(dateStr) {
-            // Format: YYYYMMDDHHmmss +0000
+            // XMLTV format: YYYYMMDDHHmmss +/-HHMM
+            // Extract components
             const year = parseInt(dateStr.substr(0, 4));
-            const month = parseInt(dateStr.substr(4, 2)) - 1;
+            const month = parseInt(dateStr.substr(4, 2)) - 1; // 0-based
             const day = parseInt(dateStr.substr(6, 2));
             const hour = parseInt(dateStr.substr(8, 2));
             const minute = parseInt(dateStr.substr(10, 2));
             const second = parseInt(dateStr.substr(12, 2));
             
-            // Create UTC date
+            // Parse timezone offset
+            let tzOffset = 0;
+            if (dateStr.length > 14) {
+                const tzSign = dateStr.charAt(15);
+                if (tzSign === '+' || tzSign === '-') {
+                    const tzHours = parseInt(dateStr.substr(16, 2)) || 0;
+                    const tzMinutes = parseInt(dateStr.substr(18, 2)) || 0;
+                    tzOffset = (tzHours * 60 + tzMinutes) * (tzSign === '-' ? -1 : 1);
+                }
+            }
+            
+            // Create date in UTC
             const utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
             
-            // Return date object (JavaScript automatically handles timezone conversion)
+            // Adjust for timezone offset to get actual UTC time
+            utcDate.setMinutes(utcDate.getMinutes() - tzOffset);
+            
             return utcDate;
         }
 
         function formatXMLTVDate(date) {
-            // Convert local date back to UTC for XML format
+            // Convert JavaScript Date to XMLTV format with UTC timezone
             const pad = (n) => String(n).padStart(2, '0');
-            return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}` +
-                   `${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())} +0000`;
+            
+            // Get UTC components
+            const year = date.getUTCFullYear();
+            const month = pad(date.getUTCMonth() + 1);
+            const day = pad(date.getUTCDate());
+            const hours = pad(date.getUTCHours());
+            const minutes = pad(date.getUTCMinutes());
+            const seconds = pad(date.getUTCSeconds());
+            
+            // Return with +0000 timezone (UTC)
+            return `${year}${month}${day}${hours}${minutes}${seconds} +0000`;
         }
 
         function loadDay() {
+            const startTime = performance.now();
+            
             const dayValue = document.getElementById('daySelector').value;
-            selectedDay = new Date(dayValue + 'T12:00:00'); // Use noon to avoid DST issues
+            selectedDay = new Date(dayValue + 'T00:00:00');
+            
+            // Check cache first
+            const cacheKey = dayValue;
+            if (dayProgramsCache.has(cacheKey)) {
+                const cachedPrograms = dayProgramsCache.get(cacheKey);
+                console.log(`Loaded ${cachedPrograms.length} programs from cache in ${(performance.now() - startTime).toFixed(2)}ms`);
+                
+                drawTimeline(cachedPrograms);
+                updateProgramTable(cachedPrograms);
+                updateAnalytics(cachedPrograms);
+                checkProblems(cachedPrograms);
+                return;
+            }
             
             // Set boundaries for the selected day in local time
             const startOfDay = new Date(selectedDay);
@@ -534,24 +635,28 @@
             endOfDay.setHours(23, 59, 59, 999);
             
             console.log('Loading day:', formatDate(selectedDay));
-            console.log('Day boundaries:', startOfDay, 'to', endOfDay);
+            console.log('Day boundaries:', startOfDay.toISOString(), 'to', endOfDay.toISOString());
             
             // Filter programs that appear in this local day
             const dayPrograms = currentPrograms.filter(p => {
-                // Include if program starts during this day
+                // Program overlaps with this day if:
+                // 1. It starts during this day
                 const startsInDay = p.start >= startOfDay && p.start <= endOfDay;
-                // Include if program ends during this day  
+                // 2. It ends during this day
                 const endsInDay = p.stop >= startOfDay && p.stop <= endOfDay;
-                // Include if program spans the entire day
+                // 3. It spans the entire day
                 const spansDay = p.start < startOfDay && p.stop > endOfDay;
                 
                 return startsInDay || endsInDay || spansDay;
             });
             
-            console.log(`Found ${dayPrograms.length} programs for ${formatDate(selectedDay)}`);
+            console.log(`Found ${dayPrograms.length} programs for ${formatDate(selectedDay)} in ${(performance.now() - startTime).toFixed(2)}ms`);
             
             // Sort by start time
             dayPrograms.sort((a, b) => a.start - b.start);
+            
+            // Cache the result
+            dayProgramsCache.set(cacheKey, dayPrograms);
             
             // Draw timeline
             drawTimeline(dayPrograms);
@@ -589,19 +694,19 @@
             
             // Draw time axis with local time
             const xAxis = d3.axisBottom(xScale)
-                .ticks(d3.timeHour.every(1))
+                .ticks(d3.timeHour.every(zoomLevel > 2 ? 1 : 2))
                 .tickFormat(d3.timeFormat('%H:%M'));
             
             svg.append('g')
                 .attr('transform', `translate(0,${height - margin.bottom})`)
                 .call(xAxis);
             
-            // Add grid lines for better readability
+            // Add grid lines
             svg.append('g')
                 .attr('class', 'grid')
                 .attr('transform', `translate(0,${height - margin.bottom})`)
                 .call(d3.axisBottom(xScale)
-                    .ticks(d3.timeHour.every(1))
+                    .ticks(d3.timeHour.every(zoomLevel > 2 ? 1 : 2))
                     .tickSize(-height + margin.top + margin.bottom)
                     .tickFormat(''))
                 .style('stroke-dasharray', '2,2')
@@ -612,20 +717,24 @@
             const programY = margin.top + 10;
             
             programs.forEach((program, index) => {
-                // Clip program to day boundaries
+                // Clip program to day boundaries for display
                 const programStart = program.start < startOfDay ? startOfDay : program.start;
                 const programEnd = program.stop > endOfDay ? endOfDay : program.stop;
                 
                 const x = xScale(programStart);
-                const width = xScale(programEnd) - x;
+                const width = Math.max(1, xScale(programEnd) - x); // Ensure minimum width
                 
                 const g = svg.append('g')
                     .attr('class', 'program-block')
                     .attr('transform', `translate(${x},${programY})`)
                     .style('cursor', 'pointer')
                     .on('click', () => showProgramDetails(program))
-                    .on('mouseenter', function(event) { showTooltip(event, program); })
-                    .on('mouseleave', hideTooltip);
+                    .on('mouseenter', function(event) { 
+                        showTooltip(event, program); 
+                    })
+                    .on('mouseleave', function() { 
+                        hideTooltip(); 
+                    });
                 
                 // Program block
                 g.append('rect')
@@ -641,7 +750,7 @@
                     g.attr('opacity', 0.8);
                 }
                 
-                // Program title
+                // Program title (only if there's enough space)
                 if (width > 40) {
                     g.append('text')
                         .attr('x', 5)
@@ -662,16 +771,18 @@
                             }
                         });
                     
-                    // Add time label
-                    g.append('text')
-                        .attr('x', 5)
-                        .attr('y', programHeight - 5)
-                        .attr('fill', 'white')
-                        .attr('font-size', '10px')
-                        .text(`${formatTime(program.start)} - ${formatTime(program.stop)}`);
+                    // Add time label if space permits
+                    if (width > 80) {
+                        g.append('text')
+                            .attr('x', 5)
+                            .attr('y', programHeight - 5)
+                            .attr('fill', 'white')
+                            .attr('font-size', '10px')
+                            .text(`${formatTime(program.start)} - ${formatTime(program.stop)}`);
+                    }
                 }
                 
-                // Icon indicator
+                // Icon indicator if space permits
                 if (program.icon && width > 60) {
                     const iconSize = 20;
                     g.append('rect')
@@ -691,7 +802,7 @@
                 }
             });
             
-            // Check for gaps between consecutive programs
+            // Check for gaps
             for (let i = 0; i < programs.length - 1; i++) {
                 const current = programs[i];
                 const next = programs[i + 1];
@@ -713,18 +824,77 @@
                             .attr('class', 'gap-indicator')
                             .attr('opacity', 0.5);
                         
-                        // Add gap duration text
-                        const gapMinutes = Math.floor(gap / 60000);
-                        svg.append('text')
-                            .attr('x', x + width/2)
-                            .attr('y', programY + programHeight/2)
-                            .attr('text-anchor', 'middle')
-                            .attr('fill', 'white')
-                            .attr('font-weight', 'bold')
-                            .text(`GAP ${gapMinutes}min`);
+                        // Add gap duration text if space permits
+                        if (width > 40) {
+                            const gapMinutes = Math.floor(gap / 60000);
+                            svg.append('text')
+                                .attr('x', x + width/2)
+                                .attr('y', programY + programHeight/2)
+                                .attr('text-anchor', 'middle')
+                                .attr('fill', 'white')
+                                .attr('font-weight', 'bold')
+                                .text(`GAP ${gapMinutes}min`);
+                        }
                     }
                 }
             }
+        }
+
+        // Fixed tooltip functions
+        function showTooltip(event, program) {
+            // Clear any existing timeout
+            if (tooltipTimeout) {
+                clearTimeout(tooltipTimeout);
+            }
+            
+            const tooltip = document.getElementById('tooltip');
+            
+            // Set content
+            tooltip.innerHTML = `
+                <div class="font-semibold">${program.title}</div>
+                <div class="text-xs">${formatTime(program.start)} - ${formatTime(program.stop)}</div>
+                <div class="text-xs">Durata: ${formatDuration(program.duration)}</div>
+                ${program.category ? `<div class="text-xs">Categoria: ${program.category}</div>` : ''}
+                ${program.desc && program.desc.length < 100 ? `<div class="text-xs mt-1">${program.desc}</div>` : ''}
+            `;
+            
+            // Position tooltip - use pageX/pageY for more stable positioning
+            const tooltipRect = tooltip.getBoundingClientRect();
+            const x = event.pageX;
+            const y = event.pageY;
+            
+            // Calculate position to keep tooltip in viewport
+            let left = x + 10;
+            let top = y - tooltipRect.height - 10;
+            
+            // Adjust if tooltip would go off-screen
+            if (left + 200 > window.innerWidth) {
+                left = x - 210;
+            }
+            if (top < 10) {
+                top = y + 20;
+            }
+            
+            // Apply position
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+            
+            // Show with slight delay to prevent flicker
+            tooltipTimeout = setTimeout(() => {
+                tooltip.classList.add('visible');
+            }, 100);
+        }
+
+        function hideTooltip() {
+            // Clear timeout
+            if (tooltipTimeout) {
+                clearTimeout(tooltipTimeout);
+                tooltipTimeout = null;
+            }
+            
+            // Hide tooltip
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('visible');
         }
 
         function showProgramDetails(program) {
@@ -749,24 +919,17 @@
                 iconUrl.textContent = 'Nessuna icona specificata';
             }
             
-            // Scroll to details
-            document.getElementById('programDetails').scrollIntoView({ behavior: 'smooth' });
+            // Smooth scroll to details
+            document.getElementById('programDetails').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function updateProgramTable(programs) {
             const tbody = document.getElementById('programTable');
             tbody.innerHTML = '';
             
-            // Get programs for current day including filtering
-            const dayPrograms = programs;
-            
-            dayPrograms.forEach((program, index) => {
+            programs.forEach((program, index) => {
                 const row = document.createElement('tr');
                 row.className = 'border-b hover:bg-gray-50';
-                
-                const startTime = formatTime(program.start);
-                const endTime = formatTime(program.stop);
-                const duration = formatDuration(program.duration);
                 
                 row.innerHTML = `
                     <td class="px-4 py-2">
@@ -779,7 +942,7 @@
                                onchange="updateProgramTime(${index}, 'stop', this.value)"
                                class="px-2 py-1 border rounded">
                     </td>
-                    <td class="px-4 py-2">${duration}</td>
+                    <td class="px-4 py-2">${formatDuration(program.duration)}</td>
                     <td class="px-4 py-2 editable-cell" onclick="editCell(this, ${index}, 'title')">${program.title}</td>
                     <td class="px-4 py-2 editable-cell" onclick="editCell(this, ${index}, 'category')">${program.category || '-'}</td>
                     <td class="px-4 py-2">
@@ -817,13 +980,18 @@
                 window.formatChart.destroy();
             }
             
+            // Sort formats by duration for better visualization
+            const sortedFormats = Object.entries(formatCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10); // Show top 10 formats
+            
             window.formatChart = new Chart(ctx, {
                 type: 'pie',
                 data: {
-                    labels: Object.keys(formatCounts),
+                    labels: sortedFormats.map(f => f[0]),
                     datasets: [{
-                        data: Object.values(formatCounts).map(s => s / 3600), // Convert to hours
-                        backgroundColor: Object.keys(formatCounts).map(f => formatColors[f] || '#6B7280')
+                        data: sortedFormats.map(f => f[1] / 3600), // Convert to hours
+                        backgroundColor: sortedFormats.map(f => formatColors[f[0]] || '#6B7280')
                     }]
                 },
                 options: {
@@ -833,13 +1001,16 @@
                         legend: {
                             position: 'right',
                             labels: {
-                                font: { size: 10 }
+                                font: { size: 10 },
+                                boxWidth: 12
                             }
                         },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.label + ': ' + context.parsed.toFixed(1) + ' ore';
+                                    const hours = context.parsed.toFixed(1);
+                                    const percentage = ((context.parsed / context.dataset.data.reduce((a, b) => a + b, 0)) * 100).toFixed(1);
+                                    return `${context.label}: ${hours}h (${percentage}%)`;
                                 }
                             }
                         }
@@ -855,45 +1026,69 @@
             
             // Check for gaps
             for (let i = 0; i < programs.length - 1; i++) {
-                const gap = programs[i + 1].start - programs[i].stop;
-                if (gap > 1000) {
-                    const gapMinutes = Math.floor(gap / 60000);
-                    problems.push({
-                        type: 'gap',
-                        severity: 'error',
-                        message: `Buco di ${gapMinutes} minuti tra "${programs[i].title}" e "${programs[i + 1].title}"`
-                    });
+                const current = programs[i];
+                const next = programs[i + 1];
+                
+                // Only check consecutive programs on the same day
+                if (current.stop.toDateString() === next.start.toDateString()) {
+                    const gap = next.start - current.stop;
+                    if (gap > 60000) { // More than 1 minute
+                        const gapMinutes = Math.floor(gap / 60000);
+                        problems.push({
+                            type: 'gap',
+                            severity: gapMinutes > 30 ? 'error' : 'warning',
+                            message: `Buco di ${gapMinutes} minuti tra "${current.title}" (${formatTime(current.stop)}) e "${next.title}" (${formatTime(next.start)})`
+                        });
+                    }
                 }
             }
             
             // Check for overlaps
             for (let i = 0; i < programs.length - 1; i++) {
-                if (programs[i].stop > programs[i + 1].start) {
+                if (programs[i].stop > programs[i + 1].start && 
+                    programs[i].stop.toDateString() === programs[i + 1].start.toDateString()) {
+                    const overlapMinutes = Math.floor((programs[i].stop - programs[i + 1].start) / 60000);
                     problems.push({
                         type: 'overlap',
                         severity: 'error',
-                        message: `Sovrapposizione tra "${programs[i].title}" e "${programs[i + 1].title}"`
+                        message: `Sovrapposizione di ${overlapMinutes} minuti tra "${programs[i].title}" e "${programs[i + 1].title}"`
                     });
                 }
             }
             
             // Check for missing icons
-            programs.forEach(p => {
-                if (!p.icon || p.icon.includes('placeholder')) {
-                    problems.push({
-                        type: 'icon',
-                        severity: 'warning',
-                        message: `Icona mancante per "${p.title}"`
-                    });
-                }
-            });
+            const missingIconPrograms = programs.filter(p => !p.icon || p.icon.includes('placeholder'));
+            if (missingIconPrograms.length > 0) {
+                problems.push({
+                    type: 'icon',
+                    severity: 'warning',
+                    message: `${missingIconPrograms.length} programmi senza icona: ${missingIconPrograms.slice(0, 3).map(p => p.title).join(', ')}${missingIconPrograms.length > 3 ? '...' : ''}`
+                });
+            }
+            
+            // Check for very short programs
+            const shortPrograms = programs.filter(p => p.duration < 300); // Less than 5 minutes
+            if (shortPrograms.length > 0) {
+                problems.push({
+                    type: 'duration',
+                    severity: 'warning',
+                    message: `${shortPrograms.length} programmi molto brevi (< 5 min)`
+                });
+            }
             
             if (problems.length === 0) {
                 report.innerHTML = '<p class="text-green-600">✅ Nessun problema rilevato</p>';
             } else {
+                // Sort problems by severity
+                problems.sort((a, b) => {
+                    if (a.severity === 'error' && b.severity !== 'error') return -1;
+                    if (a.severity !== 'error' && b.severity === 'error') return 1;
+                    return 0;
+                });
+                
                 problems.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = `p-2 rounded ${p.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'}`;
+                    div.className = `p-2 rounded text-sm ${p.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'}`;
                     div.innerHTML = `<span class="font-semibold">${p.severity === 'error' ? '❌' : '⚠️'}</span> ${p.message}`;
                     report.appendChild(div);
                 });
@@ -913,47 +1108,15 @@
         function formatDuration(seconds) {
             const hours = Math.floor(seconds / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        function showTooltip(event, program) {
-            const tooltip = document.getElementById('tooltip');
-            const rect = event.currentTarget.getBoundingClientRect();
+            const secs = Math.floor(seconds % 60);
             
-            tooltip.innerHTML = `
-                <div class="font-semibold">${program.title}</div>
-                <div class="text-xs">${formatTime(program.start)} - ${formatTime(program.stop)}</div>
-                <div class="text-xs">Durata: ${formatDuration(program.duration)}</div>
-                ${program.category ? `<div class="text-xs">Categoria: ${program.category}</div>` : ''}
-            `;
-            
-            // Position tooltip above the element to avoid interference
-            const tooltipWidth = 200; // Approximate width
-            const tooltipHeight = 80; // Approximate height
-            
-            let left = rect.left + rect.width / 2 - tooltipWidth / 2;
-            let top = rect.top - tooltipHeight - 10;
-            
-            // Keep tooltip within viewport
-            if (left < 10) left = 10;
-            if (left + tooltipWidth > window.innerWidth - 10) {
-                left = window.innerWidth - tooltipWidth - 10;
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
             }
-            
-            // If tooltip would go above viewport, show it below
-            if (top < 10) {
-                top = rect.bottom + 10;
-            }
-            
-            tooltip.style.left = left + 'px';
-            tooltip.style.top = top + 'px';
-            tooltip.classList.remove('hidden');
-        }
-
-        function hideTooltip() {
-            const tooltip = document.getElementById('tooltip');
-            tooltip.classList.add('hidden');
         }
 
         function showToast(message, type = 'info') {
@@ -968,7 +1131,8 @@
             container.appendChild(toast);
             
             setTimeout(() => {
-                toast.remove();
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
@@ -988,14 +1152,22 @@
             loadDay();
         }
 
-        // Mouse wheel zoom
+        // Mouse wheel zoom with debouncing
+        let zoomTimeout;
         document.getElementById('timelineContainer').addEventListener('wheel', (e) => {
             e.preventDefault();
-            if (e.deltaY < 0) {
-                zoomIn();
-            } else {
-                zoomOut();
-            }
+            
+            // Clear existing timeout
+            if (zoomTimeout) clearTimeout(zoomTimeout);
+            
+            // Debounce zoom to improve performance
+            zoomTimeout = setTimeout(() => {
+                if (e.deltaY < 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+            }, 50);
         });
 
         // Navigation functions
@@ -1026,9 +1198,18 @@
         }
 
         function actualizeSchedule() {
-            const newStartDate = new Date(document.getElementById('newStartDate').value);
-            const oldStartDate = selectedDay;
-            const dayDiff = Math.floor((newStartDate - oldStartDate) / (1000 * 60 * 60 * 24));
+            const newStartDate = new Date(document.getElementById('newStartDate').value + 'T00:00:00');
+            const oldStartDate = new Date(selectedDay);
+            oldStartDate.setHours(0, 0, 0, 0);
+            
+            const dayDiff = Math.round((newStartDate - oldStartDate) / (1000 * 60 * 60 * 24));
+            
+            if (dayDiff === 0) {
+                showToast('La data selezionata è la stessa', 'warning');
+                return;
+            }
+            
+            console.log(`Actualizing schedule by ${dayDiff} days`);
             
             // Create new XML document
             const newDoc = xmlDoc.cloneNode(true);
@@ -1049,12 +1230,21 @@
             });
             
             // Update tv date attribute
-            newDoc.querySelector('tv').setAttribute('date', newStartDate.toISOString().split('T')[0]);
+            const tvElement = newDoc.querySelector('tv');
+            if (tvElement) {
+                tvElement.setAttribute('date', newStartDate.toISOString().split('T')[0]);
+            }
             
-            // Download new file
+            // Serialize and download
             const serializer = new XMLSerializer();
-            const xmlString = serializer.serializeToString(newDoc);
-            const blob = new Blob([xmlString], { type: 'application/xml' });
+            let xmlString = serializer.serializeToString(newDoc);
+            
+            // Ensure proper XML declaration
+            if (!xmlString.startsWith('<?xml')) {
+                xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n' + xmlString;
+            }
+            
+            const blob = new Blob([xmlString], { type: 'application/xml;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a');
@@ -1070,8 +1260,14 @@
         // Export function
         function exportXMLTV() {
             const serializer = new XMLSerializer();
-            const xmlString = serializer.serializeToString(xmlDoc);
-            const blob = new Blob([xmlString], { type: 'application/xml' });
+            let xmlString = serializer.serializeToString(xmlDoc);
+            
+            // Ensure proper XML declaration
+            if (!xmlString.startsWith('<?xml')) {
+                xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n' + xmlString;
+            }
+            
+            const blob = new Blob([xmlString], { type: 'application/xml;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a');
@@ -1095,29 +1291,34 @@
                 const newValue = input.value.trim();
                 cell.textContent = newValue || '-';
                 
-                // Update program
-                const dayPrograms = currentPrograms.filter(p => 
-                    p.start.toDateString() === selectedDay.toDateString() ||
-                    (p.start < selectedDay && p.stop > selectedDay)
-                ).sort((a, b) => a.start - b.start);
+                // Get current day programs
+                const dayPrograms = Array.from(dayProgramsCache.get(document.getElementById('daySelector').value) || []);
                 
                 const program = dayPrograms[programIndex];
                 if (program) {
                     program[field] = newValue;
                     
                     // Update XML
-                    const titleElem = program.element.querySelector(field);
-                    if (titleElem) {
-                        titleElem.textContent = newValue;
+                    if (field === 'title') {
+                        const titleElem = program.element.querySelector('title');
+                        if (titleElem) {
+                            titleElem.textContent = newValue;
+                        }
                     } else if (field === 'category') {
-                        const catElem = xmlDoc.createElement('category');
-                        catElem.setAttribute('lang', 'it');
-                        catElem.textContent = newValue;
-                        program.element.appendChild(catElem);
+                        let catElem = program.element.querySelector('category');
+                        if (catElem) {
+                            catElem.textContent = newValue;
+                        } else if (newValue) {
+                            catElem = xmlDoc.createElement('category');
+                            catElem.setAttribute('lang', 'it');
+                            catElem.textContent = newValue;
+                            program.element.appendChild(catElem);
+                        }
                     }
                     
-                    // Reload if title changed (affects colors)
+                    // Clear cache and reload if title changed (affects colors)
                     if (field === 'title') {
+                        dayProgramsCache.clear();
                         loadDay();
                     }
                 }
@@ -1138,10 +1339,7 @@
         }
 
         function updateProgramTime(programIndex, timeType, newTime) {
-            const dayPrograms = currentPrograms.filter(p => 
-                p.start.toDateString() === selectedDay.toDateString() ||
-                (p.start < selectedDay && p.stop > selectedDay)
-            ).sort((a, b) => a.start - b.start);
+            const dayPrograms = Array.from(dayProgramsCache.get(document.getElementById('daySelector').value) || []);
             
             const program = dayPrograms[programIndex];
             if (!program) return;
@@ -1150,11 +1348,12 @@
             const newDate = new Date(program[timeType === 'start' ? 'start' : 'stop']);
             newDate.setHours(hours, minutes, 0, 0);
             
-            // If the time crosses midnight, adjust the date
-            if (timeType === 'stop' && newDate < program.start) {
+            // If end time is before start time, assume it's the next day
+            if (timeType === 'stop' && newDate <= program.start) {
                 newDate.setDate(newDate.getDate() + 1);
             }
             
+            // Update program
             if (timeType === 'start') {
                 program.start = newDate;
                 program.element.setAttribute('start', formatXMLTVDate(newDate));
@@ -1165,6 +1364,8 @@
             
             program.duration = (program.stop - program.start) / 1000;
             
+            // Clear cache and reload
+            dayProgramsCache.clear();
             loadDay();
             showToast('Orario aggiornato', 'success');
         }
@@ -1172,10 +1373,7 @@
         function deleteProgram(programIndex) {
             if (!confirm('Eliminare questo programma?')) return;
             
-            const dayPrograms = currentPrograms.filter(p => 
-                p.start.toDateString() === selectedDay.toDateString() ||
-                (p.start < selectedDay && p.stop > selectedDay)
-            ).sort((a, b) => a.start - b.start);
+            const dayPrograms = Array.from(dayProgramsCache.get(document.getElementById('daySelector').value) || []);
             
             const program = dayPrograms[programIndex];
             if (!program) return;
@@ -1183,28 +1381,32 @@
             // Remove from XML
             program.element.remove();
             
-            // Remove from array
-            const globalIndex = currentPrograms.indexOf(program);
-            currentPrograms.splice(globalIndex, 1);
+            // Remove from global array
+            const globalIndex = currentPrograms.findIndex(p => p.index === program.index);
+            if (globalIndex !== -1) {
+                currentPrograms.splice(globalIndex, 1);
+            }
             
+            // Clear cache and reload
+            dayProgramsCache.clear();
             loadDay();
             showToast('Programma eliminato', 'success');
         }
 
         function addProgram() {
-            // Find last program of the day
-            const dayPrograms = currentPrograms.filter(p => 
-                p.start.toDateString() === selectedDay.toDateString()
-            ).sort((a, b) => a.start - b.start);
+            // Get current day programs
+            const dayPrograms = Array.from(dayProgramsCache.get(document.getElementById('daySelector').value) || [])
+                .filter(p => p.start.toDateString() === selectedDay.toDateString());
             
+            // Find last program of the day
             const lastProgram = dayPrograms[dayPrograms.length - 1];
             const newStart = lastProgram ? new Date(lastProgram.stop) : new Date(selectedDay);
             if (!lastProgram) {
-                newStart.setHours(0, 0, 0, 0);
+                newStart.setHours(6, 0, 0, 0); // Default start at 6:00
             }
             
             const newStop = new Date(newStart);
-            newStop.setMinutes(newStop.getMinutes() + 30);
+            newStop.setMinutes(newStop.getMinutes() + 30); // Default 30 minutes duration
             
             // Create new program element
             const programme = xmlDoc.createElement('programme');
@@ -1232,7 +1434,7 @@
             // Add to XML
             xmlDoc.querySelector('tv').appendChild(programme);
             
-            // Add to programs array
+            // Create program object
             const newProgram = {
                 start: newStart,
                 stop: newStop,
@@ -1243,9 +1445,11 @@
                 icon: '',
                 episodeNum: '',
                 duration: 1800,
-                element: programme
+                element: programme,
+                index: currentPrograms.length
             };
             
+            // Add to programs array
             currentPrograms.push(newProgram);
             
             // Assign color
@@ -1254,14 +1458,29 @@
                 colorIndex++;
             }
             
+            // Clear cache and reload
+            dayProgramsCache.clear();
             loadDay();
             showToast('Nuovo programma aggiunto', 'success');
+            
+            // Scroll to the new program in the table
+            setTimeout(() => {
+                const table = document.getElementById('programTable');
+                if (table.lastElementChild) {
+                    table.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
         }
 
         // Dark mode toggle
         function toggleDarkMode() {
             document.body.classList.toggle('dark');
             localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+            
+            // Re-initialize icons
+            if (typeof lucide !== 'undefined') {
+                setTimeout(() => lucide.createIcons(), 100);
+            }
         }
 
         // Load dark mode preference
@@ -1272,10 +1491,91 @@
         // Show info
         function showInfo() {
             const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const utcOffset = new Date().getTimezoneOffset() / -60;
+            const now = new Date();
+            const utcOffset = -now.getTimezoneOffset() / 60;
             const offsetStr = utcOffset >= 0 ? `+${utcOffset}` : `${utcOffset}`;
             
-            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nFunzionalità:\n- Visualizzazione timeline interattiva\n- Conversione automatica da UTC a fuso orario locale\n- Modifica programmi inline\n- Attualizzazione date\n- Analisi e report\n- Export XMLTV\n\nFuso orario rilevato: ${userTimezone} (UTC${offsetStr})\n\nSviluppato per Class CNBC e Class TV Moda`);
+            const infoText = `XMLTV Viewer & Editor Pro v${APP_VERSION}
+
+Funzionalità:
+• Visualizzazione timeline interattiva con zoom
+• Conversione automatica UTC ↔ fuso orario locale
+• Modifica programmi inline (click sulle celle)
+• Attualizzazione date palinsesto
+• Analisi e report problemi
+• Export XMLTV con date UTC corrette
+
+Miglioramenti v1.3:
+• Tooltip stabile senza interferenze
+• Gestione ottimizzata date UTC/locale
+• Performance migliorate con caching
+• Gestione errori migliorata
+
+Fuso orario rilevato: ${userTimezone} (UTC${offsetStr})
+Ora locale: ${now.toLocaleString('it-IT')}
+
+Scorciatoie:
+• Rotella mouse sulla timeline: Zoom
+• Click su programma: Dettagli
+• Click su celle tabella: Modifica
+
+Sviluppato per Class CNBC e Class TV Moda`;
+            
+            alert(infoText);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    prevDay();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    nextDay();
+                    break;
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    zoomIn();
+                    break;
+                case '-':
+                case '_':
+                    e.preventDefault();
+                    zoomOut();
+                    break;
+                case '0':
+                    e.preventDefault();
+                    resetZoom();
+                    break;
+                case 'a':
+                case 'A':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        showActualizationDialog();
+                    }
+                    break;
+                case 's':
+                case 'S':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        exportXMLTV();
+                    }
+                    break;
+            }
+        });
+
+        // Performance monitoring
+        if (window.performance && window.performance.mark) {
+            window.addEventListener('load', () => {
+                console.log('Page load performance:', {
+                    domComplete: performance.timing.domComplete - performance.timing.domLoading,
+                    loadComplete: performance.timing.loadEventEnd - performance.timing.navigationStart
+                });
+            });
         }
     </script>
 </body>
