@@ -324,7 +324,7 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align:center;margin-top:-10px;margin-bottom:20px;color:#666;font-size:14px;">
-            Versione 2.5.0 - Ultimo aggiornamento: 07/06/2025
+            Versione 2.5.1 - Ultimo aggiornamento: 08/06/2025
         </div>
         
         <div class="channel-selector">
@@ -440,8 +440,8 @@
     // EPG Converter Application - Modular Architecture
     class EPGConverter {
         constructor() {
-            this.SOFTWARE_VERSION = "2.5.0";
-            this.LAST_UPDATE = "07/06/2025";
+            this.SOFTWARE_VERSION = "2.5.1";
+            this.LAST_UPDATE = "08/06/2025";
             this.fileData = null;
             this.xmltvContent = '';
             this.currentChannel = 'classcnbc';
@@ -1230,8 +1230,15 @@
             
             this.app.addLog(`  Trovati ${dayPrograms.length} programmi che toccano questa giornata`);
             
+            // Remove duplicates based on start time and title
+            const uniquePrograms = this.removeDuplicatePrograms(dayPrograms);
+            this.app.addLog(`  Dopo rimozione duplicati: ${uniquePrograms.length} programmi`);
+            
+            // Check for overlaps before processing
+            this.checkForOverlaps(uniquePrograms);
+            
             // Adjust programs to fit within the day
-            const adjustedPrograms = this.adjustProgramsForDay(dayPrograms, targetStart, targetEnd);
+            const adjustedPrograms = this.adjustProgramsForDay(uniquePrograms, targetStart, targetEnd);
             
             // Fill gaps with filler content
             const filledPrograms = this.fillGapsInDay(adjustedPrograms, targetStart, targetEnd, channel);
@@ -1377,6 +1384,42 @@
             }
             
             return programTime;
+        }
+        
+        removeDuplicatePrograms(programs) {
+            const seen = new Map();
+            const unique = [];
+            
+            for (const program of programs) {
+                // Create a unique key based on start time and title
+                const key = `${program.startTime.getTime()}_${program.title}`;
+                
+                if (!seen.has(key)) {
+                    seen.set(key, true);
+                    unique.push(program);
+                } else {
+                    this.app.addLog(`  ⚠️ Duplicato rimosso: "${program.title}" alle ${program.startTime.toLocaleTimeString('it-IT')}`);
+                }
+            }
+            
+            return unique.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+        }
+        
+        checkForOverlaps(programs) {
+            for (let i = 0; i < programs.length - 1; i++) {
+                const current = programs[i];
+                const next = programs[i + 1];
+                
+                if (current.endTime > next.startTime) {
+                    const overlapMinutes = (current.endTime - next.startTime) / (1000 * 60);
+                    this.app.addLog(`  ⚠️ SOVRAPPOSIZIONE: "${current.title}" finisce alle ${current.endTime.toLocaleTimeString('it-IT')} ma "${next.title}" inizia alle ${next.startTime.toLocaleTimeString('it-IT')} (${overlapMinutes.toFixed(1)} minuti di sovrapposizione)`);
+                    
+                    // Auto-fix: adjust the end time of current program
+                    current.endTime = new Date(next.startTime);
+                    current.duration = Math.floor((current.endTime - current.startTime) / 1000);
+                    this.app.addLog(`  ✅ Auto-fix: aggiustata fine di "${current.title}" alle ${current.endTime.toLocaleTimeString('it-IT')}`);
+                }
+            }
         }
         
         parseDate(dateObj) {
