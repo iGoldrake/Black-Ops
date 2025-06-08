@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer & Editor Professional v2.0 - Modern Timeline</title>
+    <title>XMLTV Viewer & Editor Professional v2.1 - Circular Timeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         /* Modern Timeline Styles */
@@ -208,35 +207,108 @@
             pointer-events: none;
         }
 
-        .timeline-minimap {
-            height: 40px;
-            background: rgba(0, 0, 0, 0.02);
-            border-radius: 8px;
-            margin-top: 8px;
+        /* Circular Timeline Styles */
+        .circular-timeline {
             position: relative;
-            overflow: hidden;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            aspect-ratio: 1;
+        }
+
+        .clock-face {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, 
+                rgba(255, 255, 255, 0.9) 0%, 
+                rgba(248, 250, 252, 0.9) 100%);
+            box-shadow: 
+                inset 0 0 30px rgba(0, 0, 0, 0.1),
+                0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .clock-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            background: #1e293b;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+        }
+
+        .hour-mark {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            width: 2px;
+            height: 20px;
+            background: #64748b;
+            transform-origin: center 290px;
+        }
+
+        .hour-mark.major {
+            width: 4px;
+            height: 30px;
+            background: #334155;
+        }
+
+        .hour-number {
+            position: absolute;
+            font-weight: 600;
+            font-size: 14px;
+            color: #334155;
+            transform: translate(-50%, -50%);
+        }
+
+        .circular-program {
+            position: absolute;
+            transform-origin: center;
+            transition: all 0.3s ease;
             cursor: pointer;
         }
 
-        .minimap-program {
-            position: absolute;
-            height: 100%;
-            opacity: 0.6;
-            transition: opacity 0.2s;
+        .circular-program:hover {
+            z-index: 50;
         }
 
-        .minimap-program:hover {
-            opacity: 1;
+        .circular-program-path {
+            fill: none;
+            stroke-width: 40;
+            stroke-linecap: round;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
 
-        .minimap-viewport {
+        .circular-program-path:hover {
+            stroke-width: 50;
+        }
+
+        .time-hand {
             position: absolute;
-            top: 0;
-            height: 100%;
-            background: rgba(59, 130, 246, 0.2);
-            border: 2px solid #3b82f6;
-            border-radius: 4px;
-            pointer-events: none;
+            background: #ef4444;
+            transform-origin: bottom center;
+            transition: transform 0.5s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hour-hand {
+            width: 6px;
+            height: 100px;
+            bottom: 50%;
+            left: calc(50% - 3px);
+            border-radius: 3px;
+        }
+
+        .minute-hand {
+            width: 4px;
+            height: 140px;
+            bottom: 50%;
+            left: calc(50% - 2px);
+            border-radius: 2px;
         }
 
         /* Program preview tooltip */
@@ -343,6 +415,16 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
+        .dark .clock-face {
+            background: radial-gradient(circle at center, 
+                rgba(30, 41, 59, 0.9) 0%, 
+                rgba(15, 23, 42, 0.9) 100%);
+        }
+
+        .dark .hour-number {
+            color: #e2e8f0;
+        }
+
         /* Compact mode */
         .compact .program-row {
             height: 50px;
@@ -415,6 +497,11 @@
         .timeline-body::-webkit-scrollbar-thumb:hover {
             background: rgba(0, 0, 0, 0.3);
         }
+
+        /* Hide elements for performance */
+        .hidden-view {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -427,7 +514,7 @@
                         <i data-lucide="tv" class="w-8 h-8"></i>
                         XMLTV Viewer & Editor Pro
                     </h1>
-                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v2.0 <span class="utc-badge">UTC Mode</span></p>
+                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v2.1 <span class="utc-badge">UTC Mode</span></p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-2 rounded hover:bg-gray-100">
@@ -488,7 +575,7 @@
                 </div>
             </div>
 
-            <!-- Modern Timeline View -->
+            <!-- Timeline View -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold flex items-center gap-2">
@@ -497,11 +584,11 @@
                     </h3>
                     <div class="flex items-center gap-4">
                         <div class="view-toggle">
-                            <button onclick="setViewMode('normal')" class="active" id="viewNormal">Normale</button>
+                            <button onclick="setViewMode('linear')" class="active" id="viewLinear">Lineare</button>
+                            <button onclick="setViewMode('circular')" id="viewCircular">Circolare</button>
                             <button onclick="setViewMode('compact')" id="viewCompact">Compatta</button>
-                            <button onclick="setViewMode('wave')" id="viewWave">Wave</button>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2" id="zoomControls">
                             <button onclick="zoomIn()" class="p-2 hover:bg-gray-100 rounded" title="Zoom In">
                                 <i data-lucide="zoom-in" class="w-5 h-5"></i>
                             </button>
@@ -515,7 +602,8 @@
                     </div>
                 </div>
                 
-                <div class="timeline-container" id="timelineContainer">
+                <!-- Linear Timeline -->
+                <div class="timeline-container" id="linearTimeline">
                     <div class="timeline-header" id="timelineHeader">
                         <!-- Time labels will be added here -->
                     </div>
@@ -524,9 +612,24 @@
                     </div>
                 </div>
                 
-                <!-- Minimap -->
-                <div class="timeline-minimap" id="timelineMinimap">
-                    <div class="minimap-viewport" id="minimapViewport"></div>
+                <!-- Circular Timeline -->
+                <div class="circular-timeline hidden-view" id="circularTimeline">
+                    <svg width="100%" height="100%" viewBox="0 0 600 600">
+                        <defs>
+                            <filter id="shadow">
+                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.2"/>
+                            </filter>
+                        </defs>
+                        <g id="clockFace">
+                            <!-- Clock face will be drawn here -->
+                        </g>
+                        <g id="programArcs">
+                            <!-- Program arcs will be drawn here -->
+                        </g>
+                        <g id="clockHands">
+                            <!-- Clock hands will be drawn here -->
+                        </g>
+                    </svg>
                 </div>
             </div>
 
@@ -607,23 +710,14 @@
                 </div>
             </div>
 
-            <!-- Analytics -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i data-lucide="pie-chart" class="w-5 h-5"></i>
-                        Distribuzione Format
-                    </h3>
-                    <canvas id="formatChart" width="400" height="300"></canvas>
-                </div>
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-                        Report Problemi
-                    </h3>
-                    <div id="problemsReport" class="space-y-2">
-                        <!-- Populated dynamically -->
-                    </div>
+            <!-- Problems Report Only -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    Report Problemi
+                </h3>
+                <div id="problemsReport" class="space-y-2">
+                    <!-- Populated dynamically -->
                 </div>
             </div>
         </div>
@@ -693,7 +787,6 @@
                             'tv-2': '📺',
                             'edit': '✏️',
                             'plus': '➕',
-                            'pie-chart': '📊',
                             'alert-triangle': '⚠️',
                             'trash-2': '🗑️'
                         };
@@ -706,8 +799,8 @@
         });
 
         // Version
-        const APP_VERSION = '2.0';
-        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Modern Timeline (UTC Mode)`);
+        const APP_VERSION = '2.1';
+        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Circular Timeline (UTC Mode)`);
 
         // Global state
         let xmlDoc = null;
@@ -718,7 +811,7 @@
         let zoomLevel = 1;
         let formatColors = {};
         let colorIndex = 0;
-        let viewMode = 'normal';
+        let viewMode = 'linear';
         let timelineWidth = 0;
         let pixelsPerHour = 0;
         let currentPreviewTimeout = null;
@@ -995,29 +1088,28 @@
             
             console.log('Programs for this day:', dayPrograms.length);
             
-            // Draw modern timeline
-            drawModernTimeline(dayPrograms);
+            // Draw timeline based on current view mode
+            if (viewMode === 'circular') {
+                drawCircularTimeline(dayPrograms);
+            } else {
+                drawLinearTimeline(dayPrograms);
+            }
             
             // Update table
             updateProgramTable(dayPrograms);
-            
-            // Update analytics
-            updateAnalytics(dayPrograms);
             
             // Check for problems
             checkProblems(dayPrograms);
         }
 
-        function drawModernTimeline(programs) {
-            const container = document.getElementById('timelineContainer');
+        function drawLinearTimeline(programs) {
+            const container = document.getElementById('linearTimeline');
             const header = document.getElementById('timelineHeader');
             const body = document.getElementById('timelineBody');
-            const minimap = document.getElementById('timelineMinimap');
             
             // Clear existing content
             header.innerHTML = '';
             body.innerHTML = '';
-            minimap.innerHTML = '<div class="minimap-viewport" id="minimapViewport"></div>';
             
             // Calculate dimensions
             const containerWidth = container.offsetWidth;
@@ -1105,6 +1197,7 @@
             for (let i = 0; i < Math.max(rows.length, 3); i++) {
                 const row = document.createElement('div');
                 row.className = 'program-row';
+                if (viewMode === 'compact') row.classList.add('compact');
                 row.style.width = timelineWidth + 'px';
                 body.appendChild(row);
             }
@@ -1145,7 +1238,7 @@
                 title.textContent = program.title;
                 content.appendChild(title);
                 
-                if (width > 80) {
+                if (width > 80 && viewMode !== 'compact') {
                     const time = document.createElement('div');
                     time.className = 'program-time';
                     time.textContent = `${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`;
@@ -1191,15 +1284,6 @@
                 if (rowElement) {
                     rowElement.appendChild(block);
                 }
-                
-                // Add to minimap
-                const minimapBlock = document.createElement('div');
-                minimapBlock.className = 'minimap-program';
-                minimapBlock.style.left = (x / timelineWidth * 100) + '%';
-                minimapBlock.style.width = (width / timelineWidth * 100) + '%';
-                minimapBlock.style.background = formatColors[program.title] || colorPalettes.default[0];
-                minimapBlock.onclick = () => scrollToProgram(x);
-                minimap.insertBefore(minimapBlock, minimap.firstChild);
             });
             
             // Check for gaps and add indicators
@@ -1242,32 +1326,243 @@
                     lastEnd = program.stop;
                 }
             });
-            
-            // Update minimap viewport
-            updateMinimapViewport();
-            
-            // Add scroll listener to update minimap
-            body.onscroll = updateMinimapViewport;
         }
 
-        function updateMinimapViewport() {
-            const body = document.getElementById('timelineBody');
-            const viewport = document.getElementById('minimapViewport');
-            const containerWidth = body.offsetWidth;
-            const scrollLeft = body.scrollLeft;
-            const scrollWidth = body.scrollWidth;
+        function drawCircularTimeline(programs) {
+            const container = document.getElementById('circularTimeline');
+            const svg = container.querySelector('svg');
+            const clockFace = svg.getElementById('clockFace');
+            const programArcs = svg.getElementById('programArcs');
+            const clockHands = svg.getElementById('clockHands');
             
-            const viewportLeft = (scrollLeft / scrollWidth) * 100;
-            const viewportWidth = (containerWidth / scrollWidth) * 100;
+            // Clear existing content
+            clockFace.innerHTML = '';
+            programArcs.innerHTML = '';
+            clockHands.innerHTML = '';
             
-            viewport.style.left = viewportLeft + '%';
-            viewport.style.width = viewportWidth + '%';
+            const centerX = 300;
+            const centerY = 300;
+            const radius = 250;
+            const innerRadius = 150;
+            
+            // Draw clock face
+            const face = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            face.setAttribute('cx', centerX);
+            face.setAttribute('cy', centerY);
+            face.setAttribute('r', radius);
+            face.setAttribute('fill', 'url(#clockGradient)');
+            face.setAttribute('stroke', '#e5e7eb');
+            face.setAttribute('stroke-width', '2');
+            clockFace.appendChild(face);
+            
+            // Create gradient
+            const defs = svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+            gradient.setAttribute('id', 'clockGradient');
+            
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', '#ffffff');
+            gradient.appendChild(stop1);
+            
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('stop-color', '#f8fafc');
+            gradient.appendChild(stop2);
+            
+            defs.appendChild(gradient);
+            svg.appendChild(defs);
+            
+            // Draw hour marks and numbers
+            for (let hour = 0; hour < 24; hour++) {
+                const angle = (hour * 15) - 90; // 15 degrees per hour, starting from top
+                const radian = angle * Math.PI / 180;
+                
+                // Hour marks
+                const markLength = hour % 6 === 0 ? 20 : 10;
+                const markStart = radius - markLength;
+                
+                const x1 = centerX + markStart * Math.cos(radian);
+                const y1 = centerY + markStart * Math.sin(radian);
+                const x2 = centerX + radius * Math.cos(radian);
+                const y2 = centerY + radius * Math.sin(radian);
+                
+                const mark = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                mark.setAttribute('x1', x1);
+                mark.setAttribute('y1', y1);
+                mark.setAttribute('x2', x2);
+                mark.setAttribute('y2', y2);
+                mark.setAttribute('stroke', hour % 6 === 0 ? '#334155' : '#94a3b8');
+                mark.setAttribute('stroke-width', hour % 6 === 0 ? '3' : '1');
+                clockFace.appendChild(mark);
+                
+                // Hour numbers (every 3 hours)
+                if (hour % 3 === 0) {
+                    const textRadius = radius - 35;
+                    const textX = centerX + textRadius * Math.cos(radian);
+                    const textY = centerY + textRadius * Math.sin(radian);
+                    
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', textX);
+                    text.setAttribute('y', textY);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('dominant-baseline', 'middle');
+                    text.setAttribute('font-size', '18');
+                    text.setAttribute('font-weight', '600');
+                    text.setAttribute('fill', '#334155');
+                    text.textContent = hour.toString();
+                    clockFace.appendChild(text);
+                }
+            }
+            
+            // Draw programs as arcs
+            const dayStart = new Date(scheduleDate);
+            const dayEnd = new Date(scheduleDate);
+            dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+            
+            programs.forEach((program, index) => {
+                const startHour = (program.start - dayStart) / (1000 * 60 * 60);
+                const endHour = (program.stop - dayStart) / (1000 * 60 * 60);
+                
+                // Skip if program is outside the day
+                if (endHour <= 0 || startHour >= 24) return;
+                
+                // Clip to day boundaries
+                const clippedStart = Math.max(0, startHour);
+                const clippedEnd = Math.min(24, endHour);
+                
+                const startAngle = (clippedStart * 15) - 90;
+                const endAngle = (clippedEnd * 15) - 90;
+                
+                // Create arc path
+                const path = createArcPath(centerX, centerY, innerRadius, radius, startAngle, endAngle);
+                
+                const programPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                programPath.setAttribute('d', path);
+                
+                // Extract color from gradient
+                const gradient = formatColors[program.title];
+                let fillColor = '#6B7280';
+                if (gradient && gradient.includes('gradient')) {
+                    const match = gradient.match(/#[0-9a-fA-F]{6}/);
+                    if (match) fillColor = match[0];
+                }
+                
+                programPath.setAttribute('fill', fillColor);
+                programPath.setAttribute('stroke', 'white');
+                programPath.setAttribute('stroke-width', '2');
+                programPath.setAttribute('filter', 'url(#shadow)');
+                programPath.style.cursor = 'pointer';
+                programPath.style.opacity = '0.8';
+                
+                // Check for overlaps
+                const hasOverlap = programs.some((p, i) => 
+                    i !== index && p.start < program.stop && p.stop > program.start
+                );
+                
+                if (hasOverlap) {
+                    programPath.setAttribute('stroke', '#ef4444');
+                    programPath.setAttribute('stroke-width', '3');
+                }
+                
+                // Event handlers
+                programPath.onclick = () => showProgramDetails(program);
+                programPath.onmouseenter = (e) => {
+                    programPath.style.opacity = '1';
+                    showProgramPreview(e, program);
+                };
+                programPath.onmouseleave = () => {
+                    programPath.style.opacity = '0.8';
+                    hideProgramPreview();
+                };
+                
+                programArcs.appendChild(programPath);
+                
+                // Add program label if space allows
+                const arcLength = Math.abs(endAngle - startAngle);
+                if (arcLength > 15) { // Only show label if arc is large enough
+                    const midAngle = (startAngle + endAngle) / 2;
+                    const labelRadius = (innerRadius + radius) / 2;
+                    const radian = midAngle * Math.PI / 180;
+                    
+                    const labelX = centerX + labelRadius * Math.cos(radian);
+                    const labelY = centerY + labelRadius * Math.sin(radian);
+                    
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', labelX);
+                    label.setAttribute('y', labelY);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('dominant-baseline', 'middle');
+                    label.setAttribute('font-size', '12');
+                    label.setAttribute('font-weight', '600');
+                    label.setAttribute('fill', 'white');
+                    label.setAttribute('pointer-events', 'none');
+                    label.textContent = program.title.length > 15 ? 
+                        program.title.substring(0, 15) + '...' : program.title;
+                    
+                    // Rotate text to follow arc
+                    const rotation = midAngle > 90 && midAngle < 270 ? midAngle + 180 : midAngle;
+                    label.setAttribute('transform', `rotate(${rotation} ${labelX} ${labelY})`);
+                    
+                    programArcs.appendChild(label);
+                }
+            });
+            
+            // Add current time hands if within schedule date
+            const now = new Date();
+            if (now >= scheduleDate && now < dayEnd) {
+                const currentHour = now.getUTCHours() + now.getUTCMinutes() / 60;
+                const hourAngle = (currentHour * 15) - 90;
+                const minuteAngle = ((now.getUTCMinutes() / 60) * 360) - 90;
+                
+                // Hour hand
+                const hourHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                hourHand.setAttribute('x1', centerX);
+                hourHand.setAttribute('y1', centerY);
+                hourHand.setAttribute('x2', centerX + 100 * Math.cos(hourAngle * Math.PI / 180));
+                hourHand.setAttribute('y2', centerY + 100 * Math.sin(hourAngle * Math.PI / 180));
+                hourHand.setAttribute('stroke', '#ef4444');
+                hourHand.setAttribute('stroke-width', '6');
+                hourHand.setAttribute('stroke-linecap', 'round');
+                clockHands.appendChild(hourHand);
+                
+                // Minute hand
+                const minuteHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                minuteHand.setAttribute('x1', centerX);
+                minuteHand.setAttribute('y1', centerY);
+                minuteHand.setAttribute('x2', centerX + 140 * Math.cos(minuteAngle * Math.PI / 180));
+                minuteHand.setAttribute('y2', centerY + 140 * Math.sin(minuteAngle * Math.PI / 180));
+                minuteHand.setAttribute('stroke', '#ef4444');
+                minuteHand.setAttribute('stroke-width', '4');
+                minuteHand.setAttribute('stroke-linecap', 'round');
+                clockHands.appendChild(minuteHand);
+            }
+            
+            // Center dot
+            const centerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centerDot.setAttribute('cx', centerX);
+            centerDot.setAttribute('cy', centerY);
+            centerDot.setAttribute('r', '10');
+            centerDot.setAttribute('fill', '#1e293b');
+            clockHands.appendChild(centerDot);
         }
 
-        function scrollToProgram(x) {
-            const body = document.getElementById('timelineBody');
-            const containerWidth = body.offsetWidth;
-            body.scrollLeft = x - containerWidth / 2;
+        function createArcPath(cx, cy, innerRadius, outerRadius, startAngle, endAngle) {
+            const startRad = startAngle * Math.PI / 180;
+            const endRad = endAngle * Math.PI / 180;
+            
+            const x1 = cx + innerRadius * Math.cos(startRad);
+            const y1 = cy + innerRadius * Math.sin(startRad);
+            const x2 = cx + outerRadius * Math.cos(startRad);
+            const y2 = cy + outerRadius * Math.sin(startRad);
+            const x3 = cx + outerRadius * Math.cos(endRad);
+            const y3 = cy + outerRadius * Math.sin(endRad);
+            const x4 = cx + innerRadius * Math.cos(endRad);
+            const y4 = cy + innerRadius * Math.sin(endRad);
+            
+            const largeArc = Math.abs(endAngle - startAngle) > 180 ? 1 : 0;
+            
+            return `M ${x1} ${y1} L ${x2} ${y2} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x3} ${y3} L ${x4} ${y4} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1} ${y1} Z`;
         }
 
         function showProgramPreview(event, program) {
@@ -1393,58 +1688,6 @@
             }
         }
 
-        function updateAnalytics(programs) {
-            const formatCounts = {};
-            programs.forEach(p => {
-                formatCounts[p.title] = (formatCounts[p.title] || 0) + p.duration;
-            });
-            
-            const ctx = document.getElementById('formatChart').getContext('2d');
-            
-            if (window.formatChart && typeof window.formatChart.destroy === 'function') {
-                window.formatChart.destroy();
-            }
-            
-            window.formatChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(formatCounts),
-                    datasets: [{
-                        data: Object.values(formatCounts).map(s => s / 3600),
-                        backgroundColor: Object.keys(formatCounts).map(f => {
-                            // Extract solid color from gradient for chart
-                            const gradient = formatColors[f];
-                            if (gradient && gradient.includes('gradient')) {
-                                // Extract first color from gradient
-                                const match = gradient.match(/#[0-9a-fA-F]{6}/);
-                                return match ? match[0] : '#6B7280';
-                            }
-                            return gradient || '#6B7280';
-                        })
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                font: { size: 10 }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed.toFixed(1) + ' ore';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
         function checkProblems(programs) {
             const report = document.getElementById('problemsReport');
             report.innerHTML = '';
@@ -1530,15 +1773,23 @@
                 btn.classList.remove('active');
             });
             
-            if (mode === 'compact') {
-                document.getElementById('viewCompact').classList.add('active');
-                document.getElementById('timelineContainer').classList.add('compact');
+            // Show/hide timeline views
+            if (mode === 'circular') {
+                document.getElementById('viewCircular').classList.add('active');
+                document.getElementById('linearTimeline').classList.add('hidden-view');
+                document.getElementById('circularTimeline').classList.remove('hidden-view');
+                document.getElementById('zoomControls').style.display = 'none';
             } else {
-                document.getElementById('timelineContainer').classList.remove('compact');
-                if (mode === 'normal') {
-                    document.getElementById('viewNormal').classList.add('active');
-                } else if (mode === 'wave') {
-                    document.getElementById('viewWave').classList.add('active');
+                document.getElementById('linearTimeline').classList.remove('hidden-view');
+                document.getElementById('circularTimeline').classList.add('hidden-view');
+                document.getElementById('zoomControls').style.display = 'flex';
+                
+                if (mode === 'compact') {
+                    document.getElementById('viewCompact').classList.add('active');
+                    document.querySelectorAll('.program-row').forEach(row => row.classList.add('compact'));
+                } else {
+                    document.getElementById('viewLinear').classList.add('active');
+                    document.querySelectorAll('.program-row').forEach(row => row.classList.remove('compact'));
                 }
             }
             
@@ -1604,14 +1855,19 @@
         }
 
         // Mouse wheel zoom
-        document.getElementById('timelineBody').addEventListener('wheel', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                if (e.deltaY < 0) {
-                    zoomIn();
-                } else {
-                    zoomOut();
-                }
+        document.addEventListener('DOMContentLoaded', function() {
+            const timelineBody = document.getElementById('timelineBody');
+            if (timelineBody) {
+                timelineBody.addEventListener('wheel', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        if (e.deltaY < 0) {
+                            zoomIn();
+                        } else {
+                            zoomOut();
+                        }
+                    }
+                });
             }
         });
 
@@ -1888,20 +2144,11 @@
 
         // Show info
         function showInfo() {
-            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nNuova Timeline Moderna - Modalità UTC\n\nNuove Funzionalità v2.0:\n- Timeline con design moderno e animazioni fluide\n- Vista normale, compatta e wave\n- Preview programmi on hover\n- Minimap per navigazione rapida\n- Indicatore prime time (20:00-23:00)\n- Gradiente temporale (mattina→sera)\n- Effetti glass-morphism\n- Animazioni su aggiunta/rimozione programmi\n- Zoom con rotella mouse (Ctrl+Scroll)\n- Miglior visualizzazione sovrapposizioni\n\nTutte le funzionalità esistenti sono state mantenute.\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nCircular Timeline - Modalità UTC\n\nNuove Funzionalità v2.1:\n- Vista Timeline Circolare (24 ore come orologio)\n- Rimosso grafico distribuzione format per performance\n- Vista lineare, circolare e compatta\n- Animazioni fluide ottimizzate\n- Indicatore ora corrente su timeline circolare\n- Archi colorati per programmi con etichette\n- Zoom solo per vista lineare\n- Performance migliorata\n\nTutte le funzionalità di editing sono mantenute.\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
 
-        // Minimap click handler
-        document.getElementById('timelineMinimap').addEventListener('click', function(e) {
-            const rect = this.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const percentage = x / rect.width;
-            const body = document.getElementById('timelineBody');
-            body.scrollLeft = percentage * body.scrollWidth - body.offsetWidth / 2;
-        });
-
         // Initialize
-        console.log('Modern Timeline ready!');
+        console.log('Circular Timeline ready!');
     </script>
 </body>
 </html>
