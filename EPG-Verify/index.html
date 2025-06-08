@@ -417,11 +417,12 @@
                 const stopUTC = parseXMLTVDate(prog.getAttribute('stop'));
                 
                 // Debug first few programs
-                if (currentPrograms.length < 3) {
+                if (currentPrograms.length < 5) {
                     console.log('Program:', prog.querySelector('title')?.textContent);
-                    console.log('  Start UTC:', prog.getAttribute('start'));
+                    console.log('  Start UTC string:', prog.getAttribute('start'));
+                    console.log('  Start UTC parsed:', startUTC.toISOString());
                     console.log('  Start Local:', startUTC.toString());
-                    console.log('  Stop UTC:', prog.getAttribute('stop'));
+                    console.log('  Stop UTC string:', prog.getAttribute('stop'));
                     console.log('  Stop Local:', stopUTC.toString());
                 }
                 
@@ -447,22 +448,21 @@
                 
                 currentPrograms.push(program);
                 
-                // Create a date key for the LOCAL date when the program STARTS
-                const localStartDate = new Date(startUTC);
-                localStartDate.setHours(0, 0, 0, 0);
-                const dateKey = localStartDate.toISOString().split('T')[0];
+                // Create date keys for ALL days where this program appears
+                // A program should appear in the day where it AIRS, not just where it starts
+                const startDate = new Date(startUTC);
+                const endDate = new Date(stopUTC);
                 
-                if (!daysMap.has(dateKey)) {
-                    daysMap.set(dateKey, localStartDate);
-                }
+                // Add all days from start to end
+                const currentDate = new Date(startDate);
+                currentDate.setHours(0, 0, 0, 0);
                 
-                // If program spans multiple days, add those days too
-                const localEndDate = new Date(stopUTC);
-                localEndDate.setHours(0, 0, 0, 0);
-                const endDateKey = localEndDate.toISOString().split('T')[0];
-                
-                if (endDateKey !== dateKey && !daysMap.has(endDateKey)) {
-                    daysMap.set(endDateKey, localEndDate);
+                while (currentDate <= endDate) {
+                    const dateKey = currentDate.toISOString().split('T')[0];
+                    if (!daysMap.has(dateKey)) {
+                        daysMap.set(dateKey, new Date(currentDate));
+                    }
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
                 
                 // Assign color to format
@@ -481,16 +481,49 @@
                 .sort((a, b) => a[1] - b[1]);
             
             console.log('Found days:', sortedDays.map(d => d[0]));
+            console.log('Total programs:', currentPrograms.length);
             
             sortedDays.forEach(([dateKey, date]) => {
                 const option = document.createElement('option');
                 option.value = dateKey;
-                option.textContent = formatDate(date);
+                
+                // Count programs for this day
+                const dayStart = new Date(date);
+                dayStart.setHours(0, 0, 0, 0);
+                const dayEnd = new Date(date);
+                dayEnd.setHours(23, 59, 59, 999);
+                
+                const programCount = currentPrograms.filter(p => {
+                    return (p.start <= dayEnd && p.stop >= dayStart);
+                }).length;
+                
+                option.textContent = `${formatDate(date)} (${programCount} programmi)`;
                 daySelector.appendChild(option);
             });
             
             if (sortedDays.length > 0) {
-                selectedDay = sortedDays[0][1];
+                // Select the day with most programs (usually the main day)
+                let maxPrograms = 0;
+                let bestDayIndex = 0;
+                
+                sortedDays.forEach(([dateKey, date], index) => {
+                    const dayStart = new Date(date);
+                    dayStart.setHours(0, 0, 0, 0);
+                    const dayEnd = new Date(date);
+                    dayEnd.setHours(23, 59, 59, 999);
+                    
+                    const programCount = currentPrograms.filter(p => {
+                        return (p.start <= dayEnd && p.stop >= dayStart);
+                    }).length;
+                    
+                    if (programCount > maxPrograms) {
+                        maxPrograms = programCount;
+                        bestDayIndex = index;
+                    }
+                });
+                
+                selectedDay = sortedDays[bestDayIndex][1];
+                daySelector.selectedIndex = bestDayIndex;
                 loadDay();
             }
         }
@@ -520,7 +553,7 @@
 
         function loadDay() {
             const dayValue = document.getElementById('daySelector').value;
-            selectedDay = new Date(dayValue + 'T12:00:00'); // Use noon to avoid DST issues
+            selectedDay = new Date(dayValue + 'T00:00:00'); // Local midnight
             
             // Set boundaries for the selected day in local time
             const startOfDay = new Date(selectedDay);
@@ -529,24 +562,25 @@
             endOfDay.setHours(23, 59, 59, 999);
             
             console.log('Loading day:', formatDate(selectedDay));
-            console.log('Day boundaries:', startOfDay, 'to', endOfDay);
+            console.log('Day boundaries (local):', startOfDay.toString(), 'to', endOfDay.toString());
             
             // Filter programs that appear in this local day
+            // A program appears in a day if ANY part of it airs during that day
             const dayPrograms = currentPrograms.filter(p => {
-                // Include if program starts during this day
-                const startsInDay = p.start >= startOfDay && p.start <= endOfDay;
-                // Include if program ends during this day  
-                const endsInDay = p.stop >= startOfDay && p.stop <= endOfDay;
-                // Include if program spans the entire day
-                const spansDay = p.start < startOfDay && p.stop > endOfDay;
-                
-                return startsInDay || endsInDay || spansDay;
+                // Program overlaps with this day if it starts before the day ends
+                // AND ends after the day starts
+                return p.start < endOfDay && p.stop > startOfDay;
             });
             
             console.log(`Found ${dayPrograms.length} programs for ${formatDate(selectedDay)}`);
             
             // Sort by start time
             dayPrograms.sort((a, b) => a.start - b.start);
+            
+            // Log first few programs for debugging
+            dayPrograms.slice(0, 5).forEach((p, i) => {
+                console.log(`  ${i + 1}. ${p.title}: ${formatTime(p.start)} - ${formatTime(p.stop)}`);
+            });
             
             // Draw timeline
             drawTimeline(dayPrograms);
