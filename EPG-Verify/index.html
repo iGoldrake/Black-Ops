@@ -710,7 +710,7 @@
             const ctx = document.getElementById('formatChart').getContext('2d');
             
             // Destroy existing chart if any
-            if (window.formatChart) {
+            if (window.formatChart && typeof window.formatChart.destroy === 'function') {
                 window.formatChart.destroy();
             }
             
