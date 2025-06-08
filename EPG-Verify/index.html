@@ -411,7 +411,7 @@
         function parsePrograms() {
             const programmes = xmlDoc.querySelectorAll('programme');
             currentPrograms = [];
-            const days = new Set();
+            const days = new Map(); // Use Map to store local date strings
             
             programmes.forEach(prog => {
                 const start = parseXMLTVDate(prog.getAttribute('start'));
@@ -437,7 +437,16 @@
                 };
                 
                 currentPrograms.push(program);
-                days.add(start.toDateString());
+                
+                // Group by LOCAL date, not UTC date
+                const localDateStr = start.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+                days.set(localDateStr, start);
+                
+                // Also add the stop date if it's different (program crosses midnight)
+                const stopDateStr = stop.toLocaleDateString('en-CA');
+                if (stopDateStr !== localDateStr) {
+                    days.set(stopDateStr, stop);
+                }
                 
                 // Assign color to format
                 if (!formatColors[title]) {
@@ -446,20 +455,21 @@
                 }
             });
             
-            // Populate day selector
+            // Populate day selector with local dates
             const daySelector = document.getElementById('daySelector');
             daySelector.innerHTML = '';
-            const sortedDays = Array.from(days).sort((a, b) => new Date(a) - new Date(b));
+            const sortedDays = Array.from(days.entries())
+                .sort((a, b) => a[1] - b[1]);
             
-            sortedDays.forEach((day, index) => {
+            sortedDays.forEach(([dateStr, date]) => {
                 const option = document.createElement('option');
-                option.value = day;
-                option.textContent = formatDate(new Date(day));
+                option.value = dateStr;
+                option.textContent = formatDate(new Date(dateStr + 'T00:00:00'));
                 daySelector.appendChild(option);
             });
             
             if (sortedDays.length > 0) {
-                selectedDay = new Date(sortedDays[0]);
+                selectedDay = new Date(sortedDays[0][0] + 'T00:00:00');
                 loadDay();
             }
         }
@@ -489,13 +499,22 @@
 
         function loadDay() {
             const dayValue = document.getElementById('daySelector').value;
-            selectedDay = new Date(dayValue);
+            selectedDay = new Date(dayValue + 'T00:00:00');
             
-            // Filter programs for selected day
-            const dayPrograms = currentPrograms.filter(p => 
-                p.start.toDateString() === selectedDay.toDateString() ||
-                (p.start < selectedDay && p.stop > selectedDay)
-            );
+            // Set end of selected day in local time
+            const startOfDay = new Date(selectedDay);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(selectedDay);
+            endOfDay.setHours(23, 59, 59, 999);
+            
+            // Filter programs that are visible in the selected local day
+            const dayPrograms = currentPrograms.filter(p => {
+                // Program is visible if it starts or ends during this local day,
+                // or if it spans the entire day
+                return (p.start >= startOfDay && p.start <= endOfDay) ||
+                       (p.stop >= startOfDay && p.stop <= endOfDay) ||
+                       (p.start < startOfDay && p.stop > endOfDay);
+            });
             
             // Sort by start time
             dayPrograms.sort((a, b) => a.start - b.start);
@@ -524,7 +543,7 @@
             
             svg.attr('width', width);
             
-            // Time scale
+            // Time scale for the selected day in LOCAL time
             const startOfDay = new Date(selectedDay);
             startOfDay.setHours(0, 0, 0, 0);
             const endOfDay = new Date(selectedDay);
@@ -534,7 +553,7 @@
                 .domain([startOfDay, endOfDay])
                 .range([margin.left, width - margin.right]);
             
-            // Draw time axis
+            // Draw time axis with local time
             const xAxis = d3.axisBottom(xScale)
                 .ticks(d3.timeHour.every(1))
                 .tickFormat(d3.timeFormat('%H:%M'));
@@ -543,11 +562,23 @@
                 .attr('transform', `translate(0,${height - margin.bottom})`)
                 .call(xAxis);
             
+            // Add grid lines for better readability
+            svg.append('g')
+                .attr('class', 'grid')
+                .attr('transform', `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(xScale)
+                    .ticks(d3.timeHour.every(1))
+                    .tickSize(-height + margin.top + margin.bottom)
+                    .tickFormat(''))
+                .style('stroke-dasharray', '2,2')
+                .style('opacity', 0.3);
+            
             // Draw programs
             const programHeight = 60;
             const programY = margin.top + 10;
             
             programs.forEach((program, index) => {
+                // Clip program to day boundaries
                 const programStart = program.start < startOfDay ? startOfDay : program.start;
                 const programEnd = program.stop > endOfDay ? endOfDay : program.stop;
                 
@@ -570,6 +601,11 @@
                     .attr('stroke', '#fff')
                     .attr('stroke-width', 2);
                 
+                // Add opacity if program extends beyond day boundaries
+                if (program.start < startOfDay || program.stop > endOfDay) {
+                    g.attr('opacity', 0.8);
+                }
+                
                 // Program title
                 if (width > 40) {
                     g.append('text')
@@ -590,6 +626,14 @@
                                 textLength = self.node().getComputedTextLength();
                             }
                         });
+                    
+                    // Add time label
+                    g.append('text')
+                        .attr('x', 5)
+                        .attr('y', programHeight - 5)
+                        .attr('fill', 'white')
+                        .attr('font-size', '10px')
+                        .text(`${formatTime(program.start)} - ${formatTime(program.stop)}`);
                 }
                 
                 // Icon indicator
@@ -612,23 +656,38 @@
                 }
             });
             
-            // Check for gaps
+            // Check for gaps between consecutive programs
             for (let i = 0; i < programs.length - 1; i++) {
-                const gap = programs[i + 1].start - programs[i].stop;
-                if (gap > 1000) { // More than 1 second
-                    const gapStart = programs[i].stop;
-                    const gapEnd = programs[i + 1].start;
+                const current = programs[i];
+                const next = programs[i + 1];
+                
+                // Only check gaps within the same day
+                if (current.stop < next.start && 
+                    current.stop.toDateString() === next.start.toDateString()) {
                     
-                    const x = xScale(gapStart);
-                    const width = xScale(gapEnd) - x;
-                    
-                    svg.append('rect')
-                        .attr('x', x)
-                        .attr('y', programY)
-                        .attr('width', width)
-                        .attr('height', programHeight)
-                        .attr('class', 'gap-indicator')
-                        .attr('opacity', 0.5);
+                    const gap = next.start - current.stop;
+                    if (gap > 60000) { // More than 1 minute
+                        const x = xScale(current.stop);
+                        const width = xScale(next.start) - x;
+                        
+                        svg.append('rect')
+                            .attr('x', x)
+                            .attr('y', programY)
+                            .attr('width', width)
+                            .attr('height', programHeight)
+                            .attr('class', 'gap-indicator')
+                            .attr('opacity', 0.5);
+                        
+                        // Add gap duration text
+                        const gapMinutes = Math.floor(gap / 60000);
+                        svg.append('text')
+                            .attr('x', x + width/2)
+                            .attr('y', programY + programHeight/2)
+                            .attr('text-anchor', 'middle')
+                            .attr('fill', 'white')
+                            .attr('font-weight', 'bold')
+                            .text(`GAP ${gapMinutes}min`);
+                    }
                 }
             }
         }
@@ -663,7 +722,10 @@
             const tbody = document.getElementById('programTable');
             tbody.innerHTML = '';
             
-            programs.forEach((program, index) => {
+            // Get programs for current day including filtering
+            const dayPrograms = programs;
+            
+            dayPrograms.forEach((program, index) => {
                 const row = document.createElement('tr');
                 row.className = 'border-b hover:bg-gray-50';
                 
