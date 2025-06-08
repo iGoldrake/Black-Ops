@@ -3,812 +3,306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Editor Pro - Visualizzatore e Editor EPG</title>
-    
-    <!-- CDN Dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <title>XMLTV Viewer & Editor Professional v1.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fast-xml-parser/4.3.2/fxparser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/styles/ag-grid.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/styles/ag-theme-alpine.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/lucide.css">
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
-        :root {
-            --primary: #667eea;
-            --primary-dark: #5a6fd8;
-            --secondary: #48bb78;
-            --danger: #f56565;
-            --warning: #ed8936;
-            --dark: #1a202c;
-            --light: #f7fafc;
-            --border: #e2e8f0;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #2d3748;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .main-header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            text-align: center;
-        }
-
-        .main-header h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            transition: transform 0.2s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: var(--secondary);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-outline {
-            background: white;
-            color: var(--primary);
-            border: 2px solid var(--primary);
-        }
-
-        .timeline-container {
-            position: relative;
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-
-        .timeline-controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 100;
-            display: flex;
-            gap: 10px;
-        }
-
-        .timeline-svg {
-            width: 100%;
-            height: 200px;
-            cursor: grab;
-        }
-
-        .timeline-svg.grabbing {
-            cursor: grabbing;
-        }
-
-        .program-block {
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .program-block:hover {
-            filter: brightness(1.1);
-            transform: translateY(-2px);
-        }
-
-        .gap-indicator {
-            fill: url(#diagonalHatch);
-            stroke: var(--danger);
-            stroke-width: 2;
-            stroke-dasharray: 5,5;
-            opacity: 0.8;
-        }
-
-        .tooltip {
-            position: absolute;
-            background: rgba(26, 32, 44, 0.95);
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            pointer-events: none;
-            z-index: 1000;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 300px;
-        }
-
-        .date-navigator {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .date-display {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--dark);
-            min-width: 200px;
-            text-align: center;
-        }
-
-        .icon-preview {
-            width: 60px;
-            height: 34px;
-            border-radius: 4px;
-            object-fit: cover;
-            border: 1px solid var(--border);
-        }
-
-        .icon-missing {
-            border: 2px solid var(--danger);
-            background: #fee;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            color: #718096;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #4a5568;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px 15px;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.2s ease;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            padding: 16px 24px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: slideUp 0.3s ease;
-            z-index: 3000;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(100px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .toast-success {
-            border-left: 4px solid var(--secondary);
-        }
-
-        .toast-error {
-            border-left: 4px solid var(--danger);
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin: 20px 0;
-        }
-
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid var(--border);
-            margin-bottom: 20px;
-        }
-
-        .tab {
-            padding: 12px 24px;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 16px;
-            font-weight: 500;
-            color: #718096;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-
-        .tab.active {
-            color: var(--primary);
-        }
-
-        .tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--primary);
-        }
-
-        .grid-container {
-            height: 500px;
-            margin: 20px 0;
-        }
-
-        .upload-area {
-            border: 2px dashed var(--primary);
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .upload-area:hover {
-            background: rgba(102, 126, 234, 0.05);
-            border-color: var(--primary-dark);
-        }
-
-        .upload-area.dragover {
-            background: rgba(102, 126, 234, 0.1);
-            transform: scale(1.02);
-        }
-
-        .format-selector {
-            position: relative;
-        }
-
-        .format-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 100;
-            box-shadow: var(--shadow);
-        }
-
-        .format-option {
-            padding: 10px 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: background 0.2s ease;
-        }
-
-        .format-option:hover {
-            background: #f7fafc;
-        }
-
-        .format-icon-thumb {
-            width: 40px;
-            height: 23px;
-            border-radius: 4px;
-            object-fit: cover;
-            border: 1px solid var(--border);
-        }
-
-        .dark-mode {
-            background: var(--dark);
-            color: var(--light);
-        }
-
-        .dark-mode .card,
-        .dark-mode .modal-content,
-        .dark-mode .date-navigator {
-            background: #2d3748;
-            color: var(--light);
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .icon-large-preview {
-            max-width: 100%;
-            max-height: 400px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .main-header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .toolbar {
-                justify-content: center;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+        .timeline-container { overflow-x: auto; overflow-y: hidden; }
+        .program-block { cursor: pointer; transition: all 0.2s; }
+        .program-block:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .gap-indicator { background: repeating-linear-gradient(45deg, #ef4444, #ef4444 10px, #dc2626 10px, #dc2626 20px); }
+        .icon-preview { background-size: cover; background-position: center; }
+        .toast { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .dark { background: #0f172a; color: #e2e8f0; }
+        .dark .bg-white { background: #1e293b; }
+        .dark .bg-gray-50 { background: #334155; }
+        .dark .text-gray-900 { color: #e2e8f0; }
+        .dark .text-gray-700 { color: #cbd5e1; }
+        .dark .border-gray-200 { border-color: #475569; }
+        input[type="datetime-local"] { color-scheme: light dark; }
+        .program-tooltip { pointer-events: none; }
+        .editable-cell { cursor: text; }
+        .editable-cell:hover { background: rgba(59, 130, 246, 0.1); }
     </style>
 </head>
-<body>
-    <div id="app">
-        <div class="container">
-            <!-- Header -->
-            <div class="main-header">
-                <h1>📺 XMLTV Editor Pro</h1>
-                <p>Visualizzatore e Editor professionale per file EPG</p>
-            </div>
-
-            <!-- Toolbar principale -->
-            <div class="card">
-                <div class="toolbar">
-                    <input type="file" ref="fileInput" @change="loadFile" accept=".xml" style="display: none;">
-                    <button class="btn btn-primary" @click="$refs.fileInput.click()">
-                        📁 Carica XMLTV
+<body class="bg-gray-50 text-gray-900">
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-blue-600 flex items-center gap-2">
+                        <i data-lucide="tv" class="w-8 h-8"></i>
+                        XMLTV Viewer & Editor Pro
+                    </h1>
+                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.0</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="toggleDarkMode()" class="p-2 rounded hover:bg-gray-100">
+                        <i data-lucide="moon" class="w-5 h-5"></i>
                     </button>
-                    <button class="btn btn-secondary" @click="saveFile" :disabled="!xmlData">
-                        💾 Salva modifiche
-                    </button>
-                    <button class="btn btn-outline" @click="showActualizeModal = true" :disabled="!xmlData">
-                        📅 Attualizza date
-                    </button>
-                    <button class="btn btn-outline" @click="toggleDarkMode">
-                        {{ darkMode ? '☀️' : '🌙' }} {{ darkMode ? 'Light' : 'Dark' }} Mode
-                    </button>
-                    <button class="btn btn-outline" @click="showFormatManager = true">
-                        🎨 Gestione Format
-                    </button>
-                    <button class="btn btn-danger" @click="validateXML" :disabled="!xmlData">
-                        ✅ Valida XML
+                    <button onclick="showInfo()" class="p-2 rounded hover:bg-gray-100">
+                        <i data-lucide="info" class="w-5 h-5"></i>
                     </button>
                 </div>
-            </div>
-
-            <!-- Upload Area -->
-            <div v-if="!xmlData" class="card">
-                <div class="upload-area" @click="$refs.fileInput.click()" 
-                     @dragover.prevent="dragOver = true"
-                     @dragleave.prevent="dragOver = false"
-                     @drop.prevent="handleDrop"
-                     :class="{ dragover: dragOver }">
-                    <h2>📥 Trascina qui il file XMLTV</h2>
-                    <p>oppure clicca per selezionarlo</p>
-                </div>
-            </div>
-
-            <!-- Main Content -->
-            <template v-if="xmlData">
-                <!-- Date Navigator -->
-                <div class="card">
-                    <div class="date-navigator">
-                        <button class="btn btn-outline" @click="previousDay" :disabled="currentDateIndex === 0">
-                            ⬅️ Giorno precedente
-                        </button>
-                        <div class="date-display">
-                            {{ formatDate(currentDate) }}
-                        </div>
-                        <button class="btn btn-outline" @click="nextDay" :disabled="currentDateIndex === availableDates.length - 1">
-                            Giorno successivo ➡️
-                        </button>
-                        <select class="form-control" style="width: auto;" v-model="currentDate">
-                            <option v-for="date in availableDates" :key="date" :value="date">
-                                {{ formatDate(date) }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Statistics -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">{{ currentPrograms.length }}</div>
-                        <div class="stat-label">Programmi oggi</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">{{ totalDuration }}</div>
-                        <div class="stat-label">Ore di programmazione</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">{{ gapsCount }}</div>
-                        <div class="stat-label">Buchi rilevati</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">{{ uniqueFormats }}</div>
-                        <div class="stat-label">Format diversi</div>
-                    </div>
-                </div>
-
-                <!-- Timeline -->
-                <div class="card">
-                    <h3>📊 Timeline Giornaliera</h3>
-                    <div class="timeline-container">
-                        <div class="timeline-controls">
-                            <button class="btn btn-outline" @click="zoomIn">🔍+</button>
-                            <button class="btn btn-outline" @click="zoomOut">🔍-</button>
-                            <button class="btn btn-outline" @click="resetZoom">↺ Reset</button>
-                        </div>
-                        <div ref="timelineContainer"></div>
-                    </div>
-                </div>
-
-                <!-- Tabs -->
-                <div class="card">
-                    <div class="tabs">
-                        <button class="tab" :class="{ active: activeTab === 'table' }" @click="activeTab = 'table'">
-                            📋 Tabella Programmi
-                        </button>
-                        <button class="tab" :class="{ active: activeTab === 'analysis' }" @click="activeTab = 'analysis'">
-                            📈 Analisi e Report
-                        </button>
-                        <button class="tab" :class="{ active: activeTab === 'issues' }" @click="activeTab = 'issues'">
-                            ⚠️ Problemi Rilevati
-                        </button>
-                    </div>
-
-                    <!-- Table Tab -->
-                    <div v-show="activeTab === 'table'">
-                        <div class="toolbar">
-                            <button class="btn btn-primary" @click="showAddProgramModal = true">
-                                ➕ Aggiungi programma
-                            </button>
-                            <button class="btn btn-secondary" @click="autoFillGaps" :disabled="gapsCount === 0">
-                                🔧 Riempi buchi automaticamente
-                            </button>
-                        </div>
-                        <div ref="gridContainer" class="grid-container ag-theme-alpine"></div>
-                    </div>
-
-                    <!-- Analysis Tab -->
-                    <div v-show="activeTab === 'analysis'">
-                        <h4>📊 Distribuzione Format</h4>
-                        <div class="chart-container">
-                            <canvas ref="formatChart"></canvas>
-                        </div>
-                        <h4>📈 Distribuzione Oraria</h4>
-                        <div class="chart-container">
-                            <canvas ref="hourlyChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Issues Tab -->
-                    <div v-show="activeTab === 'issues'">
-                        <div v-if="issues.length === 0" style="text-align: center; padding: 40px;">
-                            <h3>✅ Nessun problema rilevato!</h3>
-                            <p>La programmazione è corretta e completa.</p>
-                        </div>
-                        <div v-else>
-                            <div v-for="issue in issues" :key="issue.id" class="stat-card" style="text-align: left; margin-bottom: 10px;">
-                                <h4>{{ issue.type === 'gap' ? '🕳️ Buco nella programmazione' : '⚠️ ' + issue.type }}</h4>
-                                <p><strong>Orario:</strong> {{ issue.time }}</p>
-                                <p><strong>Dettagli:</strong> {{ issue.description }}</p>
-                                <button class="btn btn-primary" @click="fixIssue(issue)" style="margin-top: 10px;">
-                                    🔧 Risolvi
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
-
-            <!-- Modals -->
-            <!-- Actualize Date Modal -->
-            <div v-if="showActualizeModal" class="modal" @click.self="showActualizeModal = false">
-                <div class="modal-content">
-                    <h2>📅 Attualizza Date XMLTV</h2>
-                    <div class="form-group">
-                        <label>Seleziona la nuova data di inizio:</label>
-                        <input type="date" class="form-control" v-model="newStartDate">
-                    </div>
-                    <div class="form-group">
-                        <label>Mantieni:</label>
-                        <select class="form-control" v-model="actualizeMode">
-                            <option value="all">Tutti i giorni</option>
-                            <option value="week">Solo 7 giorni</option>
-                            <option value="single">Solo il primo giorno</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button class="btn btn-outline" @click="showActualizeModal = false">Annulla</button>
-                        <button class="btn btn-primary" @click="actualizeData">
-                            📥 Genera e Scarica
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Add Program Modal -->
-            <div v-if="showAddProgramModal" class="modal" @click.self="showAddProgramModal = false">
-                <div class="modal-content">
-                    <h2>➕ Aggiungi Nuovo Programma</h2>
-                    <div class="form-group">
-                        <label>Ora inizio:</label>
-                        <input type="time" class="form-control" v-model="newProgram.startTime">
-                    </div>
-                    <div class="form-group">
-                        <label>Durata (minuti):</label>
-                        <input type="number" class="form-control" v-model="newProgram.duration" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Format:</label>
-                        <div class="format-selector">
-                            <input type="text" class="form-control" v-model="newProgram.format" 
-                                   @focus="showFormatDropdown = true"
-                                   @blur="setTimeout(() => showFormatDropdown = false, 200)"
-                                   placeholder="Seleziona o digita un format">
-                            <div v-if="showFormatDropdown" class="format-dropdown">
-                                <div v-for="(icon, format) in currentFormatIcons" 
-                                     :key="format" 
-                                     class="format-option"
-                                     @click="selectFormat(format)">
-                                    <img :src="getIconUrl(icon)" class="format-icon-thumb" 
-                                         @error="e => e.target.src = 'https://via.placeholder.com/40x23/ccc/666?text=?'">
-                                    <span>{{ format }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Descrizione:</label>
-                        <textarea class="form-control" v-model="newProgram.description" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Categoria:</label>
-                        <select class="form-control" v-model="newProgram.category">
-                            <option value="News">News</option>
-                            <option value="Business">Business</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Documentary">Documentary</option>
-                            <option value="Fashion">Fashion</option>
-                            <option value="Lifestyle">Lifestyle</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button class="btn btn-outline" @click="showAddProgramModal = false">Annulla</button>
-                        <button class="btn btn-primary" @click="addProgram">
-                            ✅ Aggiungi
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Format Manager Modal -->
-            <div v-if="showFormatManager" class="modal" @click.self="showFormatManager = false">
-                <div class="modal-content">
-                    <h2>🎨 Gestione Format e Icone</h2>
-                    <div class="form-group">
-                        <label>Canale:</label>
-                        <select class="form-control" v-model="selectedChannel">
-                            <option value="ClassCNBC">Class CNBC</option>
-                            <option value="ClassTVModa">Class TV Moda</option>
-                        </select>
-                    </div>
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr>
-                                    <th style="text-align: left; padding: 10px; border-bottom: 2px solid #e2e8f0;">Format</th>
-                                    <th style="text-align: left; padding: 10px; border-bottom: 2px solid #e2e8f0;">Icona</th>
-                                    <th style="text-align: center; padding: 10px; border-bottom: 2px solid #e2e8f0;">Preview</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(icon, format) in currentFormatIcons" :key="format">
-                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{{ format }}</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">
-                                        <input type="text" class="form-control" :value="icon" 
-                                               @input="updateFormatIcon(format, $event.target.value)"
-                                               style="font-size: 12px;">
-                                    </td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">
-                                        <img :src="getIconUrl(icon)" class="icon-preview" 
-                                             @click="showIconPreview(getIconUrl(icon))"
-                                             @error="e => e.target.src = 'https://via.placeholder.com/60x34/fee/f55?text=ERROR'"
-                                             style="cursor: pointer;">
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style="margin-top: 20px;">
-                        <h4>➕ Aggiungi nuovo format</h4>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" class="form-control" v-model="newFormat.name" placeholder="Nome format">
-                            <input type="text" class="form-control" v-model="newFormat.icon" placeholder="Nome file icona">
-                            <button class="btn btn-primary" @click="addFormat">Aggiungi</button>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-                        <button class="btn btn-outline" @click="exportFormats">📥 Esporta</button>
-                        <button class="btn btn-outline" @click="importFormats">📤 Importa</button>
-                        <button class="btn btn-primary" @click="showFormatManager = false">Chiudi</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Icon Preview Modal -->
-            <div v-if="showIconModal" class="modal" @click.self="showIconModal = false">
-                <div class="modal-content" style="text-align: center;">
-                    <h3>🖼️ Anteprima Icona</h3>
-                    <img :src="previewIconUrl" class="icon-large-preview" 
-                         @error="e => e.target.src = 'https://via.placeholder.com/1920x1080/fee/f55?text=ERRORE+CARICAMENTO'">
-                    <div style="margin-top: 20px;">
-                        <button class="btn btn-primary" @click="showIconModal = false">Chiudi</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Toast Notifications -->
-            <div v-if="toast.show" :class="['toast', `toast-${toast.type}`]">
-                <span>{{ toast.message }}</span>
             </div>
         </div>
+
+        <!-- File Upload -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors" id="dropZone">
+                <i data-lucide="upload" class="w-12 h-12 mx-auto text-gray-400 mb-4"></i>
+                <p class="text-lg mb-2">Trascina qui il file XMLTV o clicca per selezionarlo</p>
+                <input type="file" id="fileInput" accept=".xml" class="hidden">
+                <button onclick="document.getElementById('fileInput').click()" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                    Seleziona File
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content (hidden until file loaded) -->
+        <div id="mainContent" class="hidden">
+            <!-- Channel Info & Controls -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <h3 class="font-semibold text-gray-700 mb-2">Canale</h3>
+                        <p class="text-xl font-bold" id="channelName">-</p>
+                        <p class="text-sm text-gray-600" id="channelId">-</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-700 mb-2">Seleziona Giorno</h3>
+                        <div class="flex items-center gap-2">
+                            <button onclick="prevDay()" class="p-2 hover:bg-gray-100 rounded">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <select id="daySelector" onchange="loadDay()" class="flex-1 px-3 py-2 border rounded">
+                                <!-- Options populated dynamically -->
+                            </select>
+                            <button onclick="nextDay()" class="p-2 hover:bg-gray-100 rounded">
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-700 mb-2">Azioni</h3>
+                        <div class="flex gap-2">
+                            <button onclick="showActualizationDialog()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                                Attualizza
+                            </button>
+                            <button onclick="exportXMLTV()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-1">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                Esporta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline View -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="clock" class="w-5 h-5"></i>
+                    Timeline Giornaliera
+                </h3>
+                <div class="mb-2 flex items-center gap-4">
+                    <button onclick="zoomIn()" class="p-2 hover:bg-gray-100 rounded" title="Zoom In">
+                        <i data-lucide="zoom-in" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="zoomOut()" class="p-2 hover:bg-gray-100 rounded" title="Zoom Out">
+                        <i data-lucide="zoom-out" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="resetZoom()" class="p-2 hover:bg-gray-100 rounded" title="Reset Zoom">
+                        <i data-lucide="maximize-2" class="w-5 h-5"></i>
+                    </button>
+                    <span class="text-sm text-gray-600">Usa la rotella del mouse per zoom</span>
+                </div>
+                <div class="timeline-container border rounded-lg p-4" id="timelineContainer">
+                    <svg id="timeline" width="100%" height="150"></svg>
+                </div>
+            </div>
+
+            <!-- Program Details -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6" id="programDetails" style="display:none;">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="tv-2" class="w-5 h-5"></i>
+                    Dettagli Programma
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-600">Titolo</p>
+                        <p class="font-semibold" id="detailTitle">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Format</p>
+                        <p class="font-semibold" id="detailFormat">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Orario</p>
+                        <p class="font-semibold" id="detailTime">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Durata</p>
+                        <p class="font-semibold" id="detailDuration">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Categoria</p>
+                        <p class="font-semibold" id="detailCategory">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Rating</p>
+                        <p class="font-semibold" id="detailRating">-</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-sm text-gray-600">Descrizione</p>
+                        <p class="font-semibold" id="detailDescription">-</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-sm text-gray-600">Icona</p>
+                        <div class="flex items-center gap-4 mt-2">
+                            <div class="icon-preview w-32 h-18 border rounded" id="detailIcon"></div>
+                            <p class="text-xs text-gray-500" id="detailIconUrl">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Program Editor Table -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="edit" class="w-5 h-5"></i>
+                        Editor Programmi
+                    </span>
+                    <button onclick="addProgram()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm flex items-center gap-1">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        Aggiungi Programma
+                    </button>
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left">Ora Inizio</th>
+                                <th class="px-4 py-2 text-left">Ora Fine</th>
+                                <th class="px-4 py-2 text-left">Durata</th>
+                                <th class="px-4 py-2 text-left">Titolo/Format</th>
+                                <th class="px-4 py-2 text-left">Categoria</th>
+                                <th class="px-4 py-2 text-left">Icona</th>
+                                <th class="px-4 py-2 text-left">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="programTable">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analytics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                        Distribuzione Format
+                    </h3>
+                    <canvas id="formatChart" width="400" height="300"></canvas>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                        Report Problemi
+                    </h3>
+                    <div id="problemsReport" class="space-y-2">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actualization Dialog -->
+        <div id="actualizationDialog" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full">
+                <h3 class="text-lg font-semibold mb-4">Attualizza Date Palinsesto</h3>
+                <p class="text-sm text-gray-600 mb-4">Seleziona la nuova data di inizio. Gli orari rimarranno invariati.</p>
+                <input type="date" id="newStartDate" class="w-full px-3 py-2 border rounded mb-4">
+                <div class="flex justify-end gap-2">
+                    <button onclick="closeActualizationDialog()" class="px-4 py-2 border rounded hover:bg-gray-50">
+                        Annulla
+                    </button>
+                    <button onclick="actualizeSchedule()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Attualizza
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Container -->
+        <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+        <!-- Tooltip -->
+        <div id="tooltip" class="program-tooltip fixed bg-gray-900 text-white p-3 rounded shadow-lg text-sm hidden z-40"></div>
     </div>
 
     <script>
-        const { createApp } = Vue;
+        // Fallback icons in case Lucide doesn't load
+        window.addEventListener('DOMContentLoaded', function() {
+            // Try to initialize Lucide icons after DOM is loaded
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                } else {
+                    // Replace Lucide icon placeholders with emoji
+                    document.querySelectorAll('[data-lucide]').forEach(el => {
+                        const iconMap = {
+                            'tv': '📺',
+                            'moon': '🌙',
+                            'info': 'ℹ️',
+                            'upload': '📤',
+                            'chevron-left': '◀',
+                            'chevron-right': '▶',
+                            'calendar': '📅',
+                            'download': '💾',
+                            'clock': '🕐',
+                            'zoom-in': '🔍+',
+                            'zoom-out': '🔍-',
+                            'maximize-2': '⛶',
+                            'tv-2': '📺',
+                            'edit': '✏️',
+                            'plus': '➕',
+                            'pie-chart': '📊',
+                            'alert-triangle': '⚠️',
+                            'trash-2': '🗑️'
+                        };
+                        const iconName = el.getAttribute('data-lucide');
+                        el.textContent = iconMap[iconName] || '•';
+                        el.style.fontStyle = 'normal';
+                    });
+                }
+            }, 100);
+        });
 
-        // Format icons mappings
+        // Version
+        const APP_VERSION = '1.0';
+        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION}`);
+
+        // Global state
+        let xmlDoc = null;
+        let currentPrograms = [];
+        let currentChannelId = '';
+        let currentChannelName = '';
+        let selectedDay = null;
+        let zoomLevel = 1;
+        let formatColors = {};
+        let colorIndex = 0;
+
+        // Format dictionaries
         const formatIcons = {
-            ClassCNBC: {
+            'ClassCNBC': {
                 "Trading Room": "trading-room.jpg",
                 "Business Class": "business-class.jpg",
                 "Mercati in 10 minuti": "mercati-10.jpg",
@@ -824,18 +318,18 @@
                 "Documentario": "documentario.jpg",
                 "Programmazione notturna": "default.jpg"
             },
-            ClassTVModa: {
-                "(UN)ACCESSING BACKSTAGE": "backstage.jpg",
+            'ClassTVModa': {
                 "CATWALKS": "catwalks.jpg",
+                "FASHION NEWS": "fashion-news.jpg",
+                "FRONT ROW": "front-row.jpg",
+                "SPOTLIGHT": "spotlight.jpg",
+                "(UN)ACCESSING BACKSTAGE": "backstage.jpg",
                 "CLASS TV MODA STORIES": "tv-moda-stories.jpg",
                 "DESIGN MAP": "design-map.jpg",
                 "DISTRICTS": "districts.jpg",
-                "FASHION NEWS": "fashion-news.jpg",
                 "FASHION&BEYOND": "fashion-beyond.jpg",
-                "FRONT ROW": "front-row.jpg",
                 "GREEN REVOLUTION FORWARD": "green-revolution.jpg",
                 "SOUND OF FASHION": "sound-of-fashion.jpg",
-                "SPOTLIGHT": "spotlight.jpg",
                 "VOICES": "voices.jpg",
                 "WHAT WOMEN WEAR": "what-women-wear.jpg",
                 "Programmazione": "default.jpg"
@@ -843,1268 +337,812 @@
         };
 
         const iconBaseUrls = {
-            ClassCNBC: "https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/",
-            ClassTVModa: "https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassTVModa_IT_samsung/Images/"
+            'ClassCNBC': 'https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/',
+            'ClassTVModa': 'https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassTVModa_IT_samsung/Images/'
         };
 
-        createApp({
-            data() {
-                return {
-                    xmlData: null,
-                    parsedData: null,
-                    currentDate: null,
-                    availableDates: [],
-                    currentPrograms: [],
-                    channelInfo: {},
+        const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            console.warn('Lucide not loaded, using emoji fallbacks');
+        }
+
+        // File handling
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-400', 'bg-blue-50');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.xml')) {
+                loadFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadFile(file);
+            }
+        });
+
+        function loadFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parser = new DOMParser();
+                    xmlDoc = parser.parseFromString(e.target.result, 'text/xml');
                     
-                    // UI State
-                    activeTab: 'table',
-                    darkMode: false,
-                    dragOver: false,
-                    showActualizeModal: false,
-                    showAddProgramModal: false,
-                    showFormatManager: false,
-                    showIconModal: false,
-                    showFormatDropdown: false,
-                    previewIconUrl: '',
+                    // Parse channel info
+                    const channel = xmlDoc.querySelector('channel');
+                    currentChannelId = channel.getAttribute('id');
+                    currentChannelName = channel.querySelector('display-name').textContent;
                     
-                    // Timeline
-                    timelineZoom: 1,
-                    timelinePan: 0,
+                    document.getElementById('channelName').textContent = currentChannelName;
+                    document.getElementById('channelId').textContent = `ID: ${currentChannelId}`;
                     
-                    // Grid
-                    gridApi: null,
-                    columnApi: null,
+                    // Parse programs
+                    parsePrograms();
                     
-                    // Charts
-                    formatChart: null,
-                    hourlyChart: null,
+                    // Show main content
+                    document.getElementById('mainContent').classList.remove('hidden');
                     
-                    // Forms
-                    newStartDate: new Date().toISOString().split('T')[0],
-                    actualizeMode: 'all',
-                    selectedChannel: 'ClassCNBC',
-                    newProgram: {
-                        startTime: '00:00',
-                        duration: 30,
-                        format: '',
-                        description: '',
-                        category: 'Business'
-                    },
-                    newFormat: {
-                        name: '',
-                        icon: ''
-                    },
-                    
-                    // Toast
-                    toast: {
-                        show: false,
-                        message: '',
-                        type: 'success'
-                    },
-                    
-                    // Format icons
-                    formatIconsData: JSON.parse(JSON.stringify(formatIcons))
+                    showToast('File caricato con successo', 'success');
+                } catch (error) {
+                    showToast('Errore nel caricamento del file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parsePrograms() {
+            const programmes = xmlDoc.querySelectorAll('programme');
+            currentPrograms = [];
+            const days = new Set();
+            
+            programmes.forEach(prog => {
+                const start = parseXMLTVDate(prog.getAttribute('start'));
+                const stop = parseXMLTVDate(prog.getAttribute('stop'));
+                const title = prog.querySelector('title')?.textContent || '';
+                const desc = prog.querySelector('desc')?.textContent || '';
+                const category = prog.querySelector('category')?.textContent || '';
+                const rating = prog.querySelector('rating value')?.textContent || '0';
+                const icon = prog.querySelector('icon')?.getAttribute('src') || '';
+                const episodeNum = prog.querySelector('episode-num')?.textContent || '';
+                
+                const program = {
+                    start,
+                    stop,
+                    title,
+                    desc,
+                    category,
+                    rating,
+                    icon,
+                    episodeNum,
+                    duration: (stop - start) / 1000, // seconds
+                    element: prog
                 };
-            },
-            
-            computed: {
-                currentDateIndex() {
-                    return this.availableDates.indexOf(this.currentDate);
-                },
                 
-                totalDuration() {
-                    const total = this.currentPrograms.reduce((sum, p) => {
-                        const duration = parseInt(p.duration) || 0;
-                        return sum + duration;
-                    }, 0);
-                    return Math.round(total / 3600) + 'h';
-                },
+                currentPrograms.push(program);
+                days.add(start.toDateString());
                 
-                gapsCount() {
-                    return this.findGaps().length;
-                },
-                
-                uniqueFormats() {
-                    const formats = new Set(this.currentPrograms.map(p => p.title));
-                    return formats.size;
-                },
-                
-                currentFormatIcons() {
-                    return this.formatIconsData[this.selectedChannel] || {};
-                },
-                
-                issues() {
-                    const issues = [];
-                    
-                    // Trova buchi
-                    const gaps = this.findGaps();
-                    gaps.forEach((gap, index) => {
-                        issues.push({
-                            id: `gap-${index}`,
-                            type: 'gap',
-                            time: `${gap.start} - ${gap.end}`,
-                            description: `Buco di ${gap.duration} minuti nella programmazione`,
-                            gap: gap
-                        });
-                    });
-                    
-                    // Trova sovrapposizioni
-                    for (let i = 0; i < this.currentPrograms.length - 1; i++) {
-                        const current = this.currentPrograms[i];
-                        const next = this.currentPrograms[i + 1];
-                        const currentEnd = this.parseXMLTVDate(current.stop);
-                        const nextStart = this.parseXMLTVDate(next.start);
-                        
-                        if (currentEnd > nextStart) {
-                            issues.push({
-                                id: `overlap-${i}`,
-                                type: 'overlap',
-                                time: this.formatTime(nextStart),
-                                description: `Sovrapposizione tra "${current.title}" e "${next.title}"`
-                            });
-                        }
-                    }
-                    
-                    // Trova format senza icona specifica
-                    const missingIcons = [];
-                    this.currentPrograms.forEach(p => {
-                        if (!this.currentFormatIcons[p.title] || 
-                            this.currentFormatIcons[p.title] === 'default.jpg') {
-                            if (!missingIcons.includes(p.title)) {
-                                missingIcons.push(p.title);
-                            }
-                        }
-                    });
-                    
-                    missingIcons.forEach((format, index) => {
-                        issues.push({
-                            id: `icon-${index}`,
-                            type: 'missing-icon',
-                            time: format,
-                            description: 'Format senza icona specifica'
-                        });
-                    });
-                    
-                    return issues;
+                // Assign color to format
+                if (!formatColors[title]) {
+                    formatColors[title] = colors[colorIndex % colors.length];
+                    colorIndex++;
                 }
-            },
+            });
             
-            methods: {
-                // File handling
-                loadFile(event) {
-                    const file = event.target.files[0];
-                    if (file) {
-                        this.handleFile(file);
-                    }
-                },
+            // Populate day selector
+            const daySelector = document.getElementById('daySelector');
+            daySelector.innerHTML = '';
+            const sortedDays = Array.from(days).sort((a, b) => new Date(a) - new Date(b));
+            
+            sortedDays.forEach((day, index) => {
+                const option = document.createElement('option');
+                option.value = day;
+                option.textContent = formatDate(new Date(day));
+                daySelector.appendChild(option);
+            });
+            
+            if (sortedDays.length > 0) {
+                selectedDay = new Date(sortedDays[0]);
+                loadDay();
+            }
+        }
+
+        function parseXMLTVDate(dateStr) {
+            // Format: YYYYMMDDHHmmss +0000
+            const year = dateStr.substr(0, 4);
+            const month = dateStr.substr(4, 2) - 1;
+            const day = dateStr.substr(6, 2);
+            const hour = dateStr.substr(8, 2);
+            const minute = dateStr.substr(10, 2);
+            const second = dateStr.substr(12, 2);
+            
+            return new Date(Date.UTC(year, month, day, hour, minute, second));
+        }
+
+        function formatXMLTVDate(date) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}` +
+                   `${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())} +0000`;
+        }
+
+        function loadDay() {
+            const dayValue = document.getElementById('daySelector').value;
+            selectedDay = new Date(dayValue);
+            
+            // Filter programs for selected day
+            const dayPrograms = currentPrograms.filter(p => 
+                p.start.toDateString() === selectedDay.toDateString() ||
+                (p.start < selectedDay && p.stop > selectedDay)
+            );
+            
+            // Sort by start time
+            dayPrograms.sort((a, b) => a.start - b.start);
+            
+            // Draw timeline
+            drawTimeline(dayPrograms);
+            
+            // Update table
+            updateProgramTable(dayPrograms);
+            
+            // Update analytics
+            updateAnalytics(dayPrograms);
+            
+            // Check for problems
+            checkProblems(dayPrograms);
+        }
+
+        function drawTimeline(programs) {
+            const container = document.getElementById('timelineContainer');
+            const svg = d3.select('#timeline');
+            svg.selectAll('*').remove();
+            
+            const width = container.clientWidth * zoomLevel;
+            const height = 150;
+            const margin = { top: 20, right: 20, bottom: 30, left: 20 };
+            
+            svg.attr('width', width);
+            
+            // Time scale
+            const startOfDay = new Date(selectedDay);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(selectedDay);
+            endOfDay.setHours(23, 59, 59, 999);
+            
+            const xScale = d3.scaleTime()
+                .domain([startOfDay, endOfDay])
+                .range([margin.left, width - margin.right]);
+            
+            // Draw time axis
+            const xAxis = d3.axisBottom(xScale)
+                .ticks(d3.timeHour.every(1))
+                .tickFormat(d3.timeFormat('%H:%M'));
+            
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.bottom})`)
+                .call(xAxis);
+            
+            // Draw programs
+            const programHeight = 60;
+            const programY = margin.top + 10;
+            
+            programs.forEach((program, index) => {
+                const programStart = program.start < startOfDay ? startOfDay : program.start;
+                const programEnd = program.stop > endOfDay ? endOfDay : program.stop;
                 
-                handleDrop(event) {
-                    this.dragOver = false;
-                    const file = event.dataTransfer.files[0];
-                    if (file && file.name.endsWith('.xml')) {
-                        this.handleFile(file);
-                    }
-                },
+                const x = xScale(programStart);
+                const width = xScale(programEnd) - x;
                 
-                handleFile(file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            this.xmlData = e.target.result;
-                            this.parseXML();
-                            this.showToast('File caricato con successo!', 'success');
-                        } catch (error) {
-                            this.showToast('Errore nel parsing del file XML', 'error');
-                            console.error(error);
-                        }
-                    };
-                    reader.readAsText(file);
-                },
+                const g = svg.append('g')
+                    .attr('class', 'program-block')
+                    .attr('transform', `translate(${x},${programY})`)
+                    .on('click', () => showProgramDetails(program))
+                    .on('mouseover', (event) => showTooltip(event, program))
+                    .on('mouseout', hideTooltip);
                 
-                parseXML() {
-                    const parser = new fxparser.XMLParser({
-                        ignoreAttributes: false,
-                        attributeNamePrefix: "@_"
-                    });
-                    
-                    this.parsedData = parser.parse(this.xmlData);
-                    
-                    // Extract channel info
-                    const channel = this.parsedData.tv.channel;
-                    this.channelInfo = {
-                        id: channel["@_id"],
-                        name: channel["display-name"]["#text"] || channel["display-name"]
-                    };
-                    
-                    // Detect channel type
-                    if (this.channelInfo.id.includes('CNBC')) {
-                        this.selectedChannel = 'ClassCNBC';
-                    } else if (this.channelInfo.id.includes('Moda')) {
-                        this.selectedChannel = 'ClassTVModa';
-                    }
-                    
-                    // Extract programs
-                    const programmes = Array.isArray(this.parsedData.tv.programme) 
-                        ? this.parsedData.tv.programme 
-                        : [this.parsedData.tv.programme];
-                    
-                    // Group by date
-                    const dateGroups = {};
-                    programmes.forEach(p => {
-                        const startDate = p["@_start"].substring(0, 8);
-                        if (!dateGroups[startDate]) {
-                            dateGroups[startDate] = [];
-                        }
-                        dateGroups[startDate].push(this.normalizeProgram(p));
-                    });
-                    
-                    this.availableDates = Object.keys(dateGroups).sort();
-                    this.currentDate = this.availableDates[0];
-                    
-                    // Store all programs
-                    this.allPrograms = dateGroups;
-                    this.updateCurrentPrograms();
-                    
-                    // Initialize UI
-                    this.$nextTick(() => {
-                        this.initializeTimeline();
-                        this.initializeGrid();
-                        this.updateCharts();
-                    });
-                },
+                // Program block
+                g.append('rect')
+                    .attr('width', width)
+                    .attr('height', programHeight)
+                    .attr('rx', 4)
+                    .attr('fill', formatColors[program.title] || '#6B7280')
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 2);
                 
-                normalizeProgram(p) {
-                    return {
-                        start: p["@_start"],
-                        stop: p["@_stop"],
-                        channel: p["@_channel"],
-                        assetId: p["episode-num"] ? p["episode-num"]["#text"] : '',
-                        title: p.title["#text"] || p.title,
-                        description: p.desc ? (p.desc["#text"] || p.desc) : '',
-                        duration: p.length ? p.length["#text"] : '0',
-                        rating: p.rating ? p.rating.value : '0',
-                        category: p.category ? (p.category["#text"] || p.category) : '',
-                        icon: p.icon ? p.icon["@_src"] : ''
-                    };
-                },
-                
-                updateCurrentPrograms() {
-                    this.currentPrograms = this.allPrograms[this.currentDate] || [];
-                    this.currentPrograms.sort((a, b) => a.start.localeCompare(b.start));
-                    
-                    this.$nextTick(() => {
-                        this.updateTimeline();
-                        this.updateGrid();
-                        this.updateCharts();
-                    });
-                },
-                
-                // Timeline methods
-                initializeTimeline() {
-                    const container = this.$refs.timelineContainer;
-                    if (!container) return;
-                    
-                    container.innerHTML = '<svg class="timeline-svg"></svg>';
-                    this.updateTimeline();
-                },
-                
-                updateTimeline() {
-                    const container = this.$refs.timelineContainer;
-                    if (!container || !this.currentPrograms.length) return;
-                    
-                    const svg = d3.select(container).select('svg');
-                    const width = container.offsetWidth;
-                    const height = 200;
-                    
-                    svg.attr('width', width).attr('height', height);
-                    
-                    // Clear previous content
-                    svg.selectAll('*').remove();
-                    
-                    // Add pattern for gaps
-                    const defs = svg.append('defs');
-                    const pattern = defs.append('pattern')
-                        .attr('id', 'diagonalHatch')
-                        .attr('patternUnits', 'userSpaceOnUse')
-                        .attr('width', 4)
-                        .attr('height', 4);
-                    
-                    pattern.append('path')
-                        .attr('d', 'M0,4 L4,0')
-                        .attr('stroke', '#f56565')
-                        .attr('stroke-width', 1);
-                    
-                    // Time scale
-                    const startOfDay = new Date(this.currentDate.substring(0, 4), 
-                                               parseInt(this.currentDate.substring(4, 6)) - 1,
-                                               parseInt(this.currentDate.substring(6, 8)), 0, 0, 0);
-                    const endOfDay = new Date(startOfDay);
-                    endOfDay.setDate(endOfDay.getDate() + 1);
-                    
-                    const xScale = d3.scaleTime()
-                        .domain([startOfDay, endOfDay])
-                        .range([50, width - 50]);
-                    
-                    // Draw time axis
-                    const xAxis = d3.axisBottom(xScale)
-                        .tickFormat(d3.timeFormat('%H:%M'))
-                        .ticks(d3.timeHour.every(2));
-                    
-                    svg.append('g')
-                        .attr('transform', `translate(0, ${height - 30})`)
-                        .call(xAxis);
-                    
-                    // Color scale for formats
-                    const formats = [...new Set(this.currentPrograms.map(p => p.title))];
-                    const colorScale = d3.scaleOrdinal()
-                        .domain(formats)
-                        .range(d3.schemeSet3);
-                    
-                    // Draw programs
-                    const programHeight = 80;
-                    const programY = 40;
-                    
-                    this.currentPrograms.forEach((program, index) => {
-                        const startTime = this.parseXMLTVDate(program.start);
-                        const endTime = this.parseXMLTVDate(program.stop);
-                        const x = xScale(startTime);
-                        const width = xScale(endTime) - x;
-                        
-                        const g = svg.append('g')
-                            .attr('class', 'program-block')
-                            .attr('transform', `translate(${x}, ${programY})`);
-                        
-                        // Program rectangle
-                        g.append('rect')
-                            .attr('width', Math.max(1, width))
-                            .attr('height', programHeight)
-                            .attr('fill', colorScale(program.title))
-                            .attr('stroke', '#fff')
-                            .attr('stroke-width', 2)
-                            .attr('rx', 4)
-                            .on('click', () => this.showProgramDetails(program))
-                            .on('mouseover', function(event) {
-                                d3.select(this).attr('filter', 'brightness(1.1)');
-                                // Show tooltip
-                                const tooltip = d3.select('body').append('div')
-                                    .attr('class', 'tooltip')
-                                    .style('left', (event.pageX + 10) + 'px')
-                                    .style('top', (event.pageY - 10) + 'px');
-                                
-                                tooltip.html(`
-                                    <strong>${program.title}</strong><br>
-                                    ${startTime.toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'})} - 
-                                    ${endTime.toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'})}<br>
-                                    Durata: ${Math.round(parseInt(program.duration) / 60)} minuti
-                                `);
-                            })
-                            .on('mouseout', function() {
-                                d3.select(this).attr('filter', null);
-                                d3.selectAll('.tooltip').remove();
-                            });
-                        
-                        // Program title
-                        if (width > 40) {
-                            g.append('text')
-                                .attr('x', width / 2)
-                                .attr('y', programHeight / 2)
-                                .attr('text-anchor', 'middle')
-                                .attr('dominant-baseline', 'middle')
-                                .attr('fill', '#fff')
-                                .attr('font-size', '12px')
-                                .attr('font-weight', 'bold')
-                                .attr('pointer-events', 'none')
-                                .text(program.title)
-                                .each(function() {
-                                    const self = d3.select(this);
-                                    let textLength = self.node().getComputedTextLength();
-                                    let text = self.text();
-                                    while (textLength > width - 10 && text.length > 0) {
-                                        text = text.slice(0, -1);
-                                        self.text(text + '...');
-                                        textLength = self.node().getComputedTextLength();
-                                    }
-                                });
-                        }
-                    });
-                    
-                    // Draw gaps
-                    const gaps = this.findGaps();
-                    gaps.forEach(gap => {
-                        const x = xScale(gap.startTime);
-                        const width = xScale(gap.endTime) - x;
-                        
-                        svg.append('rect')
-                            .attr('class', 'gap-indicator')
-                            .attr('x', x)
-                            .attr('y', programY)
-                            .attr('width', Math.max(1, width))
-                            .attr('height', programHeight);
-                    });
-                },
-                
-                // Grid methods
-                initializeGrid() {
-                    if (!this.$refs.gridContainer) return;
-                    
-                    const columnDefs = [
-                        { 
-                            headerName: 'Ora Inizio', 
-                            field: 'startTime',
-                            width: 100,
-                            editable: true,
-                            cellEditor: 'agTextCellEditor'
-                        },
-                        { 
-                            headerName: 'Ora Fine', 
-                            field: 'endTime',
-                            width: 100,
-                            editable: true
-                        },
-                        { 
-                            headerName: 'Durata', 
-                            field: 'durationFormatted',
-                            width: 90
-                        },
-                        { 
-                            headerName: 'Format/Titolo', 
-                            field: 'title',
-                            flex: 1,
-                            editable: true,
-                            cellEditor: 'agSelectCellEditor',
-                            cellEditorParams: {
-                                values: Object.keys(this.currentFormatIcons)
+                // Program title
+                if (width > 40) {
+                    g.append('text')
+                        .attr('x', 5)
+                        .attr('y', programHeight / 2)
+                        .attr('dy', '.35em')
+                        .attr('fill', 'white')
+                        .attr('font-size', '12px')
+                        .attr('font-weight', 'bold')
+                        .text(program.title)
+                        .each(function() {
+                            const self = d3.select(this);
+                            let textLength = self.node().getComputedTextLength();
+                            let text = self.text();
+                            while (textLength > width - 10 && text.length > 0) {
+                                text = text.slice(0, -1);
+                                self.text(text + '...');
+                                textLength = self.node().getComputedTextLength();
                             }
-                        },
-                        { 
-                            headerName: 'Descrizione', 
-                            field: 'description',
-                            flex: 1,
-                            editable: true
-                        },
-                        { 
-                            headerName: 'Categoria', 
-                            field: 'category',
-                            width: 120,
-                            editable: true,
-                            cellEditor: 'agSelectCellEditor',
-                            cellEditorParams: {
-                                values: ['News', 'Business', 'Entertainment', 'Documentary', 'Fashion', 'Lifestyle']
-                            }
-                        },
-                        { 
-                            headerName: 'Icona', 
-                            field: 'iconPreview',
-                            width: 80,
-                            cellRenderer: params => {
-                                const icon = params.data.icon;
-                                const hasCustomIcon = icon && !icon.includes('default.jpg');
-                                return `<img src="${icon || 'https://via.placeholder.com/60x34/ccc/666?text=?'}" 
-                                        class="icon-preview ${hasCustomIcon ? '' : 'icon-missing'}" 
-                                        style="cursor: pointer;">`;
-                            }
-                        },
-                        {
-                            headerName: 'Azioni',
-                            width: 100,
-                            cellRenderer: params => {
-                                return `
-                                    <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;"
-                                            onclick="window.deleteProgram(${params.rowIndex})">
-                                        🗑️
-                                    </button>
-                                `;
-                            }
-                        }
-                    ];
-                    
-                    const gridOptions = {
-                        columnDefs: columnDefs,
-                        rowData: [],
-                        animateRows: true,
-                        onCellValueChanged: this.onCellValueChanged,
-                        onCellClicked: this.onCellClicked
-                    };
-                    
-                    this.gridApi = agGrid.createGrid(this.$refs.gridContainer, gridOptions);
-                    this.updateGrid();
-                    
-                    // Expose delete function globally
-                    window.deleteProgram = (index) => this.deleteProgram(index);
-                },
-                
-                updateGrid() {
-                    if (!this.gridApi) return;
-                    
-                    const rowData = this.currentPrograms.map((p, index) => {
-                        const startTime = this.parseXMLTVDate(p.start);
-                        const endTime = this.parseXMLTVDate(p.stop);
-                        const duration = Math.round((endTime - startTime) / 1000 / 60);
-                        
-                        return {
-                            ...p,
-                            index: index,
-                            startTime: startTime.toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'}),
-                            endTime: endTime.toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'}),
-                            durationFormatted: `${Math.floor(duration / 60)}h ${duration % 60}m`,
-                            iconPreview: p.icon
-                        };
-                    });
-                    
-                    this.gridApi.setGridOption('rowData', rowData);
-                },
-                
-                onCellValueChanged(event) {
-                    // Update the program data
-                    const index = event.rowIndex;
-                    const field = event.colDef.field;
-                    const newValue = event.newValue;
-                    
-                    // Update the underlying data
-                    if (field === 'title') {
-                        this.currentPrograms[index].title = newValue;
-                        // Update icon based on format
-                        const iconFile = this.currentFormatIcons[newValue];
-                        if (iconFile) {
-                            this.currentPrograms[index].icon = this.getIconUrl(iconFile);
-                        }
-                    } else if (field === 'description') {
-                        this.currentPrograms[index].description = newValue;
-                    } else if (field === 'category') {
-                        this.currentPrograms[index].category = newValue;
-                    }
-                    
-                    // Refresh views
-                    this.updateTimeline();
-                    this.updateGrid();
-                },
-                
-                onCellClicked(event) {
-                    if (event.colDef.field === 'iconPreview') {
-                        this.showIconPreview(event.data.icon);
-                    }
-                },
-                
-                // Chart methods
-                updateCharts() {
-                    this.updateFormatChart();
-                    this.updateHourlyChart();
-                },
-                
-                updateFormatChart() {
-                    if (!this.$refs.formatChart) return;
-                    
-                    const formatCounts = {};
-                    const formatDurations = {};
-                    
-                    this.currentPrograms.forEach(p => {
-                        const format = p.title;
-                        const duration = parseInt(p.duration) || 0;
-                        
-                        formatCounts[format] = (formatCounts[format] || 0) + 1;
-                        formatDurations[format] = (formatDurations[format] || 0) + duration;
-                    });
-                    
-                    const labels = Object.keys(formatDurations);
-                    const data = labels.map(l => Math.round(formatDurations[l] / 60)); // in minutes
-                    
-                    if (this.formatChart) {
-                        this.formatChart.destroy();
-                    }
-                    
-                    this.formatChart = new Chart(this.$refs.formatChart, {
-                        type: 'pie',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                data: data,
-                                backgroundColor: [
-                                    '#667eea', '#764ba2', '#f56565', '#48bb78',
-                                    '#ed8936', '#4299e1', '#9f7aea', '#38b2ac',
-                                    '#e53e3e', '#38a169', '#d69e2e', '#3182ce'
-                                ]
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'right'
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            const label = context.label || '';
-                                            const value = context.parsed || 0;
-                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            const percentage = Math.round((value / total) * 100);
-                                            return `${label}: ${value} min (${percentage}%)`;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                },
-                
-                updateHourlyChart() {
-                    if (!this.$refs.hourlyChart) return;
-                    
-                    // Create hourly buckets
-                    const hourlyData = new Array(24).fill(0);
-                    
-                    this.currentPrograms.forEach(p => {
-                        const start = this.parseXMLTVDate(p.start);
-                        const end = this.parseXMLTVDate(p.stop);
-                        const startHour = start.getHours();
-                        const endHour = end.getHours();
-                        
-                        if (endHour >= startHour) {
-                            for (let h = startHour; h <= endHour && h < 24; h++) {
-                                hourlyData[h]++;
-                            }
-                        } else {
-                            // Crosses midnight
-                            for (let h = startHour; h < 24; h++) {
-                                hourlyData[h]++;
-                            }
-                            for (let h = 0; h <= endHour && h < 24; h++) {
-                                hourlyData[h]++;
-                            }
-                        }
-                    });
-                    
-                    if (this.hourlyChart) {
-                        this.hourlyChart.destroy();
-                    }
-                    
-                    this.hourlyChart = new Chart(this.$refs.hourlyChart, {
-                        type: 'bar',
-                        data: {
-                            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
-                            datasets: [{
-                                label: 'Programmi attivi',
-                                data: hourlyData,
-                                backgroundColor: '#667eea',
-                                borderColor: '#5a6fd8',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        stepSize: 1
-                                    }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            }
-                        }
-                    });
-                },
-                
-                // Date navigation
-                previousDay() {
-                    const index = this.currentDateIndex;
-                    if (index > 0) {
-                        this.currentDate = this.availableDates[index - 1];
-                        this.updateCurrentPrograms();
-                    }
-                },
-                
-                nextDay() {
-                    const index = this.currentDateIndex;
-                    if (index < this.availableDates.length - 1) {
-                        this.currentDate = this.availableDates[index + 1];
-                        this.updateCurrentPrograms();
-                    }
-                },
-                
-                // Utilities
-                parseXMLTVDate(dateStr) {
-                    const year = parseInt(dateStr.substring(0, 4));
-                    const month = parseInt(dateStr.substring(4, 6)) - 1;
-                    const day = parseInt(dateStr.substring(6, 8));
-                    const hour = parseInt(dateStr.substring(8, 10));
-                    const minute = parseInt(dateStr.substring(10, 12));
-                    const second = parseInt(dateStr.substring(12, 14));
-                    
-                    return new Date(year, month, day, hour, minute, second);
-                },
-                
-                formatXMLTVDate(date) {
-                    const pad = (n) => n.toString().padStart(2, '0');
-                    return date.getFullYear() + 
-                           pad(date.getMonth() + 1) + 
-                           pad(date.getDate()) + 
-                           pad(date.getHours()) + 
-                           pad(date.getMinutes()) + 
-                           pad(date.getSeconds()) + 
-                           ' +0000';
-                },
-                
-                formatDate(dateStr) {
-                    const date = new Date(
-                        dateStr.substring(0, 4),
-                        parseInt(dateStr.substring(4, 6)) - 1,
-                        parseInt(dateStr.substring(6, 8))
-                    );
-                    
-                    const options = { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    };
-                    
-                    return date.toLocaleDateString('it-IT', options);
-                },
-                
-                formatTime(date) {
-                    return date.toLocaleTimeString('it-IT', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                },
-                
-                findGaps() {
-                    const gaps = [];
-                    
-                    for (let i = 0; i < this.currentPrograms.length - 1; i++) {
-                        const current = this.currentPrograms[i];
-                        const next = this.currentPrograms[i + 1];
-                        
-                        const currentEnd = this.parseXMLTVDate(current.stop);
-                        const nextStart = this.parseXMLTVDate(next.start);
-                        
-                        const gapSeconds = (nextStart - currentEnd) / 1000;
-                        
-                        if (gapSeconds > 1) { // Gap maggiore di 1 secondo
-                            gaps.push({
-                                start: this.formatTime(currentEnd),
-                                end: this.formatTime(nextStart),
-                                duration: Math.round(gapSeconds / 60)
-                            });
-                        }
-                    }
-                    
-                    return gaps;
+                        });
                 }
-            },
-            
-            mounted() {
-                // Initialize app
-                this.showToast('Applicazione pronta. Carica un file XMLTV per iniziare!', 'success');
                 
-                // Add keyboard shortcuts
-                document.addEventListener('keydown', (e) => {
-                    if (e.ctrlKey || e.metaKey) {
-                        if (e.key === 'o') {
-                            e.preventDefault();
-                            this.$refs.fileInput.click();
-                        } else if (e.key === 's' && this.xmlData) {
-                            e.preventDefault();
-                            this.saveFile();
+                // Icon indicator
+                if (program.icon && width > 60) {
+                    const iconSize = 20;
+                    g.append('rect')
+                        .attr('x', width - iconSize - 5)
+                        .attr('y', 5)
+                        .attr('width', iconSize)
+                        .attr('height', iconSize)
+                        .attr('fill', 'white')
+                        .attr('rx', 2);
+                    
+                    g.append('text')
+                        .attr('x', width - iconSize/2 - 5)
+                        .attr('y', 15)
+                        .attr('text-anchor', 'middle')
+                        .attr('font-size', '12px')
+                        .text('📺');
+                }
+            });
+            
+            // Check for gaps
+            for (let i = 0; i < programs.length - 1; i++) {
+                const gap = programs[i + 1].start - programs[i].stop;
+                if (gap > 1000) { // More than 1 second
+                    const gapStart = programs[i].stop;
+                    const gapEnd = programs[i + 1].start;
+                    
+                    const x = xScale(gapStart);
+                    const width = xScale(gapEnd) - x;
+                    
+                    svg.append('rect')
+                        .attr('x', x)
+                        .attr('y', programY)
+                        .attr('width', width)
+                        .attr('height', programHeight)
+                        .attr('class', 'gap-indicator')
+                        .attr('opacity', 0.5);
+                }
+            }
+        }
+
+        function showProgramDetails(program) {
+            document.getElementById('programDetails').style.display = 'block';
+            document.getElementById('detailTitle').textContent = program.title;
+            document.getElementById('detailFormat').textContent = program.title;
+            document.getElementById('detailTime').textContent = `${formatTime(program.start)} - ${formatTime(program.stop)}`;
+            document.getElementById('detailDuration').textContent = formatDuration(program.duration);
+            document.getElementById('detailCategory').textContent = program.category || '-';
+            document.getElementById('detailRating').textContent = program.rating || '0';
+            document.getElementById('detailDescription').textContent = program.desc || '-';
+            
+            const iconDiv = document.getElementById('detailIcon');
+            const iconUrl = document.getElementById('detailIconUrl');
+            
+            if (program.icon) {
+                iconDiv.style.backgroundImage = `url(${program.icon})`;
+                iconUrl.textContent = program.icon;
+            } else {
+                iconDiv.style.backgroundImage = 'none';
+                iconDiv.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400">Nessuna icona</div>';
+                iconUrl.textContent = 'Nessuna icona specificata';
+            }
+            
+            // Scroll to details
+            document.getElementById('programDetails').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updateProgramTable(programs) {
+            const tbody = document.getElementById('programTable');
+            tbody.innerHTML = '';
+            
+            programs.forEach((program, index) => {
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                
+                const startTime = formatTime(program.start);
+                const endTime = formatTime(program.stop);
+                const duration = formatDuration(program.duration);
+                
+                row.innerHTML = `
+                    <td class="px-4 py-2">
+                        <input type="time" value="${program.start.toTimeString().substr(0,5)}" 
+                               onchange="updateProgramTime(${index}, 'start', this.value)"
+                               class="px-2 py-1 border rounded">
+                    </td>
+                    <td class="px-4 py-2">
+                        <input type="time" value="${program.stop.toTimeString().substr(0,5)}" 
+                               onchange="updateProgramTime(${index}, 'stop', this.value)"
+                               class="px-2 py-1 border rounded">
+                    </td>
+                    <td class="px-4 py-2">${duration}</td>
+                    <td class="px-4 py-2 editable-cell" onclick="editCell(this, ${index}, 'title')">${program.title}</td>
+                    <td class="px-4 py-2 editable-cell" onclick="editCell(this, ${index}, 'category')">${program.category || '-'}</td>
+                    <td class="px-4 py-2">
+                        <div class="w-16 h-9 bg-gray-200 rounded" 
+                             style="background-image: url(${program.icon}); background-size: cover;">
+                        </div>
+                    </td>
+                    <td class="px-4 py-2">
+                        <button onclick="deleteProgram(${index})" class="text-red-500 hover:text-red-700" title="Elimina">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            // Re-initialize icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function updateAnalytics(programs) {
+            // Format distribution chart
+            const formatCounts = {};
+            programs.forEach(p => {
+                formatCounts[p.title] = (formatCounts[p.title] || 0) + p.duration;
+            });
+            
+            const ctx = document.getElementById('formatChart').getContext('2d');
+            
+            // Destroy existing chart if any
+            if (window.formatChart) {
+                window.formatChart.destroy();
+            }
+            
+            window.formatChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(formatCounts),
+                    datasets: [{
+                        data: Object.values(formatCounts).map(s => s / 3600), // Convert to hours
+                        backgroundColor: Object.keys(formatCounts).map(f => formatColors[f] || '#6B7280')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: { size: 10 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(1) + ' ore';
+                                }
+                            }
                         }
                     }
+                }
+            });
+        }
+
+        function checkProblems(programs) {
+            const report = document.getElementById('problemsReport');
+            report.innerHTML = '';
+            const problems = [];
+            
+            // Check for gaps
+            for (let i = 0; i < programs.length - 1; i++) {
+                const gap = programs[i + 1].start - programs[i].stop;
+                if (gap > 1000) {
+                    const gapMinutes = Math.floor(gap / 60000);
+                    problems.push({
+                        type: 'gap',
+                        severity: 'error',
+                        message: `Buco di ${gapMinutes} minuti tra "${programs[i].title}" e "${programs[i + 1].title}"`
+                    });
+                }
+            }
+            
+            // Check for overlaps
+            for (let i = 0; i < programs.length - 1; i++) {
+                if (programs[i].stop > programs[i + 1].start) {
+                    problems.push({
+                        type: 'overlap',
+                        severity: 'error',
+                        message: `Sovrapposizione tra "${programs[i].title}" e "${programs[i + 1].title}"`
+                    });
+                }
+            }
+            
+            // Check for missing icons
+            programs.forEach(p => {
+                if (!p.icon || p.icon.includes('placeholder')) {
+                    problems.push({
+                        type: 'icon',
+                        severity: 'warning',
+                        message: `Icona mancante per "${p.title}"`
+                    });
+                }
+            });
+            
+            if (problems.length === 0) {
+                report.innerHTML = '<p class="text-green-600">✅ Nessun problema rilevato</p>';
+            } else {
+                problems.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = `p-2 rounded ${p.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'}`;
+                    div.innerHTML = `<span class="font-semibold">${p.severity === 'error' ? '❌' : '⚠️'}</span> ${p.message}`;
+                    report.appendChild(div);
                 });
             }
-        }).mount('#app');
+        }
+
+        // Utility functions
+        function formatDate(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('it-IT', options);
+        }
+
+        function formatTime(date) {
+            return date.toTimeString().substr(0, 5);
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function showTooltip(event, program) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <div class="font-semibold">${program.title}</div>
+                <div class="text-xs">${formatTime(program.start)} - ${formatTime(program.stop)}</div>
+                <div class="text-xs">Durata: ${formatDuration(program.duration)}</div>
+                ${program.category ? `<div class="text-xs">Categoria: ${program.category}</div>` : ''}
+            `;
+            tooltip.style.left = event.pageX + 10 + 'px';
+            tooltip.style.top = event.pageY - 10 + 'px';
+            tooltip.classList.remove('hidden');
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').classList.add('hidden');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast p-4 rounded-lg shadow-lg ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 
+                'bg-blue-500'
+            } text-white`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Zoom functions
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel * 1.2, 5);
+            loadDay();
+        }
+
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel / 1.2, 0.5);
+            loadDay();
+        }
+
+        function resetZoom() {
+            zoomLevel = 1;
+            loadDay();
+        }
+
+        // Mouse wheel zoom
+        document.getElementById('timelineContainer').addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomIn();
+            } else {
+                zoomOut();
+            }
+        });
+
+        // Navigation functions
+        function prevDay() {
+            const selector = document.getElementById('daySelector');
+            if (selector.selectedIndex > 0) {
+                selector.selectedIndex--;
+                loadDay();
+            }
+        }
+
+        function nextDay() {
+            const selector = document.getElementById('daySelector');
+            if (selector.selectedIndex < selector.options.length - 1) {
+                selector.selectedIndex++;
+                loadDay();
+            }
+        }
+
+        // Actualization functions
+        function showActualizationDialog() {
+            document.getElementById('actualizationDialog').classList.remove('hidden');
+            document.getElementById('newStartDate').value = selectedDay.toISOString().split('T')[0];
+        }
+
+        function closeActualizationDialog() {
+            document.getElementById('actualizationDialog').classList.add('hidden');
+        }
+
+        function actualizeSchedule() {
+            const newStartDate = new Date(document.getElementById('newStartDate').value);
+            const oldStartDate = selectedDay;
+            const dayDiff = Math.floor((newStartDate - oldStartDate) / (1000 * 60 * 60 * 24));
+            
+            // Create new XML document
+            const newDoc = xmlDoc.cloneNode(true);
+            
+            // Update all program dates
+            const programmes = newDoc.querySelectorAll('programme');
+            programmes.forEach(prog => {
+                const oldStart = parseXMLTVDate(prog.getAttribute('start'));
+                const oldStop = parseXMLTVDate(prog.getAttribute('stop'));
+                
+                const newStart = new Date(oldStart);
+                newStart.setDate(newStart.getDate() + dayDiff);
+                const newStop = new Date(oldStop);
+                newStop.setDate(newStop.getDate() + dayDiff);
+                
+                prog.setAttribute('start', formatXMLTVDate(newStart));
+                prog.setAttribute('stop', formatXMLTVDate(newStop));
+            });
+            
+            // Update tv date attribute
+            newDoc.querySelector('tv').setAttribute('date', newStartDate.toISOString().split('T')[0]);
+            
+            // Download new file
+            const serializer = new XMLSerializer();
+            const xmlString = serializer.serializeToString(newDoc);
+            const blob = new Blob([xmlString], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentChannelId}_actualized_${newStartDate.toISOString().split('T')[0]}.xml`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            closeActualizationDialog();
+            showToast('File attualizzato scaricato con successo', 'success');
+        }
+
+        // Export function
+        function exportXMLTV() {
+            const serializer = new XMLSerializer();
+            const xmlString = serializer.serializeToString(xmlDoc);
+            const blob = new Blob([xmlString], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentChannelId}_edited_${new Date().toISOString().split('T')[0]}.xml`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            showToast('File esportato con successo', 'success');
+        }
+
+        // Edit functions
+        function editCell(cell, programIndex, field) {
+            const currentValue = cell.textContent;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue === '-' ? '' : currentValue;
+            input.className = 'w-full px-2 py-1 border rounded';
+            
+            input.onblur = () => {
+                const newValue = input.value.trim();
+                cell.textContent = newValue || '-';
+                
+                // Update program
+                const dayPrograms = currentPrograms.filter(p => 
+                    p.start.toDateString() === selectedDay.toDateString() ||
+                    (p.start < selectedDay && p.stop > selectedDay)
+                ).sort((a, b) => a.start - b.start);
+                
+                const program = dayPrograms[programIndex];
+                if (program) {
+                    program[field] = newValue;
+                    
+                    // Update XML
+                    const titleElem = program.element.querySelector(field);
+                    if (titleElem) {
+                        titleElem.textContent = newValue;
+                    } else if (field === 'category') {
+                        const catElem = xmlDoc.createElement('category');
+                        catElem.setAttribute('lang', 'it');
+                        catElem.textContent = newValue;
+                        program.element.appendChild(catElem);
+                    }
+                    
+                    // Reload if title changed (affects colors)
+                    if (field === 'title') {
+                        loadDay();
+                    }
+                }
+            };
+            
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    cell.textContent = currentValue;
+                }
+            };
+            
+            cell.textContent = '';
+            cell.appendChild(input);
+            input.focus();
+            input.select();
+        }
+
+        function updateProgramTime(programIndex, timeType, newTime) {
+            const dayPrograms = currentPrograms.filter(p => 
+                p.start.toDateString() === selectedDay.toDateString() ||
+                (p.start < selectedDay && p.stop > selectedDay)
+            ).sort((a, b) => a.start - b.start);
+            
+            const program = dayPrograms[programIndex];
+            if (!program) return;
+            
+            const [hours, minutes] = newTime.split(':').map(Number);
+            const newDate = new Date(program[timeType === 'start' ? 'start' : 'stop']);
+            newDate.setHours(hours, minutes, 0, 0);
+            
+            if (timeType === 'start') {
+                program.start = newDate;
+                program.element.setAttribute('start', formatXMLTVDate(newDate));
+            } else {
+                program.stop = newDate;
+                program.element.setAttribute('stop', formatXMLTVDate(newDate));
+            }
+            
+            program.duration = (program.stop - program.start) / 1000;
+            
+            loadDay();
+            showToast('Orario aggiornato', 'success');
+        }
+
+        function deleteProgram(programIndex) {
+            if (!confirm('Eliminare questo programma?')) return;
+            
+            const dayPrograms = currentPrograms.filter(p => 
+                p.start.toDateString() === selectedDay.toDateString() ||
+                (p.start < selectedDay && p.stop > selectedDay)
+            ).sort((a, b) => a.start - b.start);
+            
+            const program = dayPrograms[programIndex];
+            if (!program) return;
+            
+            // Remove from XML
+            program.element.remove();
+            
+            // Remove from array
+            const globalIndex = currentPrograms.indexOf(program);
+            currentPrograms.splice(globalIndex, 1);
+            
+            loadDay();
+            showToast('Programma eliminato', 'success');
+        }
+
+        function addProgram() {
+            // Find last program of the day
+            const dayPrograms = currentPrograms.filter(p => 
+                p.start.toDateString() === selectedDay.toDateString()
+            ).sort((a, b) => a.start - b.start);
+            
+            const lastProgram = dayPrograms[dayPrograms.length - 1];
+            const newStart = lastProgram ? new Date(lastProgram.stop) : new Date(selectedDay);
+            if (!lastProgram) {
+                newStart.setHours(0, 0, 0, 0);
+            }
+            
+            const newStop = new Date(newStart);
+            newStop.setMinutes(newStop.getMinutes() + 30);
+            
+            // Create new program element
+            const programme = xmlDoc.createElement('programme');
+            programme.setAttribute('start', formatXMLTVDate(newStart));
+            programme.setAttribute('stop', formatXMLTVDate(newStop));
+            programme.setAttribute('channel', currentChannelId);
+            
+            const title = xmlDoc.createElement('title');
+            title.setAttribute('lang', 'it');
+            title.textContent = 'Nuovo Programma';
+            programme.appendChild(title);
+            
+            const desc = xmlDoc.createElement('desc');
+            desc.setAttribute('lang', 'it');
+            desc.textContent = 'Descrizione del nuovo programma';
+            programme.appendChild(desc);
+            
+            const rating = xmlDoc.createElement('rating');
+            rating.setAttribute('system', 'Italy Parental Rating');
+            const value = xmlDoc.createElement('value');
+            value.textContent = '0';
+            rating.appendChild(value);
+            programme.appendChild(rating);
+            
+            // Add to XML
+            xmlDoc.querySelector('tv').appendChild(programme);
+            
+            // Add to programs array
+            const newProgram = {
+                start: newStart,
+                stop: newStop,
+                title: 'Nuovo Programma',
+                desc: 'Descrizione del nuovo programma',
+                category: '',
+                rating: '0',
+                icon: '',
+                episodeNum: '',
+                duration: 1800,
+                element: programme
+            };
+            
+            currentPrograms.push(newProgram);
+            
+            // Assign color
+            if (!formatColors[newProgram.title]) {
+                formatColors[newProgram.title] = colors[colorIndex % colors.length];
+                colorIndex++;
+            }
+            
+            loadDay();
+            showToast('Nuovo programma aggiunto', 'success');
+        }
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+        }
+
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark');
+        }
+
+        // Show info
+        function showInfo() {
+            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nFunzionalità:\n- Visualizzazione timeline interattiva\n- Modifica programmi inline\n- Attualizzazione date\n- Analisi e report\n- Export XMLTV\n\nSviluppato per Class CNBC e Class TV Moda`);
+        }
     </script>
 </body>
 </html>
-                                startTime: currentEnd,
-                                endTime: nextStart,
-                                duration: Math.round(gapSeconds / 60),
-                                afterProgram: current,
-                                beforeProgram: next
-                            });
-                        }
-                    }
-                    
-                    return gaps;
-                },
-                
-                getIconUrl(iconFile) {
-                    if (!iconFile) return '';
-                    if (iconFile.startsWith('http')) return iconFile;
-                    
-                    const baseUrl = iconBaseUrls[this.selectedChannel];
-                    return baseUrl + iconFile;
-                },
-                
-                // Actions
-                showToast(message, type = 'success') {
-                    this.toast = {
-                        show: true,
-                        message: message,
-                        type: type
-                    };
-                    
-                    setTimeout(() => {
-                        this.toast.show = false;
-                    }, 3000);
-                },
-                
-                toggleDarkMode() {
-                    this.darkMode = !this.darkMode;
-                    document.body.classList.toggle('dark-mode');
-                },
-                
-                zoomIn() {
-                    this.timelineZoom *= 1.5;
-                    this.updateTimeline();
-                },
-                
-                zoomOut() {
-                    this.timelineZoom /= 1.5;
-                    this.updateTimeline();
-                },
-                
-                resetZoom() {
-                    this.timelineZoom = 1;
-                    this.timelinePan = 0;
-                    this.updateTimeline();
-                },
-                
-                showProgramDetails(program) {
-                    const start = this.parseXMLTVDate(program.start);
-                    const end = this.parseXMLTVDate(program.stop);
-                    const duration = Math.round((end - start) / 1000 / 60);
-                    
-                    alert(`
-📺 ${program.title}
-
-⏰ Orario: ${this.formatTime(start)} - ${this.formatTime(end)}
-⏱️ Durata: ${Math.floor(duration / 60)}h ${duration % 60}m (${program.duration} secondi)
-📁 Asset ID: ${program.assetId || 'N/A'}
-🏷️ Categoria: ${program.category || 'N/A'}
-⭐ Rating: ${program.rating || '0'}
-📝 Descrizione: ${program.description || 'Nessuna descrizione'}
-🖼️ Icona: ${program.icon || 'Nessuna icona'}
-                    `);
-                },
-                
-                showIconPreview(url) {
-                    this.previewIconUrl = url || 'https://via.placeholder.com/1920x1080/ccc/666?text=NO+ICON';
-                    this.showIconModal = true;
-                },
-                
-                selectFormat(format) {
-                    this.newProgram.format = format;
-                    this.showFormatDropdown = false;
-                },
-                
-                updateFormatIcon(format, newIcon) {
-                    this.formatIconsData[this.selectedChannel][format] = newIcon;
-                },
-                
-                addFormat() {
-                    if (this.newFormat.name && this.newFormat.icon) {
-                        this.formatIconsData[this.selectedChannel][this.newFormat.name] = this.newFormat.icon;
-                        this.newFormat = { name: '', icon: '' };
-                        this.showToast('Format aggiunto con successo', 'success');
-                    }
-                },
-                
-                exportFormats() {
-                    const data = {
-                        channel: this.selectedChannel,
-                        formats: this.formatIconsData[this.selectedChannel],
-                        exportDate: new Date().toISOString()
-                    };
-                    
-                    const blob = new Blob([JSON.stringify(data, null, 2)], {
-                        type: 'application/json'
-                    });
-                    
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `formats-${this.selectedChannel}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                },
-                
-                importFormats() {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.json';
-                    input.onchange = (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                try {
-                                    const data = JSON.parse(e.target.result);
-                                    if (data.formats) {
-                                        this.formatIconsData[this.selectedChannel] = data.formats;
-                                        this.showToast('Format importati con successo', 'success');
-                                    }
-                                } catch (error) {
-                                    this.showToast('Errore nell\'importazione', 'error');
-                                }
-                            };
-                            reader.readAsText(file);
-                        }
-                    };
-                    input.click();
-                },
-                
-                addProgram() {
-                    if (!this.newProgram.startTime || !this.newProgram.format) {
-                        this.showToast('Compila tutti i campi obbligatori', 'error');
-                        return;
-                    }
-                    
-                    // Create new program
-                    const [hours, minutes] = this.newProgram.startTime.split(':');
-                    const startDate = new Date(
-                        this.currentDate.substring(0, 4),
-                        parseInt(this.currentDate.substring(4, 6)) - 1,
-                        parseInt(this.currentDate.substring(6, 8)),
-                        parseInt(hours),
-                        parseInt(minutes),
-                        0
-                    );
-                    
-                    const endDate = new Date(startDate);
-                    endDate.setMinutes(endDate.getMinutes() + parseInt(this.newProgram.duration));
-                    
-                    const iconFile = this.currentFormatIcons[this.newProgram.format] || 'default.jpg';
-                    
-                    const newProgram = {
-                        start: this.formatXMLTVDate(startDate),
-                        stop: this.formatXMLTVDate(endDate),
-                        channel: this.channelInfo.id,
-                        assetId: 'NEW_' + Date.now(),
-                        title: this.newProgram.format,
-                        description: this.newProgram.description,
-                        duration: (this.newProgram.duration * 60).toString(),
-                        rating: '0',
-                        category: this.newProgram.category,
-                        icon: this.getIconUrl(iconFile)
-                    };
-                    
-                    // Insert in the right position
-                    let inserted = false;
-                    for (let i = 0; i < this.currentPrograms.length; i++) {
-                        if (this.currentPrograms[i].start > newProgram.start) {
-                            this.currentPrograms.splice(i, 0, newProgram);
-                            inserted = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!inserted) {
-                        this.currentPrograms.push(newProgram);
-                    }
-                    
-                    // Update everything
-                    this.updateCurrentPrograms();
-                    this.showAddProgramModal = false;
-                    this.showToast('Programma aggiunto con successo', 'success');
-                    
-                    // Reset form
-                    this.newProgram = {
-                        startTime: '00:00',
-                        duration: 30,
-                        format: '',
-                        description: '',
-                        category: 'Business'
-                    };
-                },
-                
-                deleteProgram(index) {
-                    if (confirm('Eliminare questo programma?')) {
-                        const deletedProgram = this.currentPrograms[index];
-                        
-                        // If there's a next program, extend the previous one
-                        if (index > 0 && index < this.currentPrograms.length - 1) {
-                            const prevProgram = this.currentPrograms[index - 1];
-                            const nextProgram = this.currentPrograms[index + 1];
-                            
-                            // Extend previous program to fill the gap
-                            prevProgram.stop = deletedProgram.stop;
-                            const newDuration = (this.parseXMLTVDate(prevProgram.stop) - this.parseXMLTVDate(prevProgram.start)) / 1000;
-                            prevProgram.duration = newDuration.toString();
-                        }
-                        
-                        this.currentPrograms.splice(index, 1);
-                        this.updateCurrentPrograms();
-                        this.showToast('Programma eliminato', 'success');
-                    }
-                },
-                
-                autoFillGaps() {
-                    const gaps = this.findGaps();
-                    
-                    gaps.forEach(gap => {
-                        const filler = {
-                            start: this.formatXMLTVDate(gap.startTime),
-                            stop: this.formatXMLTVDate(gap.endTime),
-                            channel: this.channelInfo.id,
-                            assetId: 'FILLER_' + Date.now(),
-                            title: 'Programmazione notturna',
-                            description: 'Programmazione di riempimento',
-                            duration: (gap.duration * 60).toString(),
-                            rating: '0',
-                            category: 'Entertainment',
-                            icon: this.getIconUrl('default.jpg')
-                        };
-                        
-                        // Find insertion point
-                        for (let i = 0; i < this.currentPrograms.length; i++) {
-                            if (this.currentPrograms[i].start > filler.start) {
-                                this.currentPrograms.splice(i, 0, filler);
-                                break;
-                            }
-                        }
-                    });
-                    
-                    this.updateCurrentPrograms();
-                    this.showToast(`${gaps.length} buchi riempiti automaticamente`, 'success');
-                },
-                
-                fixIssue(issue) {
-                    if (issue.type === 'gap') {
-                        // Create filler program
-                        const filler = {
-                            start: this.formatXMLTVDate(issue.gap.startTime),
-                            stop: this.formatXMLTVDate(issue.gap.endTime),
-                            channel: this.channelInfo.id,
-                            assetId: 'FILLER_' + Date.now(),
-                            title: 'Programmazione notturna',
-                            description: 'Programmazione di riempimento',
-                            duration: (issue.gap.duration * 60).toString(),
-                            rating: '0',
-                            category: 'Entertainment',
-                            icon: this.getIconUrl('default.jpg')
-                        };
-                        
-                        // Find insertion point
-                        for (let i = 0; i < this.currentPrograms.length; i++) {
-                            if (this.currentPrograms[i].start > filler.start) {
-                                this.currentPrograms.splice(i, 0, filler);
-                                break;
-                            }
-                        }
-                        
-                        this.updateCurrentPrograms();
-                        this.showToast('Buco riempito con successo', 'success');
-                    } else if (issue.type === 'missing-icon') {
-                        // Open format manager
-                        this.showFormatManager = true;
-                    }
-                },
-                
-                actualizeData() {
-                    if (!this.newStartDate) {
-                        this.showToast('Seleziona una data di inizio', 'error');
-                        return;
-                    }
-                    
-                    const newStartDate = new Date(this.newStartDate);
-                    const oldStartDate = new Date(
-                        this.availableDates[0].substring(0, 4),
-                        parseInt(this.availableDates[0].substring(4, 6)) - 1,
-                        parseInt(this.availableDates[0].substring(6, 8))
-                    );
-                    
-                    const daysDiff = Math.floor((newStartDate - oldStartDate) / (1000 * 60 * 60 * 24));
-                    
-                    // Clone and update programs
-                    const updatedPrograms = [];
-                    
-                    Object.entries(this.allPrograms).forEach(([dateStr, programs]) => {
-                        if (this.actualizeMode === 'single' && dateStr !== this.availableDates[0]) {
-                            return;
-                        }
-                        
-                        if (this.actualizeMode === 'week') {
-                            const dateIndex = this.availableDates.indexOf(dateStr);
-                            if (dateIndex >= 7) return;
-                        }
-                        
-                        programs.forEach(program => {
-                            const newProgram = { ...program };
-                            
-                            // Update dates
-                            const oldStart = this.parseXMLTVDate(program.start);
-                            const oldEnd = this.parseXMLTVDate(program.stop);
-                            
-                            oldStart.setDate(oldStart.getDate() + daysDiff);
-                            oldEnd.setDate(oldEnd.getDate() + daysDiff);
-                            
-                            newProgram.start = this.formatXMLTVDate(oldStart);
-                            newProgram.stop = this.formatXMLTVDate(oldEnd);
-                            
-                            updatedPrograms.push(newProgram);
-                        });
-                    });
-                    
-                    // Generate new XML
-                    const newXML = this.generateXML(updatedPrograms);
-                    
-                    // Download
-                    const blob = new Blob([newXML], { type: 'application/xml' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${this.channelInfo.id}_actualized_${this.newStartDate}.xml`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    
-                    this.showActualizeModal = false;
-                    this.showToast('File attualizzato scaricato con successo', 'success');
-                },
-                
-                generateXML(programs) {
-                    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-                    xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
-                    
-                    // Channel info
-                    xml += `  <channel id="${this.channelInfo.id}">\n`;
-                    xml += `    <display-name lang="it">${this.channelInfo.name}</display-name>\n`;
-                    xml += `  </channel>\n\n`;
-                    
-                    // Programs
-                    programs.forEach(p => {
-                        xml += `  <programme start="${p.start}" stop="${p.stop}" channel="${p.channel}">\n`;
-                        if (p.assetId) {
-                            xml += `    <episode-num system="assetID">${p.assetId}</episode-num>\n`;
-                        }
-                        xml += `    <title lang="it">${this.escapeXml(p.title)}</title>\n`;
-                        if (p.description) {
-                            xml += `    <desc lang="it">${this.escapeXml(p.description)}</desc>\n`;
-                        }
-                        xml += `    <length units="seconds">${p.duration}</length>\n`;
-                        xml += `    <rating system="Italy Parental Rating">\n`;
-                        xml += `      <value>${p.rating}</value>\n`;
-                        xml += `    </rating>\n`;
-                        if (p.category) {
-                            xml += `    <category lang="it">${p.category}</category>\n`;
-                        }
-                        if (p.icon) {
-                            xml += `    <icon src="${p.icon}" width="1920" height="1080"></icon>\n`;
-                        }
-                        xml += `  </programme>\n\n`;
-                    });
-                    
-                    xml += '</tv>';
-                    
-                    return xml;
-                },
-                
-                escapeXml(text) {
-                    if (!text) return '';
-                    return text.toString()
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/'/g, '&#39;');
-                },
-                
-                saveFile() {
-                    // Collect all programs
-                    const allPrograms = [];
-                    Object.values(this.allPrograms).forEach(programs => {
-                        allPrograms.push(...programs);
-                    });
-                    
-                    const xml = this.generateXML(allPrograms);
-                    
-                    const blob = new Blob([xml], { type: 'application/xml' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${this.channelInfo.id}_edited_${new Date().toISOString().split('T')[0]}.xml`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    
-                    this.showToast('File salvato con successo', 'success');
-                },
-                
-                validateXML() {
-                    const issues = [];
-                    
-                    // Check for gaps
-                    Object.entries(this.allPrograms).forEach(([date, programs]) => {
-                        const gaps = this.findGapsInPrograms(programs);
-                        gaps.forEach(gap => {
-                            issues.push({
-                                type: 'gap',
-                                date: date,
-                                message: `Buco di ${gap.duration} minuti tra ${gap.start} e ${gap.end}`
-                            });
-                        });
-                        
-                        // Check for overlaps
-                        for (let i = 0; i < programs.length - 1; i++) {
-                            const current = programs[i];
-                            const next = programs[i + 1];
-                            
-                            if (current.stop > next.start) {
-                                issues.push({
-                                    type: 'overlap',
-                                    date: date,
-                                    message: `Sovrapposizione tra "${current.title}" e "${next.title}"`
-                                });
-                            }
-                        }
-                    });
-                    
-                    // Check for missing icons
-                    const missingIcons = new Set();
-                    Object.values(this.allPrograms).forEach(programs => {
-                        programs.forEach(p => {
-                            if (!p.icon || p.icon.includes('default.jpg')) {
-                                missingIcons.add(p.title);
-                            }
-                        });
-                    });
-                    
-                    missingIcons.forEach(format => {
-                        issues.push({
-                            type: 'missing-icon',
-                            message: `Format "${format}" senza icona specifica`
-                        });
-                    });
-                    
-                    if (issues.length === 0) {
-                        this.showToast('✅ Validazione completata: nessun problema trovato!', 'success');
-                    } else {
-                        let message = `⚠️ Trovati ${issues.length} problemi:\n\n`;
-                        issues.forEach(issue => {
-                            message += `• ${issue.message}\n`;
-                        });
-                        alert(message);
-                    }
-                },
-                
-                findGapsInPrograms(programs) {
-                    const gaps = [];
-                    
-                    for (let i = 0; i < programs.length - 1; i++) {
-                        const current = programs[i];
-                        const next = programs[i + 1];
-                        
-                        const currentEnd = this.parseXMLTVDate(current.stop);
-                        const nextStart = this.parseXMLTVDate(next.start);
-                        
-                        const gapSeconds = (nextStart - currentEnd) / 1000;
-                        
-                        if (gapSeconds > 1) {
-                            gaps.push({
-                                start: this.formatTime(currentEnd),
-                                end: this.formatTime(nextStart),
