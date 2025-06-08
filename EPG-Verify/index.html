@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer & Editor Professional v1.5</title>
+    <title>XMLTV Viewer & Editor Professional v1.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -37,7 +37,7 @@
                         <i data-lucide="tv" class="w-8 h-8"></i>
                         XMLTV Viewer & Editor Pro
                     </h1>
-                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.5</p>
+                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.6</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-2 rounded hover:bg-gray-100">
@@ -73,18 +73,11 @@
                         <p class="text-sm text-gray-600" id="channelId">-</p>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-gray-700 mb-2">Seleziona Giorno</h3>
-                        <div class="flex items-center gap-2">
-                            <button onclick="prevDay()" class="p-2 hover:bg-gray-100 rounded">
-                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
-                            </button>
-                            <select id="daySelector" onchange="loadDay()" class="flex-1 px-3 py-2 border rounded">
-                                <!-- Options populated dynamically -->
-                            </select>
-                            <button onclick="nextDay()" class="p-2 hover:bg-gray-100 rounded">
-                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
-                            </button>
-                        </div>
+                        <h3 class="font-semibold text-gray-700 mb-2">Data Palinsesto</h3>
+                        <p class="text-xl font-bold" id="scheduleDate">-</p>
+                        <p class="text-sm text-gray-600">
+                            <span id="programCount">-</span> programmi
+                        </p>
                         <p class="text-xs text-gray-500 mt-1">Fuso orario: Europa/Roma (UTC+1/+2)</p>
                     </div>
                     <div>
@@ -107,7 +100,7 @@
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                 <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
                     <i data-lucide="clock" class="w-5 h-5"></i>
-                    Timeline Giornaliera
+                    Timeline Giornaliera <span id="timelineDate" class="text-sm font-normal text-gray-600"></span>
                 </h3>
                 <div class="mb-2 flex items-center gap-4">
                     <button onclick="zoomIn()" class="p-2 hover:bg-gray-100 rounded" title="Zoom In">
@@ -244,7 +237,7 @@
         <!-- Toast Container -->
         <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-        <!-- Tooltip - Fixed positioning -->
+        <!-- Tooltip -->
         <div id="tooltip" class="fixed bg-gray-900 text-white p-3 rounded shadow-lg text-sm hidden" style="z-index: 9999; pointer-events: none;"></div>
     </div>
 
@@ -255,7 +248,6 @@
                 if (typeof lucide !== 'undefined') {
                     lucide.createIcons();
                 } else {
-                    // Fallback to emoji if Lucide doesn't load
                     console.warn('Lucide not loaded, using emoji fallbacks');
                     document.querySelectorAll('[data-lucide]').forEach(el => {
                         const iconMap = {
@@ -263,8 +255,6 @@
                             'moon': '🌙',
                             'info': 'ℹ️',
                             'upload': '📤',
-                            'chevron-left': '◀',
-                            'chevron-right': '▶',
                             'calendar': '📅',
                             'download': '💾',
                             'clock': '🕐',
@@ -287,15 +277,17 @@
         });
 
         // Version
-        const APP_VERSION = '1.5';
-        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Fixed file loading and date handling`);
+        const APP_VERSION = '1.6';
+        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Single day view with proper UTC handling`);
 
         // Global state
         let xmlDoc = null;
         let currentPrograms = [];
         let currentChannelId = '';
         let currentChannelName = '';
-        let selectedDay = null;
+        let scheduleDate = null;
+        let timelineStartDate = null;
+        let timelineEndDate = null;
         let zoomLevel = 1;
         let formatColors = {};
         let colorIndex = 0;
@@ -303,7 +295,7 @@
         // Color palette
         const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
-        // File handling - FIXED VERSION
+        // File handling
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
 
@@ -419,8 +411,8 @@
             console.log('Found programmes:', programmes.length);
             
             currentPrograms = [];
-            const daysMap = new Map();
             
+            // Parse all programs
             programmes.forEach((prog, index) => {
                 try {
                     const startStr = prog.getAttribute('start');
@@ -438,10 +430,8 @@
                     if (index < 3) {
                         console.log(`Program ${index}:`, prog.querySelector('title')?.textContent);
                         console.log('  Start string:', startStr);
-                        console.log('  Start UTC:', startUTC.toISOString());
                         console.log('  Start Local:', startUTC.toString());
                         console.log('  Stop string:', stopStr);
-                        console.log('  Stop UTC:', stopUTC.toISOString());
                         console.log('  Stop Local:', stopUTC.toString());
                     }
                     
@@ -468,22 +458,6 @@
                     
                     currentPrograms.push(program);
                     
-                    // Add all days where this program appears
-                    const startDate = new Date(startUTC);
-                    const endDate = new Date(stopUTC);
-                    
-                    // Normalize to midnight for date tracking
-                    const currentDate = new Date(startDate);
-                    currentDate.setHours(0, 0, 0, 0);
-                    
-                    while (currentDate <= endDate) {
-                        const dateKey = currentDate.toISOString().split('T')[0];
-                        if (!daysMap.has(dateKey)) {
-                            daysMap.set(dateKey, new Date(currentDate));
-                        }
-                        currentDate.setDate(currentDate.getDate() + 1);
-                    }
-                    
                     // Assign color to format
                     if (!formatColors[title]) {
                         formatColors[title] = colors[colorIndex % colors.length];
@@ -495,49 +469,71 @@
             });
             
             console.log('Parsed programs:', currentPrograms.length);
-            console.log('Found days:', Array.from(daysMap.keys()));
             
-            // Populate day selector
-            const daySelector = document.getElementById('daySelector');
-            daySelector.innerHTML = '';
+            if (currentPrograms.length === 0) {
+                showToast('Nessun programma trovato nel file', 'error');
+                return;
+            }
             
-            // Sort days
-            const sortedDays = Array.from(daysMap.entries())
-                .sort((a, b) => a[1] - b[1]);
+            // Sort programs by start time
+            currentPrograms.sort((a, b) => a.start - b.start);
             
-            sortedDays.forEach(([dateKey, date]) => {
-                const option = document.createElement('option');
-                option.value = dateKey;
-                
-                // Count programs for this day
-                const dayStart = new Date(date);
-                dayStart.setHours(0, 0, 0, 0);
-                const dayEnd = new Date(date);
-                dayEnd.setHours(23, 59, 59, 999);
-                
-                const programCount = currentPrograms.filter(p => {
-                    return (p.start < dayEnd && p.stop > dayStart);
-                }).length;
-                
-                option.textContent = `${formatDate(date)} (${programCount} programmi)`;
-                daySelector.appendChild(option);
+            // Determine the main schedule date
+            // Count programs by date
+            const dateCounts = {};
+            currentPrograms.forEach(p => {
+                const dateKey = p.start.toISOString().split('T')[0];
+                dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
             });
             
-            if (sortedDays.length > 0) {
-                // Select the first day with programs
-                selectedDay = sortedDays[0][1];
-                daySelector.selectedIndex = 0;
-                loadDay();
-            } else {
-                showToast('Nessun programma trovato nel file', 'error');
+            // Find the date with most programs
+            let maxCount = 0;
+            let mainDateKey = null;
+            Object.entries(dateCounts).forEach(([dateKey, count]) => {
+                if (count > maxCount) {
+                    maxCount = count;
+                    mainDateKey = dateKey;
+                }
+            });
+            
+            console.log('Date counts:', dateCounts);
+            console.log('Main date:', mainDateKey, 'with', maxCount, 'programs');
+            
+            // Set schedule date
+            scheduleDate = new Date(mainDateKey + 'T00:00:00');
+            
+            // Determine timeline boundaries
+            // Start from midnight of the main day
+            timelineStartDate = new Date(scheduleDate);
+            timelineStartDate.setHours(0, 0, 0, 0);
+            
+            // End at the stop time of the last program
+            const lastProgram = currentPrograms[currentPrograms.length - 1];
+            timelineEndDate = new Date(lastProgram.stop);
+            
+            // If timeline is less than 24 hours, extend to 24 hours
+            const timelineHours = (timelineEndDate - timelineStartDate) / (1000 * 60 * 60);
+            if (timelineHours < 24) {
+                timelineEndDate = new Date(timelineStartDate);
+                timelineEndDate.setHours(23, 59, 59, 999);
             }
+            
+            console.log('Timeline boundaries:', timelineStartDate.toString(), 'to', timelineEndDate.toString());
+            
+            // Update UI
+            document.getElementById('scheduleDate').textContent = formatDate(scheduleDate);
+            document.getElementById('programCount').textContent = currentPrograms.length;
+            document.getElementById('timelineDate').textContent = 
+                `(${formatTime(timelineStartDate)} - ${formatTime(timelineEndDate)})`;
+            
+            // Load programs
+            loadPrograms();
         }
 
         function parseXMLTVDate(dateStr) {
             // XMLTV format: YYYYMMDDHHmmss +0000
-            // Extract components
             const year = parseInt(dateStr.substr(0, 4));
-            const month = parseInt(dateStr.substr(4, 2)) - 1; // JavaScript months are 0-based
+            const month = parseInt(dateStr.substr(4, 2)) - 1;
             const day = parseInt(dateStr.substr(6, 2));
             const hour = parseInt(dateStr.substr(8, 2));
             const minute = parseInt(dateStr.substr(10, 2));
@@ -546,7 +542,7 @@
             // Create UTC date
             const utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
             
-            // Return date object (will be automatically converted to local timezone by JavaScript)
+            // Return date object (automatically converted to local timezone)
             return utcDate;
         }
 
@@ -557,49 +553,18 @@
                    `${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())} +0000`;
         }
 
-        function loadDay() {
-            const dayValue = document.getElementById('daySelector').value;
-            if (!dayValue) return;
-            
-            console.log('Loading day:', dayValue);
-            
-            // Create date at midnight local time
-            const [year, month, day] = dayValue.split('-').map(Number);
-            selectedDay = new Date(year, month - 1, day, 0, 0, 0, 0);
-            
-            // Set boundaries for the selected day
-            const startOfDay = new Date(selectedDay);
-            const endOfDay = new Date(selectedDay);
-            endOfDay.setHours(23, 59, 59, 999);
-            
-            console.log('Day boundaries:', startOfDay.toString(), 'to', endOfDay.toString());
-            
-            // Filter programs that appear in this day
-            const dayPrograms = currentPrograms.filter(p => {
-                return p.start < endOfDay && p.stop > startOfDay;
-            });
-            
-            console.log(`Found ${dayPrograms.length} programs for ${formatDate(selectedDay)}`);
-            
-            // Sort by start time
-            dayPrograms.sort((a, b) => a.start - b.start);
-            
-            // Draw timeline
-            try {
-                drawTimeline(dayPrograms);
-            } catch (err) {
-                console.error('Error in drawTimeline:', err);
-                showToast('Errore nella visualizzazione timeline: ' + err.message, 'error');
-            }
+        function loadPrograms() {
+            // Draw timeline with all programs
+            drawTimeline(currentPrograms);
             
             // Update table
-            updateProgramTable(dayPrograms);
+            updateProgramTable(currentPrograms);
             
             // Update analytics
-            updateAnalytics(dayPrograms);
+            updateAnalytics(currentPrograms);
             
             // Check for problems
-            checkProblems(dayPrograms);
+            checkProblems(currentPrograms);
         }
 
         function drawTimeline(programs) {
@@ -613,20 +578,32 @@
             
             svg.attr('width', width).attr('height', height);
             
-            // Time scale for the selected day in LOCAL time
-            const startOfDay = new Date(selectedDay);
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(selectedDay);
-            endOfDay.setHours(23, 59, 59, 999);
-            
+            // Time scale based on timeline boundaries
             const xScale = d3.scaleTime()
-                .domain([startOfDay, endOfDay])
+                .domain([timelineStartDate, timelineEndDate])
                 .range([margin.left, width - margin.right]);
+            
+            // Calculate appropriate tick interval based on timeline duration
+            const timelineHours = (timelineEndDate - timelineStartDate) / (1000 * 60 * 60);
+            let tickInterval;
+            if (timelineHours <= 24) {
+                tickInterval = d3.timeHour.every(zoomLevel > 2 ? 1 : 2);
+            } else {
+                tickInterval = d3.timeHour.every(Math.ceil(timelineHours / 24) * (zoomLevel > 2 ? 1 : 2));
+            }
             
             // Draw time axis
             const xAxis = d3.axisBottom(xScale)
-                .ticks(d3.timeHour.every(zoomLevel > 2 ? 1 : 2))
-                .tickFormat(d3.timeFormat('%H:%M'));
+                .ticks(tickInterval)
+                .tickFormat(d => {
+                    const hours = d.getHours();
+                    const minutes = d.getMinutes();
+                    // Show date change indicator
+                    if (hours === 0 && minutes === 0 && d > timelineStartDate) {
+                        return d3.timeFormat('%d/%m %H:%M')(d);
+                    }
+                    return d3.timeFormat('%H:%M')(d);
+                });
             
             svg.append('g')
                 .attr('transform', `translate(0,${height - margin.bottom})`)
@@ -642,6 +619,36 @@
                     .tickFormat(''))
                 .style('stroke-dasharray', '2,2')
                 .style('opacity', 0.3);
+            
+            // Add midnight line if timeline crosses midnight
+            const midnights = [];
+            const currentMidnight = new Date(timelineStartDate);
+            currentMidnight.setHours(24, 0, 0, 0);
+            while (currentMidnight < timelineEndDate) {
+                midnights.push(new Date(currentMidnight));
+                currentMidnight.setDate(currentMidnight.getDate() + 1);
+            }
+            
+            midnights.forEach(midnight => {
+                const x = xScale(midnight);
+                svg.append('line')
+                    .attr('x1', x)
+                    .attr('y1', margin.top)
+                    .attr('x2', x)
+                    .attr('y2', height - margin.bottom)
+                    .attr('stroke', '#ef4444')
+                    .attr('stroke-width', 2)
+                    .attr('stroke-dasharray', '5,5');
+                
+                svg.append('text')
+                    .attr('x', x)
+                    .attr('y', margin.top - 5)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#ef4444')
+                    .attr('font-size', '10px')
+                    .attr('font-weight', 'bold')
+                    .text('MEZZANOTTE');
+            });
             
             // Group overlapping programs into rows
             const rows = [];
@@ -681,12 +688,8 @@
             const baseY = margin.top + 10;
             
             programs.forEach((program, index) => {
-                // Clip program to day boundaries
-                const programStart = program.start < startOfDay ? startOfDay : program.start;
-                const programEnd = program.stop > endOfDay ? endOfDay : program.stop;
-                
-                const x = xScale(programStart);
-                const width = Math.max(1, xScale(programEnd) - x);
+                const x = xScale(program.start);
+                const width = Math.max(1, xScale(program.stop) - x);
                 const y = baseY + (program.row || 0) * (programHeight + rowGap);
                 
                 const g = svg.append('g')
@@ -710,11 +713,6 @@
                     .attr('fill', formatColors[program.title] || '#6B7280')
                     .attr('stroke', hasOverlap ? '#ff0000' : '#fff')
                     .attr('stroke-width', hasOverlap ? 3 : 1);
-                
-                // Add opacity if program extends beyond day boundaries
-                if (program.start < startOfDay || program.stop > endOfDay) {
-                    g.attr('opacity', 0.8);
-                }
                 
                 // Program title
                 if (width > 30) {
@@ -1033,7 +1031,6 @@
         function formatDuration(seconds) {
             const hours = Math.floor(seconds / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = Math.floor(seconds % 60);
             if (hours > 0) {
                 return `${hours}h ${minutes}min`;
             } else {
@@ -1060,17 +1057,17 @@
         // Zoom functions
         function zoomIn() {
             zoomLevel = Math.min(zoomLevel * 1.2, 5);
-            loadDay();
+            loadPrograms();
         }
 
         function zoomOut() {
             zoomLevel = Math.max(zoomLevel / 1.2, 0.5);
-            loadDay();
+            loadPrograms();
         }
 
         function resetZoom() {
             zoomLevel = 1;
-            loadDay();
+            loadPrograms();
         }
 
         // Mouse wheel zoom
@@ -1082,23 +1079,6 @@
                 zoomOut();
             }
         });
-
-        // Navigation functions
-        function prevDay() {
-            const selector = document.getElementById('daySelector');
-            if (selector.selectedIndex > 0) {
-                selector.selectedIndex--;
-                loadDay();
-            }
-        }
-
-        function nextDay() {
-            const selector = document.getElementById('daySelector');
-            if (selector.selectedIndex < selector.options.length - 1) {
-                selector.selectedIndex++;
-                loadDay();
-            }
-        }
 
         // Edit functions
         function editCell(cell, programIndex, field) {
@@ -1112,15 +1092,7 @@
                 const newValue = input.value.trim();
                 cell.textContent = newValue || '-';
                 
-                // Get current day programs
-                const dayPrograms = currentPrograms.filter(p => {
-                    const startOfDay = new Date(selectedDay);
-                    const endOfDay = new Date(selectedDay);
-                    endOfDay.setHours(23, 59, 59, 999);
-                    return p.start < endOfDay && p.stop > startOfDay;
-                }).sort((a, b) => a.start - b.start);
-                
-                const program = dayPrograms[programIndex];
+                const program = currentPrograms[programIndex];
                 if (program) {
                     program[field] = newValue;
                     
@@ -1141,7 +1113,7 @@
                             formatColors[newValue] = formatColors[program.title] || colors[colorIndex % colors.length];
                             colorIndex++;
                         }
-                        loadDay();
+                        loadPrograms();
                     }
                 }
             };
@@ -1161,14 +1133,7 @@
         }
 
         function updateProgramTime(programIndex, timeType, newTime) {
-            const dayPrograms = currentPrograms.filter(p => {
-                const startOfDay = new Date(selectedDay);
-                const endOfDay = new Date(selectedDay);
-                endOfDay.setHours(23, 59, 59, 999);
-                return p.start < endOfDay && p.stop > startOfDay;
-            }).sort((a, b) => a.start - b.start);
-            
-            const program = dayPrograms[programIndex];
+            const program = currentPrograms[programIndex];
             if (!program) return;
             
             const [hours, minutes] = newTime.split(':').map(Number);
@@ -1190,45 +1155,30 @@
             
             program.duration = (program.stop - program.start) / 1000;
             
-            loadDay();
+            loadPrograms();
             showToast('Orario aggiornato', 'success');
         }
 
         function deleteProgram(programIndex) {
             if (!confirm('Eliminare questo programma?')) return;
             
-            const dayPrograms = currentPrograms.filter(p => {
-                const startOfDay = new Date(selectedDay);
-                const endOfDay = new Date(selectedDay);
-                endOfDay.setHours(23, 59, 59, 999);
-                return p.start < endOfDay && p.stop > startOfDay;
-            }).sort((a, b) => a.start - b.start);
-            
-            const program = dayPrograms[programIndex];
+            const program = currentPrograms[programIndex];
             if (!program) return;
             
             // Remove from XML
             program.element.remove();
             
             // Remove from array
-            const globalIndex = currentPrograms.indexOf(program);
-            currentPrograms.splice(globalIndex, 1);
+            currentPrograms.splice(programIndex, 1);
             
-            loadDay();
+            loadPrograms();
             showToast('Programma eliminato', 'success');
         }
 
         function addProgram() {
-            // Find last program of the day
-            const dayPrograms = currentPrograms.filter(p => {
-                const startOfDay = new Date(selectedDay);
-                const endOfDay = new Date(selectedDay);
-                endOfDay.setHours(23, 59, 59, 999);
-                return p.start >= startOfDay && p.start < endOfDay;
-            }).sort((a, b) => a.start - b.start);
-            
-            const lastProgram = dayPrograms[dayPrograms.length - 1];
-            const newStart = lastProgram ? new Date(lastProgram.stop) : new Date(selectedDay);
+            // Find last program
+            const lastProgram = currentPrograms[currentPrograms.length - 1];
+            const newStart = lastProgram ? new Date(lastProgram.stop) : new Date(scheduleDate);
             if (!lastProgram) {
                 newStart.setHours(20, 0, 0, 0);
             }
@@ -1277,6 +1227,7 @@
             };
             
             currentPrograms.push(newProgram);
+            currentPrograms.sort((a, b) => a.start - b.start);
             
             // Assign color
             if (!formatColors[newProgram.title]) {
@@ -1284,14 +1235,14 @@
                 colorIndex++;
             }
             
-            loadDay();
+            loadPrograms();
             showToast('Nuovo programma aggiunto', 'success');
         }
 
         // Actualization functions
         function showActualizationDialog() {
             document.getElementById('actualizationDialog').classList.remove('hidden');
-            document.getElementById('newStartDate').value = selectedDay.toISOString().split('T')[0];
+            document.getElementById('newStartDate').value = scheduleDate.toISOString().split('T')[0];
         }
 
         function closeActualizationDialog() {
@@ -1300,7 +1251,7 @@
 
         function actualizeSchedule() {
             const newStartDate = new Date(document.getElementById('newStartDate').value);
-            const oldStartDate = selectedDay;
+            const oldStartDate = scheduleDate;
             const dayDiff = Math.floor((newStartDate - oldStartDate) / (1000 * 60 * 60 * 24));
             
             if (dayDiff === 0) {
@@ -1326,8 +1277,29 @@
             // Update tv date attribute
             xmlDoc.querySelector('tv').setAttribute('date', newStartDate.toISOString().split('T')[0]);
             
-            // Re-parse programs to update day selector
-            parsePrograms();
+            // Update schedule date
+            scheduleDate = newStartDate;
+            
+            // Update timeline boundaries
+            timelineStartDate = new Date(scheduleDate);
+            timelineStartDate.setHours(0, 0, 0, 0);
+            
+            const lastProgram = currentPrograms[currentPrograms.length - 1];
+            timelineEndDate = new Date(lastProgram.stop);
+            
+            const timelineHours = (timelineEndDate - timelineStartDate) / (1000 * 60 * 60);
+            if (timelineHours < 24) {
+                timelineEndDate = new Date(timelineStartDate);
+                timelineEndDate.setHours(23, 59, 59, 999);
+            }
+            
+            // Update UI
+            document.getElementById('scheduleDate').textContent = formatDate(scheduleDate);
+            document.getElementById('timelineDate').textContent = 
+                `(${formatTime(timelineStartDate)} - ${formatTime(timelineEndDate)})`;
+            
+            // Reload programs
+            loadPrograms();
             
             closeActualizationDialog();
             showToast('Date attualizzate con successo', 'success');
@@ -1369,7 +1341,7 @@
             const utcOffset = new Date().getTimezoneOffset() / -60;
             const offsetStr = utcOffset >= 0 ? `+${utcOffset}` : `${utcOffset}`;
             
-            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nFunzionalità:\n- Visualizzazione timeline interattiva con zoom\n- Conversione automatica UTC → fuso orario locale\n- Modifica programmi inline\n- Rilevamento sovrapposizioni e buchi\n- Attualizzazione date palinsesto\n- Analisi distribuzione format\n- Export XMLTV modificato\n\nFuso orario rilevato: ${userTimezone} (UTC${offsetStr})\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nFunzionalità:\n- Visualizzazione timeline singolo giorno\n- Conversione automatica UTC → fuso orario locale\n- Gestione programmi che attraversano la mezzanotte\n- Modifica programmi inline\n- Rilevamento sovrapposizioni e buchi\n- Attualizzazione date palinsesto\n- Analisi distribuzione format\n- Export XMLTV modificato\n\nFuso orario rilevato: ${userTimezone} (UTC${offsetStr})\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
     </script>
 </body>
