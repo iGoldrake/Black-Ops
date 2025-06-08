@@ -3,215 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer & Editor Professional v2.1 - Circular Timeline</title>
+    <title>XMLTV Viewer v3.0 - Circular Sequential Timeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
-        /* Modern Timeline Styles */
-        .timeline-container {
-            background: linear-gradient(180deg, 
-                rgba(59, 130, 246, 0.05) 0%,    /* Morning */
-                rgba(251, 191, 36, 0.05) 25%,   /* Noon */
-                rgba(249, 115, 22, 0.05) 50%,   /* Afternoon */
-                rgba(99, 102, 241, 0.05) 75%,   /* Evening */
-                rgba(30, 41, 59, 0.1) 100%      /* Night */
-            );
-            border-radius: 16px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .timeline-header {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 20;
-        }
-
-        .timeline-body {
-            position: relative;
-            overflow-x: auto;
-            overflow-y: auto;
-            max-height: 500px;
-            scroll-behavior: smooth;
-        }
-
-        .time-marker {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            background: rgba(0, 0, 0, 0.1);
-            pointer-events: none;
-        }
-
-        .time-marker.major {
-            background: rgba(0, 0, 0, 0.2);
-            width: 2px;
-        }
-
-        .time-marker.current {
-            background: #ef4444;
-            width: 2px;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-            z-index: 15;
-        }
-
-        .time-label {
-            position: absolute;
-            top: -25px;
-            transform: translateX(-50%);
-            font-size: 12px;
-            font-weight: 600;
-            color: #64748b;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
-
-        .program-row {
-            position: relative;
-            height: 80px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            transition: background 0.2s;
-        }
-
-        .program-row:hover {
-            background: rgba(0, 0, 0, 0.02);
-        }
-
-        .program-block {
-            position: absolute;
-            height: 60px;
-            top: 10px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .program-block::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, 
-                rgba(255, 255, 255, 0.2) 0%, 
-                rgba(255, 255, 255, 0) 100%);
-            pointer-events: none;
-        }
-
-        .program-block:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            z-index: 10;
-        }
-
-        .program-content {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .program-title {
-            font-weight: 700;
-            color: white;
-            font-size: 14px;
-            line-height: 1.2;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .program-time {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-        }
-
-        .program-meta {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .program-icon {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background-size: cover;
-            background-position: center;
-            opacity: 0.3;
-        }
-
-        .gap-indicator {
-            background: repeating-linear-gradient(
-                45deg,
-                #ef4444,
-                #ef4444 10px,
-                #dc2626 10px,
-                #dc2626 20px
-            );
-            opacity: 0.3;
-            border: 2px dashed #ef4444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #dc2626;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .overlap-indicator {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: #ef4444;
-            color: white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            z-index: 5;
-        }
-
-        .prime-time-indicator {
-            position: absolute;
-            background: rgba(251, 191, 36, 0.1);
-            border-left: 2px solid #fbbf24;
-            border-right: 2px solid #fbbf24;
-            top: 0;
-            bottom: 0;
-            pointer-events: none;
-        }
-
         /* Circular Timeline Styles */
         .circular-timeline {
             position: relative;
             width: 100%;
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
             aspect-ratio: 1;
         }
@@ -221,23 +21,24 @@
             inset: 0;
             border-radius: 50%;
             background: radial-gradient(circle at center, 
-                rgba(255, 255, 255, 0.9) 0%, 
-                rgba(248, 250, 252, 0.9) 100%);
+                rgba(255, 255, 255, 0.95) 0%, 
+                rgba(248, 250, 252, 0.95) 100%);
             box-shadow: 
-                inset 0 0 30px rgba(0, 0, 0, 0.1),
-                0 10px 40px rgba(0, 0, 0, 0.1);
+                inset 0 0 40px rgba(0, 0, 0, 0.05),
+                0 20px 60px rgba(0, 0, 0, 0.1);
         }
 
         .clock-center {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 20px;
-            height: 20px;
-            background: #1e293b;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
             border-radius: 50%;
             transform: translate(-50%, -50%);
             z-index: 100;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         .hour-mark {
@@ -246,124 +47,121 @@
             left: 50%;
             width: 2px;
             height: 20px;
-            background: #64748b;
-            transform-origin: center 290px;
+            background: #94a3b8;
+            transform-origin: center 340px;
         }
 
         .hour-mark.major {
             width: 4px;
             height: 30px;
-            background: #334155;
+            background: #475569;
         }
 
         .hour-number {
             position: absolute;
-            font-weight: 600;
-            font-size: 14px;
+            font-weight: 700;
+            font-size: 16px;
             color: #334155;
             transform: translate(-50%, -50%);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
         }
 
-        .circular-program {
-            position: absolute;
-            transform-origin: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .circular-program:hover {
-            z-index: 50;
-        }
-
-        .circular-program-path {
+        .program-arc {
             fill: none;
-            stroke-width: 40;
-            stroke-linecap: round;
-            transition: all 0.3s ease;
+            stroke-width: 50;
+            stroke-linecap: butt;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
-        .circular-program-path:hover {
-            stroke-width: 50;
+        .program-arc:hover {
+            stroke-width: 60;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
         }
 
         .time-hand {
             position: absolute;
-            background: #ef4444;
+            background: linear-gradient(to top, #ef4444 0%, #dc2626 100%);
             transform-origin: bottom center;
-            transition: transform 0.5s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
         }
 
         .hour-hand {
-            width: 6px;
-            height: 100px;
+            width: 8px;
+            height: 120px;
             bottom: 50%;
-            left: calc(50% - 3px);
-            border-radius: 3px;
+            left: calc(50% - 4px);
         }
 
         .minute-hand {
-            width: 4px;
-            height: 140px;
+            width: 6px;
+            height: 160px;
             bottom: 50%;
-            left: calc(50% - 2px);
-            border-radius: 2px;
+            left: calc(50% - 3px);
         }
 
         /* Program preview tooltip */
         .program-preview {
             position: fixed;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(16px);
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
+            backdrop-filter: blur(20px);
             color: white;
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            max-width: 300px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            max-width: 350px;
             pointer-events: none;
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(10px) scale(0.95);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .program-preview.show {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
         }
 
         .preview-icon {
-            width: 60px;
-            height: 34px;
-            border-radius: 6px;
+            width: 80px;
+            height: 45px;
+            border-radius: 8px;
             background-size: cover;
             background-position: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* View mode toggle */
-        .view-toggle {
-            display: inline-flex;
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 8px;
-            padding: 2px;
+        /* Statistics Cards */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
         }
 
-        .view-toggle button {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
         }
 
-        .view-toggle button.active {
-            background: white;
-            shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        /* Coverage Ring */
+        .coverage-ring {
+            transform: rotate(-90deg);
+            transition: stroke-dasharray 0.5s ease;
         }
 
         /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -375,96 +173,67 @@
             }
         }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        @keyframes rotateIn {
+            from {
+                opacity: 0;
+                transform: rotate(-180deg) scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: rotate(0) scale(1);
+            }
         }
 
-        .program-block.new {
-            animation: slideIn 0.5s ease-out;
-        }
-
-        .program-block.removing {
-            opacity: 0;
-            transform: scale(0.9);
+        .program-arc.new {
+            animation: rotateIn 0.6s ease-out;
         }
 
         /* Dark mode support */
-        .dark .timeline-container {
-            background: linear-gradient(180deg, 
-                rgba(59, 130, 246, 0.1) 0%,
-                rgba(251, 191, 36, 0.1) 25%,
-                rgba(249, 115, 22, 0.1) 50%,
-                rgba(99, 102, 241, 0.1) 75%,
-                rgba(30, 41, 59, 0.2) 100%
-            );
-        }
-
-        .dark .timeline-header {
-            background: rgba(30, 41, 59, 0.9);
-            border-bottom-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .dark .time-label {
-            background: rgba(30, 41, 59, 0.9);
-            color: #e2e8f0;
-        }
-
-        .dark .program-row:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
         .dark .clock-face {
             background: radial-gradient(circle at center, 
-                rgba(30, 41, 59, 0.9) 0%, 
-                rgba(15, 23, 42, 0.9) 100%);
+                rgba(30, 41, 59, 0.95) 0%, 
+                rgba(15, 23, 42, 0.95) 100%);
+            box-shadow: 
+                inset 0 0 40px rgba(0, 0, 0, 0.3),
+                0 20px 60px rgba(0, 0, 0, 0.5);
         }
 
         .dark .hour-number {
             color: #e2e8f0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
         }
 
-        /* Compact mode */
-        .compact .program-row {
-            height: 50px;
+        .dark .hour-mark {
+            background: #64748b;
         }
 
-        .compact .program-block {
-            height: 40px;
-            top: 5px;
-            padding: 0 8px;
+        .dark .hour-mark.major {
+            background: #94a3b8;
         }
 
-        .compact .program-title {
-            font-size: 12px;
-        }
-
-        .compact .program-time,
-        .compact .program-meta {
-            display: none;
-        }
-
-        /* Utility classes */
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .utc-badge {
-            background: #3b82f6;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
+        .dark .stat-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
         /* Toast improvements */
         .toast {
             animation: slideInRight 0.3s ease-out;
             backdrop-filter: blur(10px);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: #1e293b;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.95) 0%, rgba(22, 163, 74, 0.95) 100%);
+            color: white;
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(220, 38, 38, 0.95) 100%);
+            color: white;
         }
 
         @keyframes slideInRight {
@@ -479,48 +248,112 @@
         }
 
         /* Custom scrollbar */
-        .timeline-body::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
         }
 
-        .timeline-body::-webkit-scrollbar-track {
+        ::-webkit-scrollbar-track {
             background: rgba(0, 0, 0, 0.05);
-            border-radius: 4px;
+            border-radius: 5px;
         }
 
-        .timeline-body::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 4px;
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-radius: 5px;
         }
 
-        .timeline-body::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 0, 0, 0.3);
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         }
 
-        /* Hide elements for performance */
-        .hidden-view {
-            display: none !important;
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Format legend */
+        .format-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 8px;
+        }
+
+        .format-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: white;
+            border-radius: 20px;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s;
+        }
+
+        .format-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .format-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Gap indicator on timeline */
+        .gap-arc {
+            fill: none;
+            stroke: #ef4444;
+            stroke-width: 50;
+            stroke-dasharray: 5, 5;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Loading state */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen">
     <div class="container mx-auto p-4 max-w-7xl">
         <!-- Header -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold text-blue-600 flex items-center gap-2">
-                        <i data-lucide="tv" class="w-8 h-8"></i>
-                        XMLTV Viewer & Editor Pro
+                    <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
+                        <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
+                        XMLTV Viewer v3.0
                     </h1>
-                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v2.1 <span class="utc-badge">UTC Mode</span></p>
+                    <p class="text-gray-600 mt-2">Timeline Circolare Sequenziale - Modalità UTC</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="toggleDarkMode()" class="p-2 rounded hover:bg-gray-100">
+                    <button onclick="toggleDarkMode()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Dark Mode">
                         <i data-lucide="moon" class="w-5 h-5"></i>
                     </button>
-                    <button onclick="showInfo()" class="p-2 rounded hover:bg-gray-100">
+                    <button onclick="showInfo()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Informazioni">
                         <i data-lucide="info" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -528,12 +361,13 @@
         </div>
 
         <!-- File Upload -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors" id="dropZone">
-                <i data-lucide="upload" class="w-12 h-12 mx-auto text-gray-400 mb-4"></i>
-                <p class="text-lg mb-2">Trascina qui il file XMLTV o clicca per selezionarlo</p>
+        <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-6 border border-white/50">
+            <div class="border-3 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-blue-500 transition-all duration-300 hover:bg-blue-50/50" id="dropZone">
+                <i data-lucide="upload-cloud" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                <p class="text-xl mb-2 font-semibold text-gray-700">Trascina qui il file XMLTV</p>
+                <p class="text-gray-500 mb-4">oppure</p>
                 <input type="file" id="fileInput" accept=".xml" class="hidden">
-                <button onclick="document.getElementById('fileInput').click()" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                <button onclick="document.getElementById('fileInput').click()" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105">
                     Seleziona File
                 </button>
             </div>
@@ -541,179 +375,216 @@
 
         <!-- Main Content (hidden until file loaded) -->
         <div id="mainContent" class="hidden">
-            <!-- Channel Info & Controls -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <h3 class="font-semibold text-gray-700 mb-2">Canale</h3>
-                        <p class="text-xl font-bold" id="channelName">-</p>
+            <!-- Channel Info & Stats -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="stat-card rounded-xl p-4">
+                        <h3 class="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                            <i data-lucide="tv-2" class="w-4 h-4"></i>
+                            Canale
+                        </h3>
+                        <p class="text-2xl font-bold" id="channelName">-</p>
                         <p class="text-sm text-gray-600" id="channelId">-</p>
                     </div>
-                    <div>
-                        <h3 class="font-semibold text-gray-700 mb-2">Data Palinsesto</h3>
-                        <p class="text-xl font-bold" id="scheduleDate">-</p>
+                    <div class="stat-card rounded-xl p-4">
+                        <h3 class="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            Data Palinsesto
+                        </h3>
+                        <p class="text-2xl font-bold" id="scheduleDate">-</p>
                         <p class="text-sm text-gray-600">
                             <span id="programCount">-</span> programmi
                         </p>
-                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                            <span class="utc-badge">UTC</span> Tutti gli orari sono in UTC
-                        </p>
                     </div>
-                    <div>
-                        <h3 class="font-semibold text-gray-700 mb-2">Azioni</h3>
-                        <div class="flex gap-2">
-                            <button onclick="showActualizationDialog()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center gap-1">
-                                <i data-lucide="calendar" class="w-4 h-4"></i>
-                                Attualizza
-                            </button>
-                            <button onclick="exportXMLTV()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-1">
-                                <i data-lucide="download" class="w-4 h-4"></i>
-                                Esporta
-                            </button>
+                    <div class="stat-card rounded-xl p-4">
+                        <h3 class="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                            Copertura
+                        </h3>
+                        <div class="flex items-center gap-3">
+                            <svg width="50" height="50" viewBox="0 0 50 50">
+                                <circle cx="25" cy="25" r="20" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+                                <circle cx="25" cy="25" r="20" fill="none" stroke="url(#coverageGradient)" stroke-width="8" 
+                                    stroke-dasharray="126" stroke-dashoffset="126" class="coverage-ring" id="coverageRing"/>
+                                <defs>
+                                    <linearGradient id="coverageGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#3b82f6"/>
+                                        <stop offset="100%" style="stop-color:#8b5cf6"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div>
+                                <p class="text-2xl font-bold" id="coveragePercent">0%</p>
+                                <p class="text-sm text-gray-600" id="coverageTime">0h 0m</p>
+                            </div>
                         </div>
                     </div>
+                    <div class="stat-card rounded-xl p-4">
+                        <h3 class="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            Statistiche
+                        </h3>
+                        <div class="space-y-1">
+                            <p class="text-sm"><span class="font-semibold" id="gapCount">0</span> gaps</p>
+                            <p class="text-sm"><span class="font-semibold" id="formatCount">0</span> format unici</p>
+                            <p class="text-sm"><span class="font-semibold" id="avgDuration">0m</span> durata media</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex justify-center gap-3 mt-6">
+                    <button onclick="showActualizationDialog()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2.5 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                        Attualizza Date
+                    </button>
+                    <button onclick="exportXMLTV()" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Esporta XMLTV
+                    </button>
                 </div>
             </div>
 
-            <!-- Timeline View -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold flex items-center gap-2">
-                        <i data-lucide="clock" class="w-5 h-5"></i>
-                        Timeline Giornaliera <span class="utc-badge">UTC</span>
-                    </h3>
-                    <div class="flex items-center gap-4">
-                        <div class="view-toggle">
-                            <button onclick="setViewMode('linear')" class="active" id="viewLinear">Lineare</button>
-                            <button onclick="setViewMode('circular')" id="viewCircular">Circolare</button>
-                            <button onclick="setViewMode('compact')" id="viewCompact">Compatta</button>
-                        </div>
-                        <div class="flex items-center gap-2" id="zoomControls">
-                            <button onclick="zoomIn()" class="p-2 hover:bg-gray-100 rounded" title="Zoom In">
-                                <i data-lucide="zoom-in" class="w-5 h-5"></i>
-                            </button>
-                            <button onclick="zoomOut()" class="p-2 hover:bg-gray-100 rounded" title="Zoom Out">
-                                <i data-lucide="zoom-out" class="w-5 h-5"></i>
-                            </button>
-                            <button onclick="resetZoom()" class="p-2 hover:bg-gray-100 rounded" title="Reset Zoom">
-                                <i data-lucide="maximize-2" class="w-5 h-5"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <!-- Circular Timeline -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+                <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="clock" class="w-6 h-6 text-blue-600"></i>
+                        Timeline Circolare Sequenziale
+                    </span>
+                    <span class="text-sm font-normal text-gray-600">
+                        Visualizzazione basata su durata (86.400 secondi = 24h)
+                    </span>
+                </h3>
                 
-                <!-- Linear Timeline -->
-                <div class="timeline-container" id="linearTimeline">
-                    <div class="timeline-header" id="timelineHeader">
-                        <!-- Time labels will be added here -->
-                    </div>
-                    <div class="timeline-body" id="timelineBody">
-                        <!-- Programs will be added here -->
-                    </div>
-                </div>
-                
-                <!-- Circular Timeline -->
-                <div class="circular-timeline hidden-view" id="circularTimeline">
-                    <svg width="100%" height="100%" viewBox="0 0 600 600">
+                <div class="circular-timeline" id="circularTimeline">
+                    <svg width="100%" height="100%" viewBox="0 0 700 700">
                         <defs>
-                            <filter id="shadow">
-                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.2"/>
+                            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+                            </filter>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
                             </filter>
                         </defs>
-                        <g id="clockFace">
-                            <!-- Clock face will be drawn here -->
+                        
+                        <!-- Clock face background -->
+                        <circle cx="350" cy="350" r="340" fill="url(#clockFaceGradient)" stroke="#e5e7eb" stroke-width="2" filter="url(#shadow)"/>
+                        <defs>
+                            <radialGradient id="clockFaceGradient">
+                                <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95"/>
+                                <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:0.95"/>
+                            </radialGradient>
+                        </defs>
+                        
+                        <g id="clockMarks">
+                            <!-- Hour marks will be added here -->
                         </g>
+                        
                         <g id="programArcs">
-                            <!-- Program arcs will be drawn here -->
+                            <!-- Program arcs will be added here -->
                         </g>
+                        
                         <g id="clockHands">
-                            <!-- Clock hands will be drawn here -->
+                            <!-- Clock hands will be added here -->
                         </g>
+                        
+                        <!-- Center cap -->
+                        <circle cx="350" cy="350" r="12" fill="url(#centerGradient)" filter="url(#shadow)"/>
+                        <defs>
+                            <linearGradient id="centerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#1e293b"/>
+                                <stop offset="100%" style="stop-color:#334155"/>
+                            </linearGradient>
+                        </defs>
                     </svg>
+                </div>
+                
+                <!-- Format Legend -->
+                <div class="mt-6">
+                    <h4 class="font-semibold text-gray-700 mb-2">Legenda Format</h4>
+                    <div class="format-legend" id="formatLegend">
+                        <!-- Format items will be added here -->
+                    </div>
                 </div>
             </div>
 
             <!-- Program Details -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6" id="programDetails" style="display:none;">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <i data-lucide="tv-2" class="w-5 h-5"></i>
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50" id="programDetails" style="display:none;">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="tv-2" class="w-6 h-6 text-blue-600"></i>
                     Dettagli Programma
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <p class="text-sm text-gray-600">Titolo</p>
-                        <p class="font-semibold" id="detailTitle">-</p>
+                        <p class="text-sm text-gray-600 mb-1">Titolo/Format</p>
+                        <p class="font-semibold text-lg" id="detailTitle">-</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600">Format</p>
-                        <p class="font-semibold" id="detailFormat">-</p>
+                        <p class="text-sm text-gray-600 mb-1">Orario UTC</p>
+                        <p class="font-semibold text-lg" id="detailTime">-</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 flex items-center gap-1">Orario <span class="utc-badge text-xs">UTC</span></p>
-                        <p class="font-semibold" id="detailTime">-</p>
+                        <p class="text-sm text-gray-600 mb-1">Durata</p>
+                        <p class="font-semibold text-lg" id="detailDuration">-</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600">Durata</p>
-                        <p class="font-semibold" id="detailDuration">-</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Categoria</p>
-                        <p class="font-semibold" id="detailCategory">-</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Rating</p>
-                        <p class="font-semibold" id="detailRating">-</p>
+                        <p class="text-sm text-gray-600 mb-1">Categoria</p>
+                        <p class="font-semibold text-lg" id="detailCategory">-</p>
                     </div>
                     <div class="md:col-span-2">
-                        <p class="text-sm text-gray-600">Descrizione</p>
+                        <p class="text-sm text-gray-600 mb-1">Descrizione</p>
                         <p class="font-semibold" id="detailDescription">-</p>
                     </div>
                     <div class="md:col-span-2">
-                        <p class="text-sm text-gray-600">Icona</p>
+                        <p class="text-sm text-gray-600 mb-1">Icona</p>
                         <div class="flex items-center gap-4 mt-2">
-                            <div class="icon-preview w-32 h-18 border rounded" id="detailIcon" style="background-size: cover; background-position: center;"></div>
-                            <p class="text-xs text-gray-500" id="detailIconUrl">-</p>
+                            <div class="w-32 h-18 bg-gray-200 rounded-lg overflow-hidden" id="detailIcon" style="background-size: cover; background-position: center;"></div>
+                            <p class="text-xs text-gray-500 break-all" id="detailIconUrl">-</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Program Editor Table -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h3 class="text-lg font-semibold mb-4 flex items-center justify-between">
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+                <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
                     <span class="flex items-center gap-2">
-                        <i data-lucide="edit" class="w-5 h-5"></i>
+                        <i data-lucide="edit-3" class="w-6 h-6 text-blue-600"></i>
                         Editor Programmi
                     </span>
-                    <button onclick="addProgram()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm flex items-center gap-1">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    <button onclick="addProgram()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
                         Aggiungi Programma
                     </button>
                 </h3>
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto rounded-lg border border-gray-200">
                     <table class="w-full text-sm">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                             <tr>
-                                <th class="px-4 py-2 text-left">Ora Inizio <span class="utc-badge text-xs">UTC</span></th>
-                                <th class="px-4 py-2 text-left">Ora Fine <span class="utc-badge text-xs">UTC</span></th>
-                                <th class="px-4 py-2 text-left">Durata</th>
-                                <th class="px-4 py-2 text-left">Titolo/Format</th>
-                                <th class="px-4 py-2 text-left">Categoria</th>
-                                <th class="px-4 py-2 text-left">Icona</th>
-                                <th class="px-4 py-2 text-left">Azioni</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Ora Inizio UTC</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Ora Fine UTC</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Durata</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Titolo/Format</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Categoria</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Azioni</th>
                             </tr>
                         </thead>
-                        <tbody id="programTable">
+                        <tbody id="programTable" class="divide-y divide-gray-200">
                             <!-- Populated dynamically -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Problems Report Only -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            <!-- Problems Report -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-600"></i>
                     Report Problemi
                 </h3>
                 <div id="problemsReport" class="space-y-2">
@@ -723,16 +594,16 @@
         </div>
 
         <!-- Actualization Dialog -->
-        <div id="actualizationDialog" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-md w-full">
-                <h3 class="text-lg font-semibold mb-4">Attualizza Date Palinsesto</h3>
-                <p class="text-sm text-gray-600 mb-4">Seleziona la nuova data di inizio. Gli orari rimarranno invariati.</p>
-                <input type="date" id="newStartDate" class="w-full px-3 py-2 border rounded mb-4">
-                <div class="flex justify-end gap-2">
-                    <button onclick="closeActualizationDialog()" class="px-4 py-2 border rounded hover:bg-gray-50">
+        <div id="actualizationDialog" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl transform transition-all">
+                <h3 class="text-2xl font-bold mb-4 gradient-text">Attualizza Date Palinsesto</h3>
+                <p class="text-gray-600 mb-6">Seleziona la nuova data di inizio. Gli orari rimarranno invariati.</p>
+                <input type="date" id="newStartDate" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+                <div class="flex justify-end gap-3 mt-6">
+                    <button onclick="closeActualizationDialog()" class="px-6 py-2.5 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold">
                         Annulla
                     </button>
-                    <button onclick="actualizeSchedule()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    <button onclick="actualizeSchedule()" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl">
                         Attualizza
                     </button>
                 </div>
@@ -740,67 +611,43 @@
         </div>
 
         <!-- Toast Container -->
-        <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+        <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-3"></div>
 
         <!-- Program Preview -->
         <div id="programPreview" class="program-preview">
             <div class="preview-icon" id="previewIcon"></div>
-            <h4 class="font-bold text-lg mb-2" id="previewTitle"></h4>
-            <div class="text-sm space-y-1">
+            <h4 class="font-bold text-xl mb-3" id="previewTitle"></h4>
+            <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                    <span class="text-gray-400">Orario:</span>
-                    <span id="previewTime"></span>
+                    <span class="text-gray-400">Orario UTC:</span>
+                    <span class="font-semibold" id="previewTime"></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-400">Durata:</span>
-                    <span id="previewDuration"></span>
+                    <span class="font-semibold" id="previewDuration"></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-400">Categoria:</span>
-                    <span id="previewCategory"></span>
+                    <span class="font-semibold" id="previewCategory"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Posizione:</span>
+                    <span class="font-semibold" id="previewPosition"></span>
                 </div>
             </div>
-            <p class="text-xs text-gray-400 mt-3" id="previewDesc"></p>
+            <p class="text-xs text-gray-400 mt-4 italic" id="previewDesc"></p>
         </div>
     </div>
 
     <script>
-        // Initialize Lucide icons after DOM is loaded
+        // Initialize Lucide icons
         window.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                } else {
-                    console.warn('Lucide not loaded, using emoji fallbacks');
-                    document.querySelectorAll('[data-lucide]').forEach(el => {
-                        const iconMap = {
-                            'tv': '📺',
-                            'moon': '🌙',
-                            'info': 'ℹ️',
-                            'upload': '📤',
-                            'calendar': '📅',
-                            'download': '💾',
-                            'clock': '🕐',
-                            'zoom-in': '🔍+',
-                            'zoom-out': '🔍-',
-                            'maximize-2': '⛶',
-                            'tv-2': '📺',
-                            'edit': '✏️',
-                            'plus': '➕',
-                            'alert-triangle': '⚠️',
-                            'trash-2': '🗑️'
-                        };
-                        const iconName = el.getAttribute('data-lucide');
-                        el.textContent = iconMap[iconName] || '•';
-                        el.style.fontStyle = 'normal';
-                    });
-                }
-            }, 100);
+            lucide.createIcons();
         });
 
         // Version
-        const APP_VERSION = '2.1';
-        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Circular Timeline (UTC Mode)`);
+        const APP_VERSION = '3.0';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Circular Sequential Timeline`);
 
         // Global state
         let xmlDoc = null;
@@ -808,31 +655,18 @@
         let currentChannelId = '';
         let currentChannelName = '';
         let scheduleDate = null;
-        let zoomLevel = 1;
         let formatColors = {};
         let colorIndex = 0;
-        let viewMode = 'linear';
-        let timelineWidth = 0;
-        let pixelsPerHour = 0;
         let currentPreviewTimeout = null;
+        let totalDaySeconds = 86400; // 24 hours in seconds
 
-        // Modern color palette with gradients
-        const colorPalettes = {
-            default: [
-                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-                'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-                'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'
-            ],
-            solid: [
-                '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
-                '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'
-            ]
-        };
+        // Modern color palette
+        const colorPalette = [
+            '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', 
+            '#10b981', '#06b6d4', '#6366f1', '#f43f5e',
+            '#84cc16', '#a855f7', '#0ea5e9', '#f97316',
+            '#14b8a6', '#d946ef', '#0891b2', '#dc2626'
+        ];
 
         // File handling
         const dropZone = document.getElementById('dropZone');
@@ -849,33 +683,27 @@
             e.stopPropagation();
         }
 
-        // Highlight drop zone when item is dragged over it
+        // Highlight drop zone
         ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, highlight, false);
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('border-blue-500', 'bg-blue-50');
+            }, false);
         });
 
         ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, unhighlight, false);
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            }, false);
         });
-
-        function highlight(e) {
-            dropZone.classList.add('border-blue-400', 'bg-blue-50');
-        }
-
-        function unhighlight(e) {
-            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
-        }
 
         // Handle dropped files
         dropZone.addEventListener('drop', handleDrop, false);
 
         function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
+            const files = e.dataTransfer.files;
             handleFiles(files);
         }
 
-        // Handle file input change
         fileInput.addEventListener('change', function(e) {
             handleFiles(e.target.files);
         });
@@ -892,21 +720,17 @@
         }
 
         function loadFile(file) {
-            console.log('Loading file:', file.name);
             const reader = new FileReader();
             
             reader.onload = function(e) {
                 try {
-                    const xmlContent = e.target.result;
-                    console.log('File content loaded, length:', xmlContent.length);
-                    
                     const parser = new DOMParser();
-                    xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+                    xmlDoc = parser.parseFromString(e.target.result, 'text/xml');
                     
                     // Check for parsing errors
                     const parserError = xmlDoc.getElementsByTagName('parsererror');
                     if (parserError.length > 0) {
-                        throw new Error('Errore nel parsing XML: ' + parserError[0].textContent);
+                        throw new Error('Errore nel parsing XML');
                     }
                     
                     // Parse channel info
@@ -919,18 +743,8 @@
                     const displayName = channel.querySelector('display-name');
                     currentChannelName = displayName ? displayName.textContent : currentChannelId;
                     
-                    console.log('Channel found:', currentChannelName, '(ID:', currentChannelId, ')');
-                    
                     document.getElementById('channelName').textContent = currentChannelName;
                     document.getElementById('channelId').textContent = `ID: ${currentChannelId}`;
-                    
-                    // Get schedule date from TV element
-                    const tvElement = xmlDoc.querySelector('tv');
-                    const tvDate = tvElement ? tvElement.getAttribute('date') : null;
-                    if (tvDate) {
-                        scheduleDate = parseScheduleDate(tvDate);
-                        console.log('Schedule date from TV element:', scheduleDate);
-                    }
                     
                     // Parse programs
                     parsePrograms();
@@ -945,83 +759,49 @@
                 }
             };
             
-            reader.onerror = function(error) {
-                console.error('FileReader error:', error);
-                showToast('Errore nella lettura del file', 'error');
-            };
-            
             reader.readAsText(file);
-        }
-
-        function parseScheduleDate(dateStr) {
-            // Parse date string in format YYYY-MM-DD
-            const [year, month, day] = dateStr.split('-').map(Number);
-            return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
         }
 
         function parsePrograms() {
             const programmes = xmlDoc.querySelectorAll('programme');
-            console.log('Found programmes:', programmes.length);
-            
             currentPrograms = [];
             
-            // Parse all programs
-            programmes.forEach((prog, index) => {
-                try {
-                    const startStr = prog.getAttribute('start');
-                    const stopStr = prog.getAttribute('stop');
-                    
-                    if (!startStr || !stopStr) {
-                        console.warn(`Programme ${index} missing start or stop time`);
-                        return;
-                    }
-                    
-                    const startUTC = parseXMLTVDateUTC(startStr);
-                    const stopUTC = parseXMLTVDateUTC(stopStr);
-                    
-                    // Debug first few programs
-                    if (index < 3) {
-                        console.log(`Program ${index}:`, prog.querySelector('title')?.textContent);
-                        console.log('  Start string:', startStr);
-                        console.log('  Start UTC:', startUTC.toISOString());
-                        console.log('  Stop string:', stopStr);
-                        console.log('  Stop UTC:', stopUTC.toISOString());
-                    }
-                    
-                    const title = prog.querySelector('title')?.textContent || '';
-                    const desc = prog.querySelector('desc')?.textContent || '';
-                    const category = prog.querySelector('category')?.textContent || '';
-                    const ratingValue = prog.querySelector('rating value');
-                    const rating = ratingValue ? ratingValue.textContent : '0';
-                    const icon = prog.querySelector('icon')?.getAttribute('src') || '';
-                    const episodeNum = prog.querySelector('episode-num')?.textContent || '';
-                    
-                    const program = {
-                        start: startUTC,
-                        stop: stopUTC,
-                        title,
-                        desc,
-                        category,
-                        rating,
-                        icon,
-                        episodeNum,
-                        duration: (stopUTC - startUTC) / 1000, // seconds
-                        element: prog
-                    };
-                    
-                    currentPrograms.push(program);
-                    
-                    // Assign color to format
-                    if (!formatColors[title]) {
-                        formatColors[title] = colorPalettes.default[colorIndex % colorPalettes.default.length];
-                        colorIndex++;
-                    }
-                } catch (error) {
-                    console.error(`Error parsing programme ${index}:`, error);
+            programmes.forEach((prog) => {
+                const startStr = prog.getAttribute('start');
+                const stopStr = prog.getAttribute('stop');
+                
+                if (!startStr || !stopStr) return;
+                
+                const startUTC = parseXMLTVDateUTC(startStr);
+                const stopUTC = parseXMLTVDateUTC(stopStr);
+                
+                const title = prog.querySelector('title')?.textContent || '';
+                const desc = prog.querySelector('desc')?.textContent || '';
+                const category = prog.querySelector('category')?.textContent || '';
+                const ratingValue = prog.querySelector('rating value');
+                const rating = ratingValue ? ratingValue.textContent : '0';
+                const icon = prog.querySelector('icon')?.getAttribute('src') || '';
+                
+                const program = {
+                    start: startUTC,
+                    stop: stopUTC,
+                    title,
+                    desc,
+                    category,
+                    rating,
+                    icon,
+                    duration: (stopUTC - startUTC) / 1000, // seconds
+                    element: prog
+                };
+                
+                currentPrograms.push(program);
+                
+                // Assign color to format
+                if (!formatColors[title]) {
+                    formatColors[title] = colorPalette[colorIndex % colorPalette.length];
+                    colorIndex++;
                 }
             });
-            
-            console.log('Parsed programs:', currentPrograms.length);
             
             if (currentPrograms.length === 0) {
                 showToast('Nessun programma trovato nel file', 'error');
@@ -1031,54 +811,49 @@
             // Sort programs by start time
             currentPrograms.sort((a, b) => a.start - b.start);
             
-            // Get schedule date from TV element
-            const tvElement = xmlDoc.querySelector('tv');
-            const tvDate = tvElement ? tvElement.getAttribute('date') : null;
-            
-            if (tvDate) {
-                // Use the date from TV element
-                scheduleDate = parseScheduleDate(tvDate);
-                console.log('Schedule date from TV element:', scheduleDate);
-            } else {
-                // If no TV date, try to determine the best viewing date
-                // For TV schedules that typically run from evening to evening,
-                // we should show the day that contains most of the content
-                
-                // Check if first program starts in the evening (after 18:00)
-                const firstProgram = currentPrograms[0];
-                const firstHour = firstProgram.start.getUTCHours();
-                
-                if (firstHour >= 18) {
-                    // Evening start - use next day as main viewing day
-                    scheduleDate = new Date(Date.UTC(
-                        firstProgram.start.getUTCFullYear(),
-                        firstProgram.start.getUTCMonth(),
-                        firstProgram.start.getUTCDate() + 1,
-                        0, 0, 0
-                    ));
-                    console.log('Evening schedule detected, using next day:', scheduleDate);
-                } else {
-                    // Morning/day start - use same day
-                    scheduleDate = new Date(Date.UTC(
-                        firstProgram.start.getUTCFullYear(),
-                        firstProgram.start.getUTCMonth(),
-                        firstProgram.start.getUTCDate(),
-                        0, 0, 0
-                    ));
-                }
-            }
-            
-            // Update UI
-            document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
-            document.getElementById('programCount').textContent = currentPrograms.length;
+            // Auto-detect the main programming day
+            detectMainProgrammingDay();
             
             // Load programs
             loadPrograms();
         }
 
+        function detectMainProgrammingDay() {
+            // Count programs per day
+            const programsByDay = {};
+            
+            currentPrograms.forEach(program => {
+                const dayKey = program.start.toISOString().split('T')[0];
+                if (!programsByDay[dayKey]) {
+                    programsByDay[dayKey] = [];
+                }
+                programsByDay[dayKey].push(program);
+            });
+            
+            // Find the day with most programs
+            let maxPrograms = 0;
+            let bestDay = null;
+            
+            Object.entries(programsByDay).forEach(([day, programs]) => {
+                if (programs.length > maxPrograms) {
+                    maxPrograms = programs.length;
+                    bestDay = day;
+                }
+            });
+            
+            // Set schedule date
+            if (bestDay) {
+                const [year, month, day] = bestDay.split('-').map(Number);
+                scheduleDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+            } else {
+                scheduleDate = new Date(currentPrograms[0].start);
+                scheduleDate.setUTCHours(0, 0, 0, 0);
+            }
+            
+            document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
+        }
+
         function parseXMLTVDateUTC(dateStr) {
-            // XMLTV format: YYYYMMDDHHmmss +0000
-            // We work directly in UTC, no conversion
             const year = parseInt(dateStr.substr(0, 4));
             const month = parseInt(dateStr.substr(4, 2)) - 1;
             const day = parseInt(dateStr.substr(6, 2));
@@ -1086,337 +861,70 @@
             const minute = parseInt(dateStr.substr(10, 2));
             const second = parseInt(dateStr.substr(12, 2));
             
-            // Create UTC date
             return new Date(Date.UTC(year, month, day, hour, minute, second));
         }
 
         function formatXMLTVDate(date) {
-            // Format date for XMLTV in UTC
             const pad = (n) => String(n).padStart(2, '0');
             return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}` +
                    `${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())} +0000`;
         }
 
         function loadPrograms() {
-            // For TV schedules, we need to handle the broadcast day differently
-            // A broadcast day typically runs from early morning to late night
-            // We'll show programs from previous evening through current day
-            
+            // Get programs for the schedule day (including evening programs from previous day)
             const dayStart = new Date(scheduleDate);
+            dayStart.setUTCHours(21, 0, 0, 0); // Start from 21:00 previous day
+            dayStart.setUTCDate(dayStart.getUTCDate() - 1);
+            
             const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
-            
-            // For TV schedules, also include programs from previous evening
-            const extendedStart = new Date(scheduleDate);
-            extendedStart.setUTCDate(extendedStart.getUTCDate() - 1);
-            extendedStart.setUTCHours(18, 0, 0, 0); // From 18:00 previous day
-            
-            console.log('Filtering programs for broadcast day:', extendedStart.toISOString(), 'to', dayEnd.toISOString());
+            dayEnd.setUTCHours(21, 0, 0, 0); // End at 21:00 current day
             
             const dayPrograms = currentPrograms.filter(p => {
-                // Include programs that:
-                // 1. Start within the extended broadcast day
-                // 2. Are still running from previous day
-                // 3. End within the broadcast day
-                return (p.start >= extendedStart && p.start < dayEnd) || 
-                       (p.start < extendedStart && p.stop > extendedStart) ||
-                       (p.stop > dayStart && p.stop <= dayEnd);
-            });
+                return (p.start >= dayStart && p.start < dayEnd) || 
+                       (p.start < dayStart && p.stop > dayStart);
+            }).sort((a, b) => a.start - b.start);
             
-            console.log('Programs for broadcast day:', dayPrograms.length);
+            document.getElementById('programCount').textContent = dayPrograms.length;
             
-            // Draw timeline based on current view mode
-            if (viewMode === 'circular') {
-                drawCircularTimeline(dayPrograms);
-            } else {
-                drawLinearTimeline(dayPrograms);
-            }
+            // Draw circular timeline
+            drawCircularTimeline(dayPrograms);
             
             // Update table
             updateProgramTable(dayPrograms);
             
+            // Update statistics
+            updateStatistics(dayPrograms);
+            
             // Check for problems
             checkProblems(dayPrograms);
-        }
-
-        function drawLinearTimeline(programs) {
-            const container = document.getElementById('linearTimeline');
-            const header = document.getElementById('timelineHeader');
-            const body = document.getElementById('timelineBody');
             
-            // Clear existing content
-            header.innerHTML = '';
-            body.innerHTML = '';
-            
-            // Calculate dimensions
-            const containerWidth = container.offsetWidth;
-            timelineWidth = containerWidth * zoomLevel;
-            pixelsPerHour = timelineWidth / 24;
-            
-            // Setup timeline header with time labels
-            header.style.width = timelineWidth + 'px';
-            header.style.height = '40px';
-            header.style.position = 'relative';
-            
-            // Add time markers and labels
-            for (let hour = 0; hour <= 24; hour++) {
-                const x = hour * pixelsPerHour;
-                
-                // Time marker
-                const marker = document.createElement('div');
-                marker.className = 'time-marker' + (hour % 6 === 0 ? ' major' : '');
-                marker.style.left = x + 'px';
-                body.appendChild(marker);
-                
-                // Time label
-                if (hour < 24 && (hour % (zoomLevel > 2 ? 1 : zoomLevel > 1 ? 2 : 3) === 0)) {
-                    const label = document.createElement('div');
-                    label.className = 'time-label';
-                    label.style.left = x + 'px';
-                    label.textContent = `${hour.toString().padStart(2, '0')}:00`;
-                    header.appendChild(label);
-                }
-            }
-            
-            // Add current time indicator if within schedule date
-            const now = new Date();
-            if (now >= scheduleDate && now < new Date(scheduleDate.getTime() + 24 * 60 * 60 * 1000)) {
-                const currentHour = now.getUTCHours() + now.getUTCMinutes() / 60;
-                const currentX = currentHour * pixelsPerHour;
-                
-                const currentMarker = document.createElement('div');
-                currentMarker.className = 'time-marker current';
-                currentMarker.style.left = currentX + 'px';
-                currentMarker.innerHTML = '<div style="position: absolute; top: -30px; left: -30px; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">NOW</div>';
-                body.appendChild(currentMarker);
-            }
-            
-            // Add prime time indicator
-            const primeTimeStart = 20 * pixelsPerHour;
-            const primeTimeEnd = 23 * pixelsPerHour;
-            const primeTime = document.createElement('div');
-            primeTime.className = 'prime-time-indicator';
-            primeTime.style.left = primeTimeStart + 'px';
-            primeTime.style.width = (primeTimeEnd - primeTimeStart) + 'px';
-            primeTime.title = 'Prime Time (20:00 - 23:00)';
-            body.appendChild(primeTime);
-            
-            // Setup body dimensions
-            body.style.width = timelineWidth + 'px';
-            
-            // Group overlapping programs into rows
-            const rows = [];
-            programs.forEach(program => {
-                let placed = false;
-                for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-                    const row = rows[rowIndex];
-                    const fits = !row.some(p => 
-                        (program.start < p.stop && program.stop > p.start)
-                    );
-                    if (fits) {
-                        row.push(program);
-                        placed = true;
-                        program.row = rowIndex;
-                        break;
-                    }
-                }
-                if (!placed) {
-                    rows.push([program]);
-                    program.row = rows.length - 1;
-                }
-            });
-            
-            // Create program rows
-            const dayStart = new Date(scheduleDate);
-            const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
-            
-            for (let i = 0; i < Math.max(rows.length, 3); i++) {
-                const row = document.createElement('div');
-                row.className = 'program-row';
-                if (viewMode === 'compact') row.classList.add('compact');
-                row.style.width = timelineWidth + 'px';
-                body.appendChild(row);
-            }
-            
-            // Add programs to timeline
-            programs.forEach((program, index) => {
-                const displayStart = program.start < dayStart ? dayStart : program.start;
-                const displayEnd = program.stop > dayEnd ? dayEnd : program.stop;
-                
-                const startHour = (displayStart - dayStart) / (1000 * 60 * 60);
-                const endHour = (displayEnd - dayStart) / (1000 * 60 * 60);
-                
-                const x = startHour * pixelsPerHour;
-                const width = Math.max(1, (endHour - startHour) * pixelsPerHour);
-                
-                // Create program block
-                const block = document.createElement('div');
-                block.className = 'program-block';
-                block.style.left = x + 'px';
-                block.style.width = width + 'px';
-                block.style.background = formatColors[program.title] || colorPalettes.default[0];
-                
-                // Check for overlaps
-                const hasOverlap = programs.some((p, i) => 
-                    i !== index && p.start < program.stop && p.stop > program.start
-                );
-                
-                if (hasOverlap) {
-                    block.style.border = '2px solid #ef4444';
-                }
-                
-                // Program content
-                const content = document.createElement('div');
-                content.className = 'program-content';
-                
-                const title = document.createElement('div');
-                title.className = 'program-title';
-                title.textContent = program.title;
-                content.appendChild(title);
-                
-                if (width > 80 && viewMode !== 'compact') {
-                    const time = document.createElement('div');
-                    time.className = 'program-time';
-                    time.textContent = `${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`;
-                    content.appendChild(time);
-                }
-                
-                if (width > 120 && viewMode !== 'compact') {
-                    const meta = document.createElement('div');
-                    meta.className = 'program-meta';
-                    meta.innerHTML = `
-                        <span>${formatDuration(program.duration)}</span>
-                        ${program.category ? `<span>• ${program.category}</span>` : ''}
-                    `;
-                    content.appendChild(meta);
-                }
-                
-                block.appendChild(content);
-                
-                // Program icon
-                if (program.icon && width > 100) {
-                    const icon = document.createElement('div');
-                    icon.className = 'program-icon';
-                    icon.style.backgroundImage = `url(${program.icon})`;
-                    block.appendChild(icon);
-                }
-                
-                // Overlap indicator
-                if (hasOverlap) {
-                    const overlap = document.createElement('div');
-                    overlap.className = 'overlap-indicator';
-                    overlap.textContent = '!';
-                    overlap.title = 'Sovrapposizione rilevata';
-                    block.appendChild(overlap);
-                }
-                
-                // Event handlers
-                block.onclick = () => showProgramDetails(program);
-                block.onmouseenter = (e) => showProgramPreview(e, program);
-                block.onmouseleave = hideProgramPreview;
-                
-                // Add to appropriate row
-                const rowElement = body.children[program.row + 1]; // +1 for header
-                if (rowElement) {
-                    rowElement.appendChild(block);
-                }
-            });
-            
-            // Check for gaps and add indicators
-            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
-            let lastEnd = null;
-            
-            sortedPrograms.forEach(program => {
-                if (lastEnd && program.start > lastEnd) {
-                    const gap = program.start - lastEnd;
-                    if (gap > 60000) { // More than 1 minute
-                        if (lastEnd < dayEnd && program.start > dayStart) {
-                            const gapStart = lastEnd < dayStart ? dayStart : lastEnd;
-                            const gapEnd = program.start > dayEnd ? dayEnd : program.start;
-                            
-                            const startHour = (gapStart - dayStart) / (1000 * 60 * 60);
-                            const endHour = (gapEnd - dayStart) / (1000 * 60 * 60);
-                            
-                            const x = startHour * pixelsPerHour;
-                            const width = (endHour - startHour) * pixelsPerHour;
-                            
-                            const gapBlock = document.createElement('div');
-                            gapBlock.className = 'program-block gap-indicator';
-                            gapBlock.style.left = x + 'px';
-                            gapBlock.style.width = width + 'px';
-                            
-                            const gapMinutes = Math.floor(gap / 60000);
-                            if (width > 40) {
-                                gapBlock.textContent = `GAP ${gapMinutes}min`;
-                            }
-                            
-                            const firstRow = body.querySelector('.program-row');
-                            if (firstRow) {
-                                firstRow.appendChild(gapBlock);
-                            }
-                        }
-                    }
-                }
-                
-                if (!lastEnd || program.stop > lastEnd) {
-                    lastEnd = program.stop;
-                }
-            });
+            // Update format legend
+            updateFormatLegend(dayPrograms);
         }
 
         function drawCircularTimeline(programs) {
-            const container = document.getElementById('circularTimeline');
-            const svg = container.querySelector('svg');
-            const clockFace = svg.getElementById('clockFace');
+            const svg = document.querySelector('#circularTimeline svg');
+            const clockMarks = svg.getElementById('clockMarks');
             const programArcs = svg.getElementById('programArcs');
             const clockHands = svg.getElementById('clockHands');
             
             // Clear existing content
-            clockFace.innerHTML = '';
+            clockMarks.innerHTML = '';
             programArcs.innerHTML = '';
             clockHands.innerHTML = '';
             
-            const centerX = 300;
-            const centerY = 300;
-            const radius = 250;
-            const innerRadius = 150;
-            
-            // Draw clock face
-            const face = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            face.setAttribute('cx', centerX);
-            face.setAttribute('cy', centerY);
-            face.setAttribute('r', radius);
-            face.setAttribute('fill', 'url(#clockGradient)');
-            face.setAttribute('stroke', '#e5e7eb');
-            face.setAttribute('stroke-width', '2');
-            clockFace.appendChild(face);
-            
-            // Create gradient
-            const defs = svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
-            gradient.setAttribute('id', 'clockGradient');
-            
-            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-            stop1.setAttribute('offset', '0%');
-            stop1.setAttribute('stop-color', '#ffffff');
-            gradient.appendChild(stop1);
-            
-            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-            stop2.setAttribute('offset', '100%');
-            stop2.setAttribute('stop-color', '#f8fafc');
-            gradient.appendChild(stop2);
-            
-            defs.appendChild(gradient);
-            svg.appendChild(defs);
+            const centerX = 350;
+            const centerY = 350;
+            const radius = 340;
+            const innerRadius = 200;
             
             // Draw hour marks and numbers
             for (let hour = 0; hour < 24; hour++) {
-                const angle = (hour * 15) - 90; // 15 degrees per hour, starting from top
+                const angle = (hour * 15) - 90; // 15 degrees per hour
                 const radian = angle * Math.PI / 180;
                 
                 // Hour marks
-                const markLength = hour % 6 === 0 ? 20 : 10;
+                const markLength = hour % 6 === 0 ? 30 : hour % 3 === 0 ? 20 : 10;
                 const markStart = radius - markLength;
                 
                 const x1 = centerX + markStart * Math.cos(radian);
@@ -1429,13 +937,14 @@
                 mark.setAttribute('y1', y1);
                 mark.setAttribute('x2', x2);
                 mark.setAttribute('y2', y2);
-                mark.setAttribute('stroke', hour % 6 === 0 ? '#334155' : '#94a3b8');
-                mark.setAttribute('stroke-width', hour % 6 === 0 ? '3' : '1');
-                clockFace.appendChild(mark);
+                mark.setAttribute('stroke', hour % 6 === 0 ? '#475569' : '#94a3b8');
+                mark.setAttribute('stroke-width', hour % 6 === 0 ? '4' : hour % 3 === 0 ? '2' : '1');
+                mark.setAttribute('stroke-linecap', 'round');
+                clockMarks.appendChild(mark);
                 
                 // Hour numbers (every 3 hours)
                 if (hour % 3 === 0) {
-                    const textRadius = radius - 35;
+                    const textRadius = radius - 45;
                     const textX = centerX + textRadius * Math.cos(radian);
                     const textY = centerY + textRadius * Math.sin(radian);
                     
@@ -1444,194 +953,141 @@
                     text.setAttribute('y', textY);
                     text.setAttribute('text-anchor', 'middle');
                     text.setAttribute('dominant-baseline', 'middle');
-                    text.setAttribute('font-size', '18');
-                    text.setAttribute('font-weight', '600');
+                    text.setAttribute('font-size', '20');
+                    text.setAttribute('font-weight', '700');
                     text.setAttribute('fill', '#334155');
-                    text.textContent = hour.toString();
-                    clockFace.appendChild(text);
+                    text.setAttribute('class', 'hour-number');
+                    text.textContent = hour.toString().padStart(2, '0');
+                    clockMarks.appendChild(text);
                 }
             }
             
-            // For broadcast day visualization, we need to show programs in their actual time slots
-            // regardless of which calendar day they belong to
-            const dayStart = new Date(scheduleDate);
-            const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+            // Calculate sequential positions
+            let currentSecond = 0;
+            const programsWithPosition = [];
             
             programs.forEach((program, index) => {
-                // Calculate the hour position based on the program's actual time
-                // For programs from previous evening (21:00-23:59), place them at hours 21-23
-                // For programs from current day (00:00-20:59), place them at hours 0-20
+                const startSecond = currentSecond;
+                const endSecond = Math.min(currentSecond + program.duration, totalDaySeconds);
                 
-                let startHour, endHour;
+                programsWithPosition.push({
+                    ...program,
+                    sequentialStart: startSecond,
+                    sequentialEnd: endSecond,
+                    index
+                });
                 
-                // Get the hours directly from the program times
-                const programStartHour = program.start.getUTCHours();
-                const programStartMinutes = program.start.getUTCMinutes() / 60;
-                const programEndHour = program.stop.getUTCHours();
-                const programEndMinutes = program.stop.getUTCMinutes() / 60;
-                
-                // Check if this is an evening program from previous day
-                if (program.start < dayStart) {
-                    // Program started yesterday evening
-                    startHour = programStartHour + programStartMinutes;
-                } else {
-                    // Program started today
-                    startHour = programStartHour + programStartMinutes;
-                }
-                
-                // Check if program ends on a different day than it starts
-                if (program.stop.getUTCDate() !== program.start.getUTCDate()) {
-                    // Program crosses midnight
-                    if (program.stop > dayStart && program.stop <= dayEnd) {
-                        // Ends today
-                        endHour = programEndHour + programEndMinutes;
-                    } else {
-                        // Ends tomorrow (for programs that go past midnight of current day)
-                        endHour = 24; // Cap at end of day
-                    }
-                } else {
-                    // Program starts and ends on same day
-                    endHour = programEndHour + programEndMinutes;
-                }
-                
-                // Convert hours to angles
-                const startAngle = (startHour * 15) - 90;
-                const endAngle = (endHour * 15) - 90;
-                
-                // Create arc path
-                const path = createArcPath(centerX, centerY, innerRadius, radius, startAngle, endAngle);
-                drawProgramArc(path, program, index, programs);
+                currentSecond = endSecond;
             });
             
-            // Helper function to draw program arc
-            function drawProgramArc(path, program, index, programs) {
+            // Draw programs as arcs
+            programsWithPosition.forEach((program) => {
+                const startAngle = (program.sequentialStart / totalDaySeconds * 360) - 90;
+                const endAngle = (program.sequentialEnd / totalDaySeconds * 360) - 90;
+                
+                // Create arc path
+                const path = createArcPath(centerX, centerY, innerRadius, radius - 40, startAngle, endAngle);
+                
                 const programPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 programPath.setAttribute('d', path);
-                
-                // Extract color from gradient
-                const gradient = formatColors[program.title];
-                let fillColor = '#6B7280';
-                if (gradient && gradient.includes('gradient')) {
-                    const match = gradient.match(/#[0-9a-fA-F]{6}/);
-                    if (match) fillColor = match[0];
-                }
-                
-                programPath.setAttribute('fill', fillColor);
+                programPath.setAttribute('fill', formatColors[program.title]);
                 programPath.setAttribute('stroke', 'white');
-                programPath.setAttribute('stroke-width', '2');
-                programPath.setAttribute('filter', 'url(#shadow)');
-                programPath.style.cursor = 'pointer';
-                programPath.style.opacity = '0.8';
-                
-                // Check for overlaps
-                const hasOverlap = programs.some((p, i) => 
-                    i !== index && p.start < program.stop && p.stop > program.start
-                );
-                
-                if (hasOverlap) {
-                    programPath.setAttribute('stroke', '#ef4444');
-                    programPath.setAttribute('stroke-width', '3');
-                }
+                programPath.setAttribute('stroke-width', '3');
+                programPath.setAttribute('class', 'program-arc');
+                programPath.style.filter = 'url(#shadow)';
                 
                 // Event handlers
                 programPath.onclick = () => showProgramDetails(program);
-                programPath.onmouseenter = (e) => {
-                    programPath.style.opacity = '1';
-                    showProgramPreview(e, program);
-                };
-                programPath.onmouseleave = () => {
-                    programPath.style.opacity = '0.8';
-                    hideProgramPreview();
-                };
+                programPath.onmouseenter = (e) => showProgramPreview(e, program);
+                programPath.onmouseleave = hideProgramPreview;
                 
                 programArcs.appendChild(programPath);
                 
-                // Add label if the arc is large enough
-                const pathData = path.match(/A \d+ \d+ 0 \d+ \d+ ([\d.-]+) ([\d.-]+)/g);
-                if (pathData) {
-                    // Calculate arc span from path
-                    const coords = path.match(/M ([\d.-]+) ([\d.-]+) L ([\d.-]+) ([\d.-]+)/);
-                    if (coords) {
-                        const x1 = parseFloat(coords[1]);
-                        const y1 = parseFloat(coords[2]);
-                        const x2 = parseFloat(coords[3]);
-                        const y2 = parseFloat(coords[4]);
-                        
-                        // Calculate angles
-                        const angle1 = Math.atan2(y1 - centerY, x1 - centerX) * 180 / Math.PI;
-                        const angle2 = Math.atan2(y2 - centerY, x2 - centerX) * 180 / Math.PI;
-                        
-                        let arcLength = Math.abs(angle2 - angle1);
-                        if (arcLength > 180) arcLength = 360 - arcLength;
-                        
-                        if (arcLength > 15) {
-                            const midAngle = (angle1 + angle2) / 2;
-                            const labelRadius = (innerRadius + radius) / 2;
-                            const radian = midAngle * Math.PI / 180;
-                            
-                            const labelX = centerX + labelRadius * Math.cos(radian);
-                            const labelY = centerY + labelRadius * Math.sin(radian);
-                            
-                            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                            label.setAttribute('x', labelX);
-                            label.setAttribute('y', labelY);
-                            label.setAttribute('text-anchor', 'middle');
-                            label.setAttribute('dominant-baseline', 'middle');
-                            label.setAttribute('font-size', '12');
-                            label.setAttribute('font-weight', '600');
-                            label.setAttribute('fill', 'white');
-                            label.setAttribute('pointer-events', 'none');
-                            label.textContent = program.title.length > 15 ? 
-                                program.title.substring(0, 15) + '...' : program.title;
-                            
-                            // Rotate text to follow arc
-                            const rotation = midAngle > 90 && midAngle < 270 ? midAngle + 180 : midAngle;
-                            label.setAttribute('transform', `rotate(${rotation} ${labelX} ${labelY})`);
-                            
-                            programArcs.appendChild(label);
-                        }
-                    }
+                // Add label if space allows
+                const arcLength = Math.abs(endAngle - startAngle);
+                if (arcLength > 10) {
+                    const midAngle = (startAngle + endAngle) / 2;
+                    const labelRadius = (innerRadius + radius - 40) / 2;
+                    const radian = midAngle * Math.PI / 180;
+                    
+                    const labelX = centerX + labelRadius * Math.cos(radian);
+                    const labelY = centerY + labelRadius * Math.sin(radian);
+                    
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', labelX);
+                    label.setAttribute('y', labelY);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('dominant-baseline', 'middle');
+                    label.setAttribute('font-size', '14');
+                    label.setAttribute('font-weight', '600');
+                    label.setAttribute('fill', 'white');
+                    label.setAttribute('pointer-events', 'none');
+                    label.style.textShadow = '0 1px 2px rgba(0,0,0,0.5)';
+                    
+                    const title = program.title.length > 20 ? 
+                        program.title.substring(0, 20) + '...' : program.title;
+                    label.textContent = title;
+                    
+                    // Rotate text to follow arc
+                    const rotation = midAngle > 90 && midAngle < 270 ? midAngle + 180 : midAngle;
+                    label.setAttribute('transform', `rotate(${rotation} ${labelX} ${labelY})`);
+                    
+                    programArcs.appendChild(label);
                 }
+            });
+            
+            // Draw gaps
+            if (currentSecond < totalDaySeconds) {
+                const gapStartAngle = (currentSecond / totalDaySeconds * 360) - 90;
+                const gapEndAngle = 270; // Full circle
+                
+                const gapPath = createArcPath(centerX, centerY, innerRadius, radius - 40, gapStartAngle, gapEndAngle);
+                
+                const gap = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                gap.setAttribute('d', gapPath);
+                gap.setAttribute('class', 'gap-arc');
+                programArcs.appendChild(gap);
             }
             
-            // Add current time hands if within schedule date
+            // Add current time hands
             const now = new Date();
-            if (now >= scheduleDate && now < dayEnd) {
-                const currentHour = now.getUTCHours() + now.getUTCMinutes() / 60;
-                const hourAngle = (currentHour * 15) - 90;
-                const minuteAngle = ((now.getUTCMinutes() / 60) * 360) - 90;
-                
-                // Hour hand
-                const hourHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                hourHand.setAttribute('x1', centerX);
-                hourHand.setAttribute('y1', centerY);
-                hourHand.setAttribute('x2', centerX + 100 * Math.cos(hourAngle * Math.PI / 180));
-                hourHand.setAttribute('y2', centerY + 100 * Math.sin(hourAngle * Math.PI / 180));
-                hourHand.setAttribute('stroke', '#ef4444');
-                hourHand.setAttribute('stroke-width', '6');
-                hourHand.setAttribute('stroke-linecap', 'round');
-                clockHands.appendChild(hourHand);
-                
-                // Minute hand
-                const minuteHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                minuteHand.setAttribute('x1', centerX);
-                minuteHand.setAttribute('y1', centerY);
-                minuteHand.setAttribute('x2', centerX + 140 * Math.cos(minuteAngle * Math.PI / 180));
-                minuteHand.setAttribute('y2', centerY + 140 * Math.sin(minuteAngle * Math.PI / 180));
-                minuteHand.setAttribute('stroke', '#ef4444');
-                minuteHand.setAttribute('stroke-width', '4');
-                minuteHand.setAttribute('stroke-linecap', 'round');
-                clockHands.appendChild(minuteHand);
-            }
+            const currentHour = now.getUTCHours() + now.getUTCMinutes() / 60;
+            const hourAngle = (currentHour * 15) - 90;
+            const minuteAngle = ((now.getUTCMinutes() / 60) * 360) - 90;
             
-            // Center dot
-            const centerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            centerDot.setAttribute('cx', centerX);
-            centerDot.setAttribute('cy', centerY);
-            centerDot.setAttribute('r', '10');
-            centerDot.setAttribute('fill', '#1e293b');
-            clockHands.appendChild(centerDot);
+            // Hour hand
+            const hourHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            hourHand.setAttribute('x1', centerX);
+            hourHand.setAttribute('y1', centerY);
+            hourHand.setAttribute('x2', centerX + 120 * Math.cos(hourAngle * Math.PI / 180));
+            hourHand.setAttribute('y2', centerY + 120 * Math.sin(hourAngle * Math.PI / 180));
+            hourHand.setAttribute('stroke', 'url(#handGradient)');
+            hourHand.setAttribute('stroke-width', '8');
+            hourHand.setAttribute('stroke-linecap', 'round');
+            hourHand.setAttribute('filter', 'url(#shadow)');
+            clockHands.appendChild(hourHand);
+            
+            // Minute hand
+            const minuteHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            minuteHand.setAttribute('x1', centerX);
+            minuteHand.setAttribute('y1', centerY);
+            minuteHand.setAttribute('x2', centerX + 160 * Math.cos(minuteAngle * Math.PI / 180));
+            minuteHand.setAttribute('y2', centerY + 160 * Math.sin(minuteAngle * Math.PI / 180));
+            minuteHand.setAttribute('stroke', 'url(#handGradient)');
+            minuteHand.setAttribute('stroke-width', '6');
+            minuteHand.setAttribute('stroke-linecap', 'round');
+            minuteHand.setAttribute('filter', 'url(#shadow)');
+            clockHands.appendChild(minuteHand);
+            
+            // Add gradient for hands
+            const defs = svg.querySelector('defs');
+            const handGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            handGradient.setAttribute('id', 'handGradient');
+            handGradient.innerHTML = `
+                <stop offset="0%" style="stop-color:#ef4444"/>
+                <stop offset="100%" style="stop-color:#dc2626"/>
+            `;
+            defs.appendChild(handGradient);
         }
 
         function createArcPath(cx, cy, innerRadius, outerRadius, startAngle, endAngle) {
@@ -1652,6 +1108,58 @@
             return `M ${x1} ${y1} L ${x2} ${y2} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x3} ${y3} L ${x4} ${y4} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1} ${y1} Z`;
         }
 
+        function updateStatistics(programs) {
+            // Calculate total coverage
+            const totalDuration = programs.reduce((sum, p) => sum + p.duration, 0);
+            const coveragePercent = Math.min(100, (totalDuration / totalDaySeconds) * 100);
+            const coverageHours = Math.floor(totalDuration / 3600);
+            const coverageMinutes = Math.floor((totalDuration % 3600) / 60);
+            
+            document.getElementById('coveragePercent').textContent = `${coveragePercent.toFixed(1)}%`;
+            document.getElementById('coverageTime').textContent = `${coverageHours}h ${coverageMinutes}m`;
+            
+            // Update coverage ring
+            const ring = document.getElementById('coverageRing');
+            const circumference = 2 * Math.PI * 20;
+            const offset = circumference - (coveragePercent / 100) * circumference;
+            ring.style.strokeDashoffset = offset;
+            
+            // Count gaps
+            let gapCount = 0;
+            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
+            for (let i = 0; i < sortedPrograms.length - 1; i++) {
+                if (sortedPrograms[i + 1].start > sortedPrograms[i].stop) {
+                    gapCount++;
+                }
+            }
+            document.getElementById('gapCount').textContent = gapCount;
+            
+            // Count unique formats
+            const uniqueFormats = [...new Set(programs.map(p => p.title))];
+            document.getElementById('formatCount').textContent = uniqueFormats.length;
+            
+            // Calculate average duration
+            const avgDuration = totalDuration / programs.length;
+            const avgMinutes = Math.floor(avgDuration / 60);
+            document.getElementById('avgDuration').textContent = `${avgMinutes}m`;
+        }
+
+        function updateFormatLegend(programs) {
+            const legend = document.getElementById('formatLegend');
+            legend.innerHTML = '';
+            
+            const formats = [...new Set(programs.map(p => p.title))];
+            formats.forEach(format => {
+                const item = document.createElement('div');
+                item.className = 'format-item';
+                item.innerHTML = `
+                    <div class="format-color" style="background: ${formatColors[format]}"></div>
+                    <span>${format}</span>
+                `;
+                legend.appendChild(item);
+            });
+        }
+
         function showProgramPreview(event, program) {
             if (currentPreviewTimeout) {
                 clearTimeout(currentPreviewTimeout);
@@ -1664,6 +1172,12 @@
                 document.getElementById('previewTime').textContent = `${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`;
                 document.getElementById('previewDuration').textContent = formatDuration(program.duration);
                 document.getElementById('previewCategory').textContent = program.category || 'N/A';
+                
+                // Show sequential position
+                const dayPrograms = getCurrentDayPrograms();
+                const position = dayPrograms.findIndex(p => p === program) + 1;
+                document.getElementById('previewPosition').textContent = `${position}° di ${dayPrograms.length}`;
+                
                 document.getElementById('previewDesc').textContent = program.desc ? 
                     (program.desc.length > 150 ? program.desc.substring(0, 150) + '...' : program.desc) : 
                     'Nessuna descrizione disponibile';
@@ -1678,16 +1192,13 @@
                 
                 // Position preview
                 const rect = event.target.getBoundingClientRect();
-                const previewRect = preview.getBoundingClientRect();
-                
                 let top = rect.bottom + 10;
-                let left = rect.left + rect.width / 2 - 150; // Center on program
+                let left = rect.left + rect.width / 2 - 175;
                 
-                // Adjust if would go off screen
                 if (left < 10) left = 10;
-                if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
-                if (top + previewRect.height > window.innerHeight) {
-                    top = rect.top - previewRect.height - 10;
+                if (left + 350 > window.innerWidth) left = window.innerWidth - 360;
+                if (top + 300 > window.innerHeight) {
+                    top = rect.top - 300 - 10;
                 }
                 
                 preview.style.left = left + 'px';
@@ -1707,11 +1218,9 @@
         function showProgramDetails(program) {
             document.getElementById('programDetails').style.display = 'block';
             document.getElementById('detailTitle').textContent = program.title;
-            document.getElementById('detailFormat').textContent = program.title;
             document.getElementById('detailTime').textContent = `${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`;
             document.getElementById('detailDuration').textContent = formatDuration(program.duration);
             document.getElementById('detailCategory').textContent = program.category || '-';
-            document.getElementById('detailRating').textContent = program.rating || '0';
             document.getElementById('detailDescription').textContent = program.desc || '-';
             
             const iconDiv = document.getElementById('detailIcon');
@@ -1735,32 +1244,27 @@
             
             programs.forEach((program, index) => {
                 const row = document.createElement('tr');
-                row.className = 'border-b hover:bg-gray-50 transition-colors';
+                row.className = 'hover:bg-gray-50 transition-colors';
                 
                 const startTimeStr = `${program.start.getUTCHours().toString().padStart(2, '0')}:${program.start.getUTCMinutes().toString().padStart(2, '0')}`;
                 const stopTimeStr = `${program.stop.getUTCHours().toString().padStart(2, '0')}:${program.stop.getUTCMinutes().toString().padStart(2, '0')}`;
                 
                 row.innerHTML = `
-                    <td class="px-4 py-2">
+                    <td class="px-4 py-3">
                         <input type="time" value="${startTimeStr}" 
                                onchange="updateProgramTime(${index}, 'start', this.value)"
-                               class="px-2 py-1 border rounded">
+                               class="px-2 py-1 border rounded-lg focus:border-blue-500 focus:outline-none">
                     </td>
-                    <td class="px-4 py-2">
+                    <td class="px-4 py-3">
                         <input type="time" value="${stopTimeStr}" 
                                onchange="updateProgramTime(${index}, 'stop', this.value)"
-                               class="px-2 py-1 border rounded">
+                               class="px-2 py-1 border rounded-lg focus:border-blue-500 focus:outline-none">
                     </td>
-                    <td class="px-4 py-2">${formatDuration(program.duration)}</td>
-                    <td class="px-4 py-2 cursor-pointer hover:bg-blue-50" onclick="editCell(this, ${index}, 'title')">${program.title}</td>
-                    <td class="px-4 py-2 cursor-pointer hover:bg-blue-50" onclick="editCell(this, ${index}, 'category')">${program.category || '-'}</td>
-                    <td class="px-4 py-2">
-                        <div class="w-16 h-9 bg-gray-200 rounded" 
-                             style="background-image: url(${program.icon}); background-size: cover;">
-                        </div>
-                    </td>
-                    <td class="px-4 py-2">
-                        <button onclick="deleteProgram(${index})" class="text-red-500 hover:text-red-700 transition-colors" title="Elimina">
+                    <td class="px-4 py-3">${formatDuration(program.duration)}</td>
+                    <td class="px-4 py-3 cursor-pointer hover:bg-blue-50 rounded transition-colors" onclick="editCell(this, ${index}, 'title')">${program.title}</td>
+                    <td class="px-4 py-3 cursor-pointer hover:bg-blue-50 rounded transition-colors" onclick="editCell(this, ${index}, 'category')">${program.category || '-'}</td>
+                    <td class="px-4 py-3">
+                        <button onclick="deleteProgram(${index})" class="text-red-500 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-lg" title="Elimina">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </td>
@@ -1770,9 +1274,7 @@
             });
             
             // Re-initialize icons
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+            lucide.createIcons();
         }
 
         function checkProblems(programs) {
@@ -1784,10 +1286,7 @@
             for (let i = 0; i < programs.length; i++) {
                 for (let j = i + 1; j < programs.length; j++) {
                     if (programs[i].stop > programs[j].start && programs[i].start < programs[j].stop) {
-                        const overlapStart = Math.max(programs[i].start, programs[j].start);
-                        const overlapEnd = Math.min(programs[i].stop, programs[j].stop);
-                        const overlapMinutes = Math.floor((overlapEnd - overlapStart) / 60000);
-                        
+                        const overlapMinutes = Math.floor((Math.min(programs[i].stop, programs[j].stop) - Math.max(programs[i].start, programs[j].start)) / 60000);
                         problems.push({
                             type: 'overlap',
                             severity: 'error',
@@ -1800,50 +1299,38 @@
             // Check for gaps
             const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
             for (let i = 0; i < sortedPrograms.length - 1; i++) {
-                let nextNonOverlapping = null;
-                for (let j = i + 1; j < sortedPrograms.length; j++) {
-                    if (sortedPrograms[j].start >= sortedPrograms[i].stop) {
-                        nextNonOverlapping = sortedPrograms[j];
-                        break;
-                    }
-                }
-                
-                if (nextNonOverlapping) {
-                    const gap = nextNonOverlapping.start - sortedPrograms[i].stop;
-                    if (gap > 60000) {
-                        const gapMinutes = Math.floor(gap / 60000);
-                        problems.push({
-                            type: 'gap',
-                            severity: gapMinutes > 30 ? 'error' : 'warning',
-                            message: `Buco di ${gapMinutes} minuti dopo "${sortedPrograms[i].title}"`
-                        });
-                    }
+                const gap = sortedPrograms[i + 1].start - sortedPrograms[i].stop;
+                if (gap > 60000) { // More than 1 minute
+                    const gapMinutes = Math.floor(gap / 60000);
+                    problems.push({
+                        type: 'gap',
+                        severity: gapMinutes > 30 ? 'error' : 'warning',
+                        message: `Buco di ${gapMinutes} minuti dopo "${sortedPrograms[i].title}"`
+                    });
                 }
             }
             
-            // Check for missing icons
-            const missingIcons = programs.filter(p => 
-                !p.icon || p.icon.includes('placeholder') || p.icon.includes('default.jpg')
-            ).length;
-            
-            if (missingIcons > 0) {
+            // Check total coverage
+            const totalDuration = programs.reduce((sum, p) => sum + p.duration, 0);
+            if (totalDuration < totalDaySeconds) {
+                const missingHours = ((totalDaySeconds - totalDuration) / 3600).toFixed(1);
                 problems.push({
-                    type: 'icon',
+                    type: 'coverage',
                     severity: 'info',
-                    message: `${missingIcons} programmi con icone mancanti o default`
+                    message: `Mancano ${missingHours} ore per completare le 24h`
                 });
             }
             
             // Display problems
             if (problems.length === 0) {
-                report.innerHTML = '<p class="text-green-600">✅ Nessun problema rilevato</p>';
+                report.innerHTML = '<p class="text-green-600 font-semibold">✅ Nessun problema rilevato</p>';
             } else {
                 problems.forEach(problem => {
                     const div = document.createElement('div');
-                    div.className = `p-2 rounded text-sm mb-1 ${
-                        problem.severity === 'error' ? 'bg-red-50 text-red-700' :
-                        problem.severity === 'warning' ? 'bg-yellow-50 text-yellow-700' :
-                        'bg-blue-50 text-blue-700'
+                    div.className = `p-3 rounded-lg text-sm ${
+                        problem.severity === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+                        problem.severity === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                        'bg-blue-50 text-blue-700 border border-blue-200'
                     }`;
                     div.textContent = problem.message;
                     report.appendChild(div);
@@ -1851,112 +1338,19 @@
             }
         }
 
-        // View mode functions
-        function setViewMode(mode) {
-            viewMode = mode;
+        function getCurrentDayPrograms() {
+            const dayStart = new Date(scheduleDate);
+            dayStart.setUTCHours(21, 0, 0, 0);
+            dayStart.setUTCDate(dayStart.getUTCDate() - 1);
             
-            // Update buttons
-            document.querySelectorAll('.view-toggle button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            const dayEnd = new Date(scheduleDate);
+            dayEnd.setUTCHours(21, 0, 0, 0);
             
-            // Show/hide timeline views
-            if (mode === 'circular') {
-                document.getElementById('viewCircular').classList.add('active');
-                document.getElementById('linearTimeline').classList.add('hidden-view');
-                document.getElementById('circularTimeline').classList.remove('hidden-view');
-                document.getElementById('zoomControls').style.display = 'none';
-            } else {
-                document.getElementById('linearTimeline').classList.remove('hidden-view');
-                document.getElementById('circularTimeline').classList.add('hidden-view');
-                document.getElementById('zoomControls').style.display = 'flex';
-                
-                if (mode === 'compact') {
-                    document.getElementById('viewCompact').classList.add('active');
-                    document.querySelectorAll('.program-row').forEach(row => row.classList.add('compact'));
-                } else {
-                    document.getElementById('viewLinear').classList.add('active');
-                    document.querySelectorAll('.program-row').forEach(row => row.classList.remove('compact'));
-                }
-            }
-            
-            // Reload timeline with new view
-            if (currentPrograms.length > 0) {
-                loadPrograms();
-            }
+            return currentPrograms.filter(p => {
+                return (p.start >= dayStart && p.start < dayEnd) || 
+                       (p.start < dayStart && p.stop > dayStart);
+            }).sort((a, b) => a.start - b.start);
         }
-
-        // Utility functions
-        function formatDateUTC(date) {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
-            return date.toLocaleDateString('it-IT', options);
-        }
-
-        function formatTimeUTC(date) {
-            const hours = date.getUTCHours().toString().padStart(2, '0');
-            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-            return `${hours}:${minutes}`;
-        }
-
-        function formatDuration(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            if (hours > 0) {
-                return `${hours}h ${minutes}min`;
-            } else {
-                return `${minutes}min`;
-            }
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast p-4 rounded-lg shadow-lg ${
-                type === 'success' ? 'bg-green-500' : 
-                type === 'error' ? 'bg-red-500' : 
-                'bg-blue-500'
-            } text-white`;
-            toast.textContent = message;
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // Zoom functions
-        function zoomIn() {
-            zoomLevel = Math.min(zoomLevel * 1.2, 5);
-            loadPrograms();
-        }
-
-        function zoomOut() {
-            zoomLevel = Math.max(zoomLevel / 1.2, 0.5);
-            loadPrograms();
-        }
-
-        function resetZoom() {
-            zoomLevel = 1;
-            loadPrograms();
-        }
-
-        // Mouse wheel zoom
-        document.addEventListener('DOMContentLoaded', function() {
-            const timelineBody = document.getElementById('timelineBody');
-            if (timelineBody) {
-                timelineBody.addEventListener('wheel', (e) => {
-                    if (e.ctrlKey || e.metaKey) {
-                        e.preventDefault();
-                        if (e.deltaY < 0) {
-                            zoomIn();
-                        } else {
-                            zoomOut();
-                        }
-                    }
-                });
-            }
-        });
 
         // Edit functions
         function editCell(cell, programIndex, field) {
@@ -1968,7 +1362,7 @@
             const input = document.createElement('input');
             input.type = 'text';
             input.value = currentValue === '-' ? '' : currentValue;
-            input.className = 'w-full px-2 py-1 border rounded';
+            input.className = 'w-full px-2 py-1 border rounded-lg focus:border-blue-500 focus:outline-none';
             
             input.onblur = () => {
                 const newValue = input.value.trim();
@@ -1990,7 +1384,7 @@
                 // Reload if title changed
                 if (field === 'title') {
                     if (!formatColors[newValue]) {
-                        formatColors[newValue] = formatColors[program.title] || colorPalettes.default[colorIndex % colorPalettes.default.length];
+                        formatColors[newValue] = colorPalette[colorIndex % colorPalette.length];
                         colorIndex++;
                     }
                     loadPrograms();
@@ -2022,7 +1416,6 @@
             
             // Ensure stop time is after start time
             if (timeType === 'stop' && newDate <= program.start) {
-                // If stop time is before or equal to start, assume it's next day
                 newDate.setUTCDate(newDate.getUTCDate() + 1);
             }
             
@@ -2060,17 +1453,6 @@
             showToast('Programma eliminato', 'success');
         }
 
-        function getCurrentDayPrograms() {
-            const dayStart = new Date(scheduleDate);
-            const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
-            
-            return currentPrograms.filter(p => {
-                return (p.start >= dayStart && p.start < dayEnd) || 
-                       (p.start < dayStart && p.stop > dayStart);
-            }).sort((a, b) => a.start - b.start);
-        }
-
         function addProgram() {
             const dayPrograms = getCurrentDayPrograms();
             const lastProgram = dayPrograms[dayPrograms.length - 1];
@@ -2080,7 +1462,7 @@
                 newStart = new Date(lastProgram.stop);
             } else {
                 newStart = new Date(scheduleDate);
-                newStart.setUTCHours(20, 0, 0, 0);
+                newStart.setUTCHours(6, 0, 0, 0);
             }
             
             const newStop = new Date(newStart);
@@ -2102,13 +1484,6 @@
             desc.textContent = 'Descrizione del nuovo programma';
             programme.appendChild(desc);
             
-            const rating = xmlDoc.createElement('rating');
-            rating.setAttribute('system', 'Italy Parental Rating');
-            const value = xmlDoc.createElement('value');
-            value.textContent = '0';
-            rating.appendChild(value);
-            programme.appendChild(rating);
-            
             // Add to XML
             xmlDoc.querySelector('tv').appendChild(programme);
             
@@ -2121,7 +1496,6 @@
                 category: '',
                 rating: '0',
                 icon: '',
-                episodeNum: '',
                 duration: 1800,
                 element: programme
             };
@@ -2131,18 +1505,9 @@
             
             // Assign color
             if (!formatColors[newProgram.title]) {
-                formatColors[newProgram.title] = colorPalettes.default[colorIndex % colorPalettes.default.length];
+                formatColors[newProgram.title] = colorPalette[colorIndex % colorPalette.length];
                 colorIndex++;
             }
-            
-            // Add animation class
-            setTimeout(() => {
-                const blocks = document.querySelectorAll('.program-block');
-                const lastBlock = blocks[blocks.length - 1];
-                if (lastBlock) {
-                    lastBlock.classList.add('new');
-                }
-            }, 100);
             
             loadPrograms();
             showToast('Nuovo programma aggiunto', 'success');
@@ -2209,13 +1574,57 @@
             const a = document.createElement('a');
             a.href = url;
             const date = new Date().toISOString().split('T')[0];
-            a.download = `${currentChannelId}_edited_${date}.xml`;
+            a.download = `${currentChannelId}_sequential_${date}.xml`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             
             URL.revokeObjectURL(url);
             showToast('File esportato con successo', 'success');
+        }
+
+        // Utility functions
+        function formatDateUTC(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
+            return date.toLocaleDateString('it-IT', options);
+        }
+
+        function formatTimeUTC(date) {
+            const hours = date.getUTCHours().toString().padStart(2, '0');
+            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (hours > 0) {
+                return `${hours}h ${minutes}min`;
+            } else {
+                return `${minutes}min`;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast p-4 rounded-lg shadow-lg ${type} min-w-[250px]`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" class="w-5 h-5"></i>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            container.appendChild(toast);
+            
+            // Re-initialize icons
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         // Dark mode toggle
@@ -2231,11 +1640,34 @@
 
         // Show info
         function showInfo() {
-            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nCircular Timeline - Modalità UTC\n\nNuove Funzionalità v2.1:\n- Vista Timeline Circolare (24 ore come orologio)\n- Rimosso grafico distribuzione format per performance\n- Vista lineare, circolare e compatta\n- Animazioni fluide ottimizzate\n- Indicatore ora corrente su timeline circolare\n- Archi colorati per programmi con etichette\n- Zoom solo per vista lineare\n- Performance migliorata\n\nTutte le funzionalità di editing sono mantenute.\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer v${APP_VERSION}\n\nTimeline Circolare Sequenziale\n\nNuove Funzionalità v3.0:\n- Timeline SOLO circolare\n- Visualizzazione sequenziale basata su durata (non su orario)\n- Il cerchio rappresenta 86.400 secondi (24 ore)\n- Statistiche complete: copertura, gaps, format unici\n- Supporto palinsesti TV con programmazione 21:00-20:59\n- Auto-rilevamento giorno principale\n- Editor programmi migliorato\n- Gestione gaps visuale\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
 
+        // Auto-update clock hands every minute
+        setInterval(() => {
+            const hands = document.getElementById('clockHands');
+            if (hands && hands.children.length > 0) {
+                const now = new Date();
+                const currentHour = now.getUTCHours() + now.getUTCMinutes() / 60;
+                const hourAngle = (currentHour * 15) - 90;
+                const minuteAngle = ((now.getUTCMinutes() / 60) * 360) - 90;
+                
+                if (hands.children[0]) {
+                    hands.children[0].setAttribute('x2', 350 + 120 * Math.cos(hourAngle * Math.PI / 180));
+                    hands.children[0].setAttribute('y2', 350 + 120 * Math.sin(hourAngle * Math.PI / 180));
+                }
+                
+                if (hands.children[1]) {
+                    hands.children[1].setAttribute('x2', 350 + 160 * Math.cos(minuteAngle * Math.PI / 180));
+                    hands.children[1].setAttribute('y2', 350 + 160 * Math.sin(minuteAngle * Math.PI / 180));
+                }
+            }
+        }, 60000);
+
         // Initialize
-        console.log('Circular Timeline ready!');
+        console.log('XMLTV Viewer v3.0 - Circular Sequential Timeline ready!');
     </script>
 </body>
 </html>
+            
+            //
