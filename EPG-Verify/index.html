@@ -1452,54 +1452,56 @@
                 }
             }
             
-            // Draw programs as arcs
+            // For broadcast day visualization, we need to show programs in their actual time slots
+            // regardless of which calendar day they belong to
             const dayStart = new Date(scheduleDate);
             const dayEnd = new Date(scheduleDate);
             dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
             
             programs.forEach((program, index) => {
-                // For programs that span across midnight, we need to handle them specially
-                const dayStart = new Date(scheduleDate);
-                const dayEnd = new Date(scheduleDate);
-                dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+                // Calculate the hour position based on the program's actual time
+                // For programs from previous evening (21:00-23:59), place them at hours 21-23
+                // For programs from current day (00:00-20:59), place them at hours 0-20
                 
-                // Check if program crosses midnight
-                if (program.start < dayStart && program.stop > dayStart) {
-                    // Program started yesterday and continues into today
-                    // Draw from 00:00 to stop time
-                    const endHour = Math.min(24, (program.stop - dayStart) / (1000 * 60 * 60));
-                    const startAngle = -90; // Start at top (00:00)
-                    const endAngle = (endHour * 15) - 90;
-                    
-                    const path = createArcPath(centerX, centerY, innerRadius, radius, startAngle, endAngle);
-                    drawProgramArc(path, program, index, programs);
-                } else if (program.stop > dayEnd && program.start < dayEnd) {
-                    // Program starts today and continues into tomorrow
-                    // Draw from start time to 24:00
-                    const startHour = Math.max(0, (program.start - dayStart) / (1000 * 60 * 60));
-                    const startAngle = (startHour * 15) - 90;
-                    const endAngle = 270; // End at 24:00 (which is 270 degrees)
-                    
-                    const path = createArcPath(centerX, centerY, innerRadius, radius, startAngle, endAngle);
-                    drawProgramArc(path, program, index, programs);
+                let startHour, endHour;
+                
+                // Get the hours directly from the program times
+                const programStartHour = program.start.getUTCHours();
+                const programStartMinutes = program.start.getUTCMinutes() / 60;
+                const programEndHour = program.stop.getUTCHours();
+                const programEndMinutes = program.stop.getUTCMinutes() / 60;
+                
+                // Check if this is an evening program from previous day
+                if (program.start < dayStart) {
+                    // Program started yesterday evening
+                    startHour = programStartHour + programStartMinutes;
                 } else {
-                    // Normal program within the day
-                    const startHour = (program.start - dayStart) / (1000 * 60 * 60);
-                    const endHour = (program.stop - dayStart) / (1000 * 60 * 60);
-                    
-                    // Skip if program is outside the day
-                    if (endHour <= 0 || startHour >= 24) return;
-                    
-                    // Clip to day boundaries
-                    const clippedStart = Math.max(0, startHour);
-                    const clippedEnd = Math.min(24, endHour);
-                    
-                    const startAngle = (clippedStart * 15) - 90;
-                    const endAngle = (clippedEnd * 15) - 90;
-                    
-                    const path = createArcPath(centerX, centerY, innerRadius, radius, startAngle, endAngle);
-                    drawProgramArc(path, program, index, programs);
+                    // Program started today
+                    startHour = programStartHour + programStartMinutes;
                 }
+                
+                // Check if program ends on a different day than it starts
+                if (program.stop.getUTCDate() !== program.start.getUTCDate()) {
+                    // Program crosses midnight
+                    if (program.stop > dayStart && program.stop <= dayEnd) {
+                        // Ends today
+                        endHour = programEndHour + programEndMinutes;
+                    } else {
+                        // Ends tomorrow (for programs that go past midnight of current day)
+                        endHour = 24; // Cap at end of day
+                    }
+                } else {
+                    // Program starts and ends on same day
+                    endHour = programEndHour + programEndMinutes;
+                }
+                
+                // Convert hours to angles
+                const startAngle = (startHour * 15) - 90;
+                const endAngle = (endHour * 15) - 90;
+                
+                // Create arc path
+                const path = createArcPath(centerX, centerY, innerRadius, radius, startAngle, endAngle);
+                drawProgramArc(path, program, index, programs);
             });
             
             // Helper function to draw program arc
@@ -1546,7 +1548,6 @@
                 programArcs.appendChild(programPath);
                 
                 // Add label if the arc is large enough
-                // Parse the path to get start and end angles
                 const pathData = path.match(/A \d+ \d+ 0 \d+ \d+ ([\d.-]+) ([\d.-]+)/g);
                 if (pathData) {
                     // Calculate arc span from path
