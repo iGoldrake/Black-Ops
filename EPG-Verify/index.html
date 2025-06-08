@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer & Editor Professional v1.3</title>
+    <title>XMLTV Viewer & Editor Professional v1.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -37,7 +37,7 @@
                         <i data-lucide="tv" class="w-8 h-8"></i>
                         XMLTV Viewer & Editor Pro
                     </h1>
-                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.4</p>
+                    <p class="text-gray-600 mt-1">Visualizza e modifica palinsesti TV - v1.5</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-2 rounded hover:bg-gray-100">
@@ -249,14 +249,14 @@
     </div>
 
     <script>
-        // Fallback icons in case Lucide doesn't load
+        // Initialize Lucide icons after DOM is loaded
         window.addEventListener('DOMContentLoaded', function() {
-            // Try to initialize Lucide icons after DOM is loaded
             setTimeout(() => {
                 if (typeof lucide !== 'undefined') {
                     lucide.createIcons();
                 } else {
-                    // Replace Lucide icon placeholders with emoji
+                    // Fallback to emoji if Lucide doesn't load
+                    console.warn('Lucide not loaded, using emoji fallbacks');
                     document.querySelectorAll('[data-lucide]').forEach(el => {
                         const iconMap = {
                             'tv': '📺',
@@ -287,8 +287,8 @@
         });
 
         // Version
-        const APP_VERSION = '1.4';
-        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Fixed date handling and file loading`);
+        const APP_VERSION = '1.5';
+        console.log(`XMLTV Viewer & Editor Pro v${APP_VERSION} - Fixed file loading and date handling`);
 
         // Global state
         let xmlDoc = null;
@@ -300,106 +300,95 @@
         let formatColors = {};
         let colorIndex = 0;
 
-        // Format dictionaries
-        const formatIcons = {
-            'ClassCNBC': {
-                "Trading Room": "trading-room.jpg",
-                "Business Class": "business-class.jpg",
-                "Mercati in 10 minuti": "mercati-10.jpg",
-                "Class Meteo": "meteo.jpg",
-                "Borse Oggi": "borse-oggi.jpg",
-                "Apertura Mercati": "apertura-mercati.jpg",
-                "Market Driver": "market-driver.jpg",
-                "Wall Street": "wall-street.jpg",
-                "Chiusura Mercati": "chiusura-mercati.jpg",
-                "Business Talk": "business-talk.jpg",
-                "Class Life": "class-life.jpg",
-                "Report": "report.jpg",
-                "Documentario": "documentario.jpg",
-                "Programmazione notturna": "default.jpg"
-            },
-            'ClassTVModa': {
-                "CATWALKS": "catwalks.jpg",
-                "FASHION NEWS": "fashion-news.jpg",
-                "FRONT ROW": "front-row.jpg",
-                "SPOTLIGHT": "spotlight.jpg",
-                "(UN)ACCESSING BACKSTAGE": "backstage.jpg",
-                "CLASS TV MODA STORIES": "tv-moda-stories.jpg",
-                "DESIGN MAP": "design-map.jpg",
-                "DISTRICTS": "districts.jpg",
-                "FASHION&BEYOND": "fashion-beyond.jpg",
-                "GREEN REVOLUTION FORWARD": "green-revolution.jpg",
-                "SOUND OF FASHION": "sound-of-fashion.jpg",
-                "VOICES": "voices.jpg",
-                "WHAT WOMEN WEAR": "what-women-wear.jpg",
-                "Programmazione": "default.jpg"
-            }
-        };
-
-        const iconBaseUrls = {
-            'ClassCNBC': 'https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/',
-            'ClassTVModa': 'https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassTVModa_IT_samsung/Images/'
-        };
-
+        // Color palette
         const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
-        // Initialize Lucide icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        } else {
-            console.warn('Lucide not loaded, using emoji fallbacks');
-        }
-
-        // File handling
+        // File handling - FIXED VERSION
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
 
-        // Handle button click inside dropZone
-        dropZone.addEventListener('click', (e) => {
-            // If clicking on the dropzone itself (not the button), open file dialog
-            if (!e.target.closest('button')) {
-                fileInput.click();
-            }
-        });
-        
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('border-blue-400', 'bg-blue-50');
-        });
-        
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
-        });
-        
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
-            const file = e.dataTransfer.files[0];
-            if (file && file.name.endsWith('.xml')) {
-                loadFile(file);
-            } else if (file) {
-                showToast('Seleziona un file XML valido', 'error');
-            }
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
         });
 
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                loadFile(file);
-            }
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight drop zone when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
         });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('border-blue-400', 'bg-blue-50');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+        }
+
+        // Handle dropped files
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        // Handle file input change
+        fileInput.addEventListener('change', function(e) {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === 'text/xml' || file.type === 'application/xml' || file.name.endsWith('.xml')) {
+                    loadFile(file);
+                } else {
+                    showToast('Seleziona un file XML valido', 'error');
+                }
+            }
+        }
 
         function loadFile(file) {
+            console.log('Loading file:', file.name);
             const reader = new FileReader();
-            reader.onload = (e) => {
+            
+            reader.onload = function(e) {
                 try {
+                    const xmlContent = e.target.result;
+                    console.log('File content loaded, length:', xmlContent.length);
+                    
                     const parser = new DOMParser();
-                    xmlDoc = parser.parseFromString(e.target.result, 'text/xml');
+                    xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+                    
+                    // Check for parsing errors
+                    const parserError = xmlDoc.getElementsByTagName('parsererror');
+                    if (parserError.length > 0) {
+                        throw new Error('Errore nel parsing XML: ' + parserError[0].textContent);
+                    }
                     
                     // Parse channel info
                     const channel = xmlDoc.querySelector('channel');
+                    if (!channel) {
+                        throw new Error('Nessun canale trovato nel file XML');
+                    }
+                    
                     currentChannelId = channel.getAttribute('id');
-                    currentChannelName = channel.querySelector('display-name').textContent;
+                    const displayName = channel.querySelector('display-name');
+                    currentChannelName = displayName ? displayName.textContent : currentChannelId;
+                    
+                    console.log('Channel found:', currentChannelName, '(ID:', currentChannelId, ')');
                     
                     document.getElementById('channelName').textContent = currentChannelName;
                     document.getElementById('channelId').textContent = `ID: ${currentChannelId}`;
@@ -412,78 +401,103 @@
                     
                     showToast('File caricato con successo', 'success');
                 } catch (error) {
+                    console.error('Error loading file:', error);
                     showToast('Errore nel caricamento del file: ' + error.message, 'error');
                 }
             };
+            
+            reader.onerror = function(error) {
+                console.error('FileReader error:', error);
+                showToast('Errore nella lettura del file', 'error');
+            };
+            
             reader.readAsText(file);
         }
 
         function parsePrograms() {
             const programmes = xmlDoc.querySelectorAll('programme');
-            currentPrograms = [];
-            const daysMap = new Map(); // Map to track unique days
+            console.log('Found programmes:', programmes.length);
             
-            programmes.forEach(prog => {
-                const startUTC = parseXMLTVDate(prog.getAttribute('start'));
-                const stopUTC = parseXMLTVDate(prog.getAttribute('stop'));
-                
-                // Debug first few programs
-                if (currentPrograms.length < 5) {
-                    console.log('Program:', prog.querySelector('title')?.textContent);
-                    console.log('  Start UTC string:', prog.getAttribute('start'));
-                    console.log('  Start UTC parsed:', startUTC.toISOString());
-                    console.log('  Start Local:', startUTC.toString());
-                    console.log('  Stop UTC string:', prog.getAttribute('stop'));
-                    console.log('  Stop Local:', stopUTC.toString());
-                }
-                
-                const title = prog.querySelector('title')?.textContent || '';
-                const desc = prog.querySelector('desc')?.textContent || '';
-                const category = prog.querySelector('category')?.textContent || '';
-                const rating = prog.querySelector('rating value')?.textContent || '0';
-                const icon = prog.querySelector('icon')?.getAttribute('src') || '';
-                const episodeNum = prog.querySelector('episode-num')?.textContent || '';
-                
-                const program = {
-                    start: startUTC,
-                    stop: stopUTC,
-                    title,
-                    desc,
-                    category,
-                    rating,
-                    icon,
-                    episodeNum,
-                    duration: (stopUTC - startUTC) / 1000, // seconds
-                    element: prog
-                };
-                
-                currentPrograms.push(program);
-                
-                // Create date keys for ALL days where this program appears
-                // A program should appear in the day where it AIRS, not just where it starts
-                const startDate = new Date(startUTC);
-                const endDate = new Date(stopUTC);
-                
-                // Add all days from start to end
-                const currentDate = new Date(startDate);
-                currentDate.setHours(0, 0, 0, 0);
-                
-                while (currentDate <= endDate) {
-                    const dateKey = currentDate.toISOString().split('T')[0];
-                    if (!daysMap.has(dateKey)) {
-                        daysMap.set(dateKey, new Date(currentDate));
+            currentPrograms = [];
+            const daysMap = new Map();
+            
+            programmes.forEach((prog, index) => {
+                try {
+                    const startStr = prog.getAttribute('start');
+                    const stopStr = prog.getAttribute('stop');
+                    
+                    if (!startStr || !stopStr) {
+                        console.warn(`Programme ${index} missing start or stop time`);
+                        return;
                     }
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
-                
-                // Assign color to format
-                if (!formatColors[title]) {
-                    formatColors[title] = colors[colorIndex % colors.length];
-                    colorIndex++;
+                    
+                    const startUTC = parseXMLTVDate(startStr);
+                    const stopUTC = parseXMLTVDate(stopStr);
+                    
+                    // Debug first few programs
+                    if (index < 3) {
+                        console.log(`Program ${index}:`, prog.querySelector('title')?.textContent);
+                        console.log('  Start string:', startStr);
+                        console.log('  Start UTC:', startUTC.toISOString());
+                        console.log('  Start Local:', startUTC.toString());
+                        console.log('  Stop string:', stopStr);
+                        console.log('  Stop UTC:', stopUTC.toISOString());
+                        console.log('  Stop Local:', stopUTC.toString());
+                    }
+                    
+                    const title = prog.querySelector('title')?.textContent || '';
+                    const desc = prog.querySelector('desc')?.textContent || '';
+                    const category = prog.querySelector('category')?.textContent || '';
+                    const ratingValue = prog.querySelector('rating value');
+                    const rating = ratingValue ? ratingValue.textContent : '0';
+                    const icon = prog.querySelector('icon')?.getAttribute('src') || '';
+                    const episodeNum = prog.querySelector('episode-num')?.textContent || '';
+                    
+                    const program = {
+                        start: startUTC,
+                        stop: stopUTC,
+                        title,
+                        desc,
+                        category,
+                        rating,
+                        icon,
+                        episodeNum,
+                        duration: (stopUTC - startUTC) / 1000, // seconds
+                        element: prog
+                    };
+                    
+                    currentPrograms.push(program);
+                    
+                    // Add all days where this program appears
+                    const startDate = new Date(startUTC);
+                    const endDate = new Date(stopUTC);
+                    
+                    // Normalize to midnight for date tracking
+                    const currentDate = new Date(startDate);
+                    currentDate.setHours(0, 0, 0, 0);
+                    
+                    while (currentDate <= endDate) {
+                        const dateKey = currentDate.toISOString().split('T')[0];
+                        if (!daysMap.has(dateKey)) {
+                            daysMap.set(dateKey, new Date(currentDate));
+                        }
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+                    
+                    // Assign color to format
+                    if (!formatColors[title]) {
+                        formatColors[title] = colors[colorIndex % colors.length];
+                        colorIndex++;
+                    }
+                } catch (error) {
+                    console.error(`Error parsing programme ${index}:`, error);
                 }
             });
             
-            // Populate day selector with unique days
+            console.log('Parsed programs:', currentPrograms.length);
+            console.log('Found days:', Array.from(daysMap.keys()));
+            
+            // Populate day selector
             const daySelector = document.getElementById('daySelector');
             daySelector.innerHTML = '';
             
@@ -491,17 +505,15 @@
             const sortedDays = Array.from(daysMap.entries())
                 .sort((a, b) => a[1] - b[1]);
             
-            console.log('Found days:', sortedDays.map(d => d[0]));
-            console.log('Total programs:', currentPrograms.length);
-            
             sortedDays.forEach(([dateKey, date]) => {
                 const option = document.createElement('option');
                 option.value = dateKey;
                 
                 // Count programs for this day
-                const [year, month, day] = dateKey.split('-').map(Number);
-                const dayStart = new Date(year, month - 1, day, 0, 0, 0, 0);
-                const dayEnd = new Date(year, month - 1, day, 23, 59, 59, 999);
+                const dayStart = new Date(date);
+                dayStart.setHours(0, 0, 0, 0);
+                const dayEnd = new Date(date);
+                dayEnd.setHours(23, 59, 59, 999);
                 
                 const programCount = currentPrograms.filter(p => {
                     return (p.start < dayEnd && p.stop > dayStart);
@@ -512,35 +524,20 @@
             });
             
             if (sortedDays.length > 0) {
-                // Select the day with most programs (usually the main day)
-                let maxPrograms = 0;
-                let bestDayIndex = 0;
-                
-                sortedDays.forEach(([dateKey, date], index) => {
-                    const [year, month, day] = dateKey.split('-').map(Number);
-                    const dayStart = new Date(year, month - 1, day, 0, 0, 0, 0);
-                    const dayEnd = new Date(year, month - 1, day, 23, 59, 59, 999);
-                    
-                    const programCount = currentPrograms.filter(p => {
-                        return (p.start < dayEnd && p.stop > dayStart);
-                    }).length;
-                    
-                    if (programCount > maxPrograms) {
-                        maxPrograms = programCount;
-                        bestDayIndex = index;
-                    }
-                });
-                
-                selectedDay = sortedDays[bestDayIndex][1];
-                daySelector.selectedIndex = bestDayIndex;
+                // Select the first day with programs
+                selectedDay = sortedDays[0][1];
+                daySelector.selectedIndex = 0;
                 loadDay();
+            } else {
+                showToast('Nessun programma trovato nel file', 'error');
             }
         }
 
         function parseXMLTVDate(dateStr) {
-            // Format: YYYYMMDDHHmmss +0000
+            // XMLTV format: YYYYMMDDHHmmss +0000
+            // Extract components
             const year = parseInt(dateStr.substr(0, 4));
-            const month = parseInt(dateStr.substr(4, 2)) - 1;
+            const month = parseInt(dateStr.substr(4, 2)) - 1; // JavaScript months are 0-based
             const day = parseInt(dateStr.substr(6, 2));
             const hour = parseInt(dateStr.substr(8, 2));
             const minute = parseInt(dateStr.substr(10, 2));
@@ -549,12 +546,12 @@
             // Create UTC date
             const utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
             
-            // Return date object (JavaScript automatically handles timezone conversion)
+            // Return date object (will be automatically converted to local timezone by JavaScript)
             return utcDate;
         }
 
         function formatXMLTVDate(date) {
-            // Convert local date back to UTC for XML format
+            // Convert local date to UTC for XML format
             const pad = (n) => String(n).padStart(2, '0');
             return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}` +
                    `${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())} +0000`;
@@ -562,53 +559,38 @@
 
         function loadDay() {
             const dayValue = document.getElementById('daySelector').value;
-            console.log('Selected day value:', dayValue);
+            if (!dayValue) return;
+            
+            console.log('Loading day:', dayValue);
             
             // Create date at midnight local time
             const [year, month, day] = dayValue.split('-').map(Number);
             selectedDay = new Date(year, month - 1, day, 0, 0, 0, 0);
             
-            // Set boundaries for the selected day in local time
+            // Set boundaries for the selected day
             const startOfDay = new Date(selectedDay);
             const endOfDay = new Date(selectedDay);
             endOfDay.setHours(23, 59, 59, 999);
             
-            console.log('Loading day:', formatDate(selectedDay));
-            console.log('Day boundaries (local):', startOfDay.toString(), 'to', endOfDay.toString());
-            console.log('Day boundaries (ISO):', startOfDay.toISOString(), 'to', endOfDay.toISOString());
+            console.log('Day boundaries:', startOfDay.toString(), 'to', endOfDay.toString());
             
-            // Filter programs that appear in this local day
-            // A program appears in a day if ANY part of it airs during that day
+            // Filter programs that appear in this day
             const dayPrograms = currentPrograms.filter(p => {
-                // Program overlaps with this day if it starts before the day ends
-                // AND ends after the day starts
-                const overlaps = p.start < endOfDay && p.stop > startOfDay;
-                
-                return overlaps;
+                return p.start < endOfDay && p.stop > startOfDay;
             });
             
             console.log(`Found ${dayPrograms.length} programs for ${formatDate(selectedDay)}`);
             
-            // Log first few overlapping programs for debugging
-            dayPrograms.slice(0, 5).forEach((p, i) => {
-                console.log(`  ${i + 1}. ${p.title}: ${formatTime(p.start)} - ${formatTime(p.stop)}`);
-            });
-            
             // Sort by start time
             dayPrograms.sort((a, b) => a.start - b.start);
             
-            // Log first and last programs for debugging
-            if (dayPrograms.length > 0) {
-                console.log(`First program: ${dayPrograms[0].title} at ${formatTime(dayPrograms[0].start)}`);
-                console.log(`Last program: ${dayPrograms[dayPrograms.length-1].title} at ${formatTime(dayPrograms[dayPrograms.length-1].start)}`);
-            }
-            
             // Draw timeline
-                                drawTimeline(dayPrograms);
-                } catch (err) {
-                    console.error('Error in drawTimeline:', err);
-                    showToast('Errore nella visualizzazione timeline: ' + err.message, 'error');
-                }
+            try {
+                drawTimeline(dayPrograms);
+            } catch (err) {
+                console.error('Error in drawTimeline:', err);
+                showToast('Errore nella visualizzazione timeline: ' + err.message, 'error');
+            }
             
             // Update table
             updateProgramTable(dayPrograms);
@@ -641,16 +623,16 @@
                 .domain([startOfDay, endOfDay])
                 .range([margin.left, width - margin.right]);
             
-            // Draw time axis with local time
+            // Draw time axis
             const xAxis = d3.axisBottom(xScale)
-                .ticks(d3.timeHour.every(1))
+                .ticks(d3.timeHour.every(zoomLevel > 2 ? 1 : 2))
                 .tickFormat(d3.timeFormat('%H:%M'));
             
             svg.append('g')
                 .attr('transform', `translate(0,${height - margin.bottom})`)
                 .call(xAxis);
             
-            // Add grid lines for better readability
+            // Add grid lines
             svg.append('g')
                 .attr('class', 'grid')
                 .attr('transform', `translate(0,${height - margin.bottom})`)
@@ -667,7 +649,6 @@
                 let placed = false;
                 for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
                     const row = rows[rowIndex];
-                    // Check if program fits in this row without overlap
                     const fits = !row.some(p => 
                         (program.start < p.stop && program.stop > p.start)
                     );
@@ -684,9 +665,19 @@
                 }
             });
             
-            // Draw programs
-            const programHeight = 50;
+            // Adjust SVG height based on number of rows
+            const programHeight = 40;
             const rowGap = 5;
+            const neededHeight = Math.max(150, margin.top + margin.bottom + (rows.length * (programHeight + rowGap)) + 20);
+            svg.attr('height', neededHeight);
+            
+            // Re-draw axis at new position
+            svg.select('g').remove();
+            svg.append('g')
+                .attr('transform', `translate(0,${neededHeight - margin.bottom})`)
+                .call(xAxis);
+            
+            // Draw programs
             const baseY = margin.top + 10;
             
             programs.forEach((program, index) => {
@@ -706,7 +697,7 @@
                     .on('mouseenter', (event) => showTooltip(event, program))
                     .on('mouseleave', hideTooltip);
                 
-                // Highlight overlapping programs
+                // Check for overlaps
                 const hasOverlap = programs.some((p, i) => 
                     i !== index && p.start < program.stop && p.stop > program.start
                 );
@@ -718,7 +709,7 @@
                     .attr('rx', 4)
                     .attr('fill', formatColors[program.title] || '#6B7280')
                     .attr('stroke', hasOverlap ? '#ff0000' : '#fff')
-                    .attr('stroke-width', hasOverlap ? 3 : 2);
+                    .attr('stroke-width', hasOverlap ? 3 : 1);
                 
                 // Add opacity if program extends beyond day boundaries
                 if (program.start < startOfDay || program.stop > endOfDay) {
@@ -747,10 +738,10 @@
                         });
                     
                     // Add time label
-                    if (width > 80) {
+                    if (width > 60) {
                         g.append('text')
                             .attr('x', 5)
-                            .attr('y', programHeight - 8)
+                            .attr('y', programHeight - 5)
                             .attr('fill', 'white')
                             .attr('font-size', '10px')
                             .text(`${formatTime(program.start)} - ${formatTime(program.stop)}`);
@@ -758,17 +749,18 @@
                 }
                 
                 // Warning icon for overlaps
-                if (hasOverlap && width > 30) {
+                if (hasOverlap && width > 20) {
                     g.append('text')
-                        .attr('x', width - 20)
+                        .attr('x', width - 15)
                         .attr('y', programHeight / 2)
+                        .attr('dy', '.35em')
                         .attr('text-anchor', 'middle')
-                        .attr('font-size', '16px')
+                        .attr('font-size', '14px')
                         .text('⚠️');
                 }
             });
             
-            // Check for gaps between consecutive programs (considering overlaps)
+            // Check for gaps
             const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
             let lastEnd = null;
             
@@ -789,31 +781,30 @@
                         
                         // Add gap duration text
                         const gapMinutes = Math.floor(gap / 60000);
-                        svg.append('text')
-                            .attr('x', x + width/2)
-                            .attr('y', baseY + programHeight/2)
-                            .attr('text-anchor', 'middle')
-                            .attr('fill', 'white')
-                            .attr('font-weight', 'bold')
-                            .text(`GAP ${gapMinutes}min`);
+                        if (width > 40) {
+                            svg.append('text')
+                                .attr('x', x + width/2)
+                                .attr('y', baseY + programHeight/2)
+                                .attr('text-anchor', 'middle')
+                                .attr('dy', '.35em')
+                                .attr('fill', 'white')
+                                .attr('font-weight', 'bold')
+                                .attr('font-size', '12px')
+                                .text(`GAP ${gapMinutes}min`);
+                        }
                     }
                 }
                 
-                // Update lastEnd to be the maximum end time seen so far
                 if (!lastEnd || program.stop > lastEnd) {
                     lastEnd = program.stop;
                 }
             });
-            
-            // Update axis to 24h display
-            svg.attr('width', width).attr('height', height);
         }
 
-        // Fixed tooltip implementation
+        // Tooltip functions
         let currentTooltipTimeout = null;
         
         function showTooltip(event, program) {
-            // Clear any existing timeout
             if (currentTooltipTimeout) {
                 clearTimeout(currentTooltipTimeout);
             }
@@ -826,12 +817,8 @@
                 ${program.category ? `<div class="text-xs">Categoria: ${program.category}</div>` : ''}
             `;
             
-            // Small delay to prevent flicker
             currentTooltipTimeout = setTimeout(() => {
-                // Get mouse position from D3 event
                 const [mouseX, mouseY] = d3.pointer(event, document.body);
-                
-                // Position tooltip
                 tooltip.style.left = (mouseX + 10) + 'px';
                 tooltip.style.top = (mouseY - 40) + 'px';
                 tooltip.classList.remove('hidden');
@@ -843,8 +830,7 @@
                 clearTimeout(currentTooltipTimeout);
                 currentTooltipTimeout = null;
             }
-            const tooltip = document.getElementById('tooltip');
-            tooltip.classList.add('hidden');
+            document.getElementById('tooltip').classList.add('hidden');
         }
 
         function showProgramDetails(program) {
@@ -869,7 +855,6 @@
                 iconUrl.textContent = 'Nessuna icona specificata';
             }
             
-            // Scroll to details
             document.getElementById('programDetails').scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -877,29 +862,22 @@
             const tbody = document.getElementById('programTable');
             tbody.innerHTML = '';
             
-            // Get programs for current day including filtering
-            const dayPrograms = programs;
-            
-            dayPrograms.forEach((program, index) => {
+            programs.forEach((program, index) => {
                 const row = document.createElement('tr');
                 row.className = 'border-b hover:bg-gray-50';
                 
-                const startTime = formatTime(program.start);
-                const endTime = formatTime(program.stop);
-                const duration = formatDuration(program.duration);
-                
                 row.innerHTML = `
                     <td class="px-4 py-2">
-                        <input type="time" value="${program.start.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'})}" 
+                        <input type="time" value="${program.start.toTimeString().substr(0, 5)}" 
                                onchange="updateProgramTime(${index}, 'start', this.value)"
                                class="px-2 py-1 border rounded">
                     </td>
                     <td class="px-4 py-2">
-                        <input type="time" value="${program.stop.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'})}" 
+                        <input type="time" value="${program.stop.toTimeString().substr(0, 5)}" 
                                onchange="updateProgramTime(${index}, 'stop', this.value)"
                                class="px-2 py-1 border rounded">
                     </td>
-                    <td class="px-4 py-2">${duration}</td>
+                    <td class="px-4 py-2">${formatDuration(program.duration)}</td>
                     <td class="px-4 py-2 editable-cell" onclick="editCell(this, ${index}, 'title')">${program.title}</td>
                     <td class="px-4 py-2 editable-cell" onclick="editCell(this, ${index}, 'category')">${program.category || '-'}</td>
                     <td class="px-4 py-2">
@@ -924,7 +902,6 @@
         }
 
         function updateAnalytics(programs) {
-            // Format distribution chart
             const formatCounts = {};
             programs.forEach(p => {
                 formatCounts[p.title] = (formatCounts[p.title] || 0) + p.duration;
@@ -932,7 +909,6 @@
             
             const ctx = document.getElementById('formatChart').getContext('2d');
             
-            // Destroy existing chart if any
             if (window.formatChart && typeof window.formatChart.destroy === 'function') {
                 window.formatChart.destroy();
             }
@@ -942,7 +918,7 @@
                 data: {
                     labels: Object.keys(formatCounts),
                     datasets: [{
-                        data: Object.values(formatCounts).map(s => s / 3600), // Convert to hours
+                        data: Object.values(formatCounts).map(s => s / 3600),
                         backgroundColor: Object.keys(formatCounts).map(f => formatColors[f] || '#6B7280')
                     }]
                 },
@@ -984,7 +960,7 @@
                         problems.push({
                             type: 'overlap',
                             severity: 'error',
-                            message: `⚠️ SOVRAPPOSIZIONE di ${overlapMinutes} minuti tra "${programs[i].title}" (${formatTime(programs[i].start)}-${formatTime(programs[i].stop)}) e "${programs[j].title}" (${formatTime(programs[j].start)}-${formatTime(programs[j].stop)})`
+                            message: `Sovrapposizione di ${overlapMinutes} minuti tra "${programs[i].title}" e "${programs[j].title}"`
                         });
                     }
                 }
@@ -993,7 +969,6 @@
             // Check for gaps
             const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
             for (let i = 0; i < sortedPrograms.length - 1; i++) {
-                // Find the next program that doesn't overlap with current
                 let nextNonOverlapping = null;
                 for (let j = i + 1; j < sortedPrograms.length; j++) {
                     if (sortedPrograms[j].start >= sortedPrograms[i].stop) {
@@ -1004,72 +979,44 @@
                 
                 if (nextNonOverlapping) {
                     const gap = nextNonOverlapping.start - sortedPrograms[i].stop;
-                    if (gap > 60000) { // More than 1 minute
+                    if (gap > 60000) {
                         const gapMinutes = Math.floor(gap / 60000);
                         problems.push({
                             type: 'gap',
                             severity: gapMinutes > 30 ? 'error' : 'warning',
-                            message: `Buco di ${gapMinutes} minuti tra "${sortedPrograms[i].title}" (${formatTime(sortedPrograms[i].stop)}) e "${nextNonOverlapping.title}" (${formatTime(nextNonOverlapping.start)})`
+                            message: `Buco di ${gapMinutes} minuti dopo "${sortedPrograms[i].title}"`
                         });
                     }
                 }
             }
             
             // Check for missing icons
-            programs.forEach(p => {
-                if (!p.icon || p.icon.includes('placeholder') || p.icon.includes('default.jpg')) {
-                    problems.push({
-                        type: 'icon',
-                        severity: 'warning',
-                        message: `Icona mancante o default per "${p.title}"`
-                    });
-                }
-            });
+            const missingIcons = programs.filter(p => 
+                !p.icon || p.icon.includes('placeholder') || p.icon.includes('default.jpg')
+            ).length;
             
+            if (missingIcons > 0) {
+                problems.push({
+                    type: 'icon',
+                    severity: 'info',
+                    message: `${missingIcons} programmi con icone mancanti o default`
+                });
+            }
+            
+            // Display problems
             if (problems.length === 0) {
                 report.innerHTML = '<p class="text-green-600">✅ Nessun problema rilevato</p>';
             } else {
-                // Group problems by type
-                const overlaps = problems.filter(p => p.type === 'overlap');
-                const gaps = problems.filter(p => p.type === 'gap');
-                const icons = problems.filter(p => p.type === 'icon');
-                
-                if (overlaps.length > 0) {
+                problems.forEach(problem => {
                     const div = document.createElement('div');
-                    div.className = 'mb-3';
-                    div.innerHTML = `<h4 class="font-semibold text-red-700 mb-1">❌ Sovrapposizioni (${overlaps.length})</h4>`;
-                    overlaps.forEach(p => {
-                        const item = document.createElement('div');
-                        item.className = 'p-2 rounded bg-red-50 text-red-700 text-sm mb-1';
-                        item.textContent = p.message;
-                        div.appendChild(item);
-                    });
+                    div.className = `p-2 rounded text-sm mb-1 ${
+                        problem.severity === 'error' ? 'bg-red-50 text-red-700' :
+                        problem.severity === 'warning' ? 'bg-yellow-50 text-yellow-700' :
+                        'bg-blue-50 text-blue-700'
+                    }`;
+                    div.textContent = problem.message;
                     report.appendChild(div);
-                }
-                
-                if (gaps.length > 0) {
-                    const div = document.createElement('div');
-                    div.className = 'mb-3';
-                    div.innerHTML = `<h4 class="font-semibold text-yellow-700 mb-1">⚠️ Buchi nel palinsesto (${gaps.length})</h4>`;
-                    gaps.forEach(p => {
-                        const item = document.createElement('div');
-                        item.className = `p-2 rounded text-sm mb-1 ${p.severity === 'error' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'}`;
-                        item.textContent = p.message;
-                        div.appendChild(item);
-                    });
-                    report.appendChild(div);
-                }
-                
-                if (icons.length > 0) {
-                    const div = document.createElement('div');
-                    div.className = 'mb-3';
-                    div.innerHTML = `<h4 class="font-semibold text-blue-700 mb-1">ℹ️ Icone mancanti (${icons.length})</h4>`;
-                    const item = document.createElement('div');
-                    item.className = 'p-2 rounded bg-blue-50 text-blue-700 text-sm';
-                    item.textContent = `${icons.length} programmi con icone mancanti o default`;
-                    div.appendChild(item);
-                    report.appendChild(div);
-                }
+                });
             }
         }
 
@@ -1086,8 +1033,12 @@
         function formatDuration(seconds) {
             const hours = Math.floor(seconds / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            const secs = Math.floor(seconds % 60);
+            if (hours > 0) {
+                return `${hours}h ${minutes}min`;
+            } else {
+                return `${minutes}min`;
+            }
         }
 
         function showToast(message, type = 'info') {
@@ -1149,74 +1100,6 @@
             }
         }
 
-        // Actualization functions
-        function showActualizationDialog() {
-            document.getElementById('actualizationDialog').classList.remove('hidden');
-            document.getElementById('newStartDate').value = selectedDay.toISOString().split('T')[0];
-        }
-
-        function closeActualizationDialog() {
-            document.getElementById('actualizationDialog').classList.add('hidden');
-        }
-
-        function actualizeSchedule() {
-            const newStartDate = new Date(document.getElementById('newStartDate').value);
-            const oldStartDate = selectedDay;
-            const dayDiff = Math.floor((newStartDate - oldStartDate) / (1000 * 60 * 60 * 24));
-            
-            // Create new XML document
-            const newDoc = xmlDoc.cloneNode(true);
-            
-            // Update all program dates
-            const programmes = newDoc.querySelectorAll('programme');
-            programmes.forEach(prog => {
-                const oldStart = parseXMLTVDate(prog.getAttribute('start'));
-                const oldStop = parseXMLTVDate(prog.getAttribute('stop'));
-                
-                const newStart = new Date(oldStart);
-                newStart.setDate(newStart.getDate() + dayDiff);
-                const newStop = new Date(oldStop);
-                newStop.setDate(newStop.getDate() + dayDiff);
-                
-                prog.setAttribute('start', formatXMLTVDate(newStart));
-                prog.setAttribute('stop', formatXMLTVDate(newStop));
-            });
-            
-            // Update tv date attribute
-            newDoc.querySelector('tv').setAttribute('date', newStartDate.toISOString().split('T')[0]);
-            
-            // Download new file
-            const serializer = new XMLSerializer();
-            const xmlString = serializer.serializeToString(newDoc);
-            const blob = new Blob([xmlString], { type: 'application/xml' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${currentChannelId}_actualized_${newStartDate.toISOString().split('T')[0]}.xml`;
-            a.click();
-            
-            URL.revokeObjectURL(url);
-            closeActualizationDialog();
-            showToast('File attualizzato scaricato con successo', 'success');
-        }
-
-        // Export function
-        function exportXMLTV() {
-            const serializer = new XMLSerializer();
-            const xmlString = serializer.serializeToString(xmlDoc);
-            const blob = new Blob([xmlString], { type: 'application/xml' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${currentChannelId}_edited_${new Date().toISOString().split('T')[0]}.xml`;
-            a.click();
-            
-            URL.revokeObjectURL(url);
-            showToast('File esportato con successo', 'success');
-        }
-
         // Edit functions
         function editCell(cell, programIndex, field) {
             const currentValue = cell.textContent;
@@ -1229,29 +1112,35 @@
                 const newValue = input.value.trim();
                 cell.textContent = newValue || '-';
                 
-                // Update program
-                const dayPrograms = currentPrograms.filter(p => 
-                    p.start.toDateString() === selectedDay.toDateString() ||
-                    (p.start < selectedDay && p.stop > selectedDay)
-                ).sort((a, b) => a.start - b.start);
+                // Get current day programs
+                const dayPrograms = currentPrograms.filter(p => {
+                    const startOfDay = new Date(selectedDay);
+                    const endOfDay = new Date(selectedDay);
+                    endOfDay.setHours(23, 59, 59, 999);
+                    return p.start < endOfDay && p.stop > startOfDay;
+                }).sort((a, b) => a.start - b.start);
                 
                 const program = dayPrograms[programIndex];
                 if (program) {
                     program[field] = newValue;
                     
                     // Update XML
-                    const titleElem = program.element.querySelector(field);
-                    if (titleElem) {
-                        titleElem.textContent = newValue;
-                    } else if (field === 'category') {
+                    const elem = program.element.querySelector(field);
+                    if (elem) {
+                        elem.textContent = newValue;
+                    } else if (field === 'category' && newValue) {
                         const catElem = xmlDoc.createElement('category');
                         catElem.setAttribute('lang', 'it');
                         catElem.textContent = newValue;
                         program.element.appendChild(catElem);
                     }
                     
-                    // Reload if title changed (affects colors)
+                    // Reload if title changed
                     if (field === 'title') {
+                        if (!formatColors[newValue]) {
+                            formatColors[newValue] = formatColors[program.title] || colors[colorIndex % colors.length];
+                            colorIndex++;
+                        }
                         loadDay();
                     }
                 }
@@ -1272,10 +1161,12 @@
         }
 
         function updateProgramTime(programIndex, timeType, newTime) {
-            const dayPrograms = currentPrograms.filter(p => 
-                p.start.toDateString() === selectedDay.toDateString() ||
-                (p.start < selectedDay && p.stop > selectedDay)
-            ).sort((a, b) => a.start - b.start);
+            const dayPrograms = currentPrograms.filter(p => {
+                const startOfDay = new Date(selectedDay);
+                const endOfDay = new Date(selectedDay);
+                endOfDay.setHours(23, 59, 59, 999);
+                return p.start < endOfDay && p.stop > startOfDay;
+            }).sort((a, b) => a.start - b.start);
             
             const program = dayPrograms[programIndex];
             if (!program) return;
@@ -1306,10 +1197,12 @@
         function deleteProgram(programIndex) {
             if (!confirm('Eliminare questo programma?')) return;
             
-            const dayPrograms = currentPrograms.filter(p => 
-                p.start.toDateString() === selectedDay.toDateString() ||
-                (p.start < selectedDay && p.stop > selectedDay)
-            ).sort((a, b) => a.start - b.start);
+            const dayPrograms = currentPrograms.filter(p => {
+                const startOfDay = new Date(selectedDay);
+                const endOfDay = new Date(selectedDay);
+                endOfDay.setHours(23, 59, 59, 999);
+                return p.start < endOfDay && p.stop > startOfDay;
+            }).sort((a, b) => a.start - b.start);
             
             const program = dayPrograms[programIndex];
             if (!program) return;
@@ -1327,14 +1220,17 @@
 
         function addProgram() {
             // Find last program of the day
-            const dayPrograms = currentPrograms.filter(p => 
-                p.start.toDateString() === selectedDay.toDateString()
-            ).sort((a, b) => a.start - b.start);
+            const dayPrograms = currentPrograms.filter(p => {
+                const startOfDay = new Date(selectedDay);
+                const endOfDay = new Date(selectedDay);
+                endOfDay.setHours(23, 59, 59, 999);
+                return p.start >= startOfDay && p.start < endOfDay;
+            }).sort((a, b) => a.start - b.start);
             
             const lastProgram = dayPrograms[dayPrograms.length - 1];
             const newStart = lastProgram ? new Date(lastProgram.stop) : new Date(selectedDay);
             if (!lastProgram) {
-                newStart.setHours(0, 0, 0, 0);
+                newStart.setHours(20, 0, 0, 0);
             }
             
             const newStop = new Date(newStart);
@@ -1392,6 +1288,70 @@
             showToast('Nuovo programma aggiunto', 'success');
         }
 
+        // Actualization functions
+        function showActualizationDialog() {
+            document.getElementById('actualizationDialog').classList.remove('hidden');
+            document.getElementById('newStartDate').value = selectedDay.toISOString().split('T')[0];
+        }
+
+        function closeActualizationDialog() {
+            document.getElementById('actualizationDialog').classList.add('hidden');
+        }
+
+        function actualizeSchedule() {
+            const newStartDate = new Date(document.getElementById('newStartDate').value);
+            const oldStartDate = selectedDay;
+            const dayDiff = Math.floor((newStartDate - oldStartDate) / (1000 * 60 * 60 * 24));
+            
+            if (dayDiff === 0) {
+                showToast('La data selezionata è la stessa', 'info');
+                closeActualizationDialog();
+                return;
+            }
+            
+            // Update all program dates
+            currentPrograms.forEach(program => {
+                const newStart = new Date(program.start);
+                newStart.setDate(newStart.getDate() + dayDiff);
+                const newStop = new Date(program.stop);
+                newStop.setDate(newStop.getDate() + dayDiff);
+                
+                program.start = newStart;
+                program.stop = newStop;
+                
+                program.element.setAttribute('start', formatXMLTVDate(newStart));
+                program.element.setAttribute('stop', formatXMLTVDate(newStop));
+            });
+            
+            // Update tv date attribute
+            xmlDoc.querySelector('tv').setAttribute('date', newStartDate.toISOString().split('T')[0]);
+            
+            // Re-parse programs to update day selector
+            parsePrograms();
+            
+            closeActualizationDialog();
+            showToast('Date attualizzate con successo', 'success');
+        }
+
+        // Export function
+        function exportXMLTV() {
+            const serializer = new XMLSerializer();
+            const xmlString = serializer.serializeToString(xmlDoc);
+            const blob = new Blob([xmlString], { type: 'application/xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            const date = new Date().toISOString().split('T')[0];
+            a.download = `${currentChannelId}_edited_${date}.xml`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+            showToast('File esportato con successo', 'success');
+        }
+
         // Dark mode toggle
         function toggleDarkMode() {
             document.body.classList.toggle('dark');
@@ -1409,7 +1369,7 @@
             const utcOffset = new Date().getTimezoneOffset() / -60;
             const offsetStr = utcOffset >= 0 ? `+${utcOffset}` : `${utcOffset}`;
             
-            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nFunzionalità:\n- Visualizzazione timeline interattiva\n- Conversione automatica da UTC a fuso orario locale\n- Modifica programmi inline\n- Attualizzazione date\n- Analisi e report\n- Export XMLTV\n\nFuso orario rilevato: ${userTimezone} (UTC${offsetStr})\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer & Editor Pro v${APP_VERSION}\n\nFunzionalità:\n- Visualizzazione timeline interattiva con zoom\n- Conversione automatica UTC → fuso orario locale\n- Modifica programmi inline\n- Rilevamento sovrapposizioni e buchi\n- Attualizzazione date palinsesto\n- Analisi distribuzione format\n- Export XMLTV modificato\n\nFuso orario rilevato: ${userTimezone} (UTC${offsetStr})\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
     </script>
 </body>
