@@ -576,33 +576,35 @@
             
             const width = container.clientWidth * zoomLevel;
             const height = 150;
-            const margin = { top: 20, right: 20, bottom: 30, left: 20 };
+            const margin = { top: 20, right: 20, bottom: 30, left: 40 };
             
             svg.attr('width', width).attr('height', height);
             
             // Fixed 24-hour timeline for the schedule date in UTC
             const dayStart = new Date(scheduleDate);
+            dayStart.setUTCHours(0, 0, 0, 0);
             const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+            dayEnd.setUTCHours(23, 59, 59, 999);
             
             const xScale = d3.scaleTime()
                 .domain([dayStart, dayEnd])
                 .range([margin.left, width - margin.right]);
             
-            // Draw time axis
+            // Draw time axis with all 24 hours marked
             const xAxis = d3.axisBottom(xScale)
-                .ticks(d3.timeHour.every(zoomLevel > 2 ? 1 : 2))
+                .ticks(d3.timeHour.every(zoomLevel > 3 ? 1 : zoomLevel > 2 ? 2 : zoomLevel > 1 ? 3 : 4))
                 .tickFormat(d => {
                     const hours = d.getUTCHours();
-                    const minutes = d.getUTCMinutes();
-                    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                    return `${hours.toString().padStart(2, '0')}:00`;
                 });
             
             svg.append('g')
                 .attr('transform', `translate(0,${height - margin.bottom})`)
-                .call(xAxis);
+                .call(xAxis)
+                .selectAll('text')
+                .style('font-weight', d => d.getUTCHours() === 0 || d.getUTCHours() === 12 ? 'bold' : 'normal');
             
-            // Add grid lines
+            // Add grid lines for every hour
             svg.append('g')
                 .attr('class', 'grid')
                 .attr('transform', `translate(0,${height - margin.bottom})`)
@@ -613,7 +615,67 @@
                 .style('stroke-dasharray', '2,2')
                 .style('opacity', 0.3);
             
-            // Group overlapping programs into rows
+            // Add stronger lines at 00:00, 06:00, 12:00, 18:00
+            [0, 6, 12, 18].forEach(hour => {
+                const time = new Date(scheduleDate);
+                time.setUTCHours(hour, 0, 0, 0);
+                const x = xScale(time);
+                
+                svg.append('line')
+                    .attr('x1', x)
+                    .attr('y1', margin.top)
+                    .attr('x2', x)
+                    .attr('y2', height - margin.bottom)
+                    .attr('stroke', '#666')
+                    .attr('stroke-width', hour === 0 ? 2 : 1)
+                    .attr('opacity', 0.5);
+            });
+            
+            // Add time labels at the top for better readability
+            svg.selectAll('.hour-label')
+                .data([0, 3, 6, 9, 12, 15, 18, 21])
+                .enter()
+                .append('text')
+                .attr('class', 'hour-label')
+                .attr('x', d => {
+                    const time = new Date(scheduleDate);
+                    time.setUTCHours(d, 0, 0, 0);
+                    return xScale(time);
+                })
+                .attr('y', margin.top - 5)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '11px')
+                .attr('fill', '#666')
+                .attr('font-weight', d => d === 0 || d === 12 ? 'bold' : 'normal')
+                .text(d => `${d.toString().padStart(2, '0')}:00`);
+            
+            // Add day coverage indicator
+            const firstProgram = programs.length > 0 ? programs[0] : null;
+            const lastProgram = programs.length > 0 ? programs[programs.length - 1] : null;
+            
+            if (firstProgram && lastProgram) {
+                const coverageStart = firstProgram.start < dayStart ? dayStart : firstProgram.start;
+                const coverageEnd = lastProgram.stop > dayEnd ? dayEnd : lastProgram.stop;
+                const coverageHours = (coverageEnd - coverageStart) / (1000 * 60 * 60);
+                const coveragePercent = (coverageHours / 24 * 100).toFixed(1);
+                
+                // Add coverage bar
+                const coverageY = height - margin.bottom + 15;
+                svg.append('rect')
+                    .attr('x', xScale(coverageStart))
+                    .attr('y', coverageY)
+                    .attr('width', xScale(coverageEnd) - xScale(coverageStart))
+                    .attr('height', 6)
+                    .attr('fill', coveragePercent >= 95 ? '#10b981' : '#f59e0b')
+                    .attr('rx', 3);
+                
+                svg.append('text')
+                    .attr('x', width / 2)
+                    .attr('y', coverageY + 20)
+                    .attr('text-anchor', 'middle')
+                    .attr('font-size', '11px')
+                    .attr('fill', '#666')
+                    .text(`Copertura: ${coveragePercent}% delle 24h`);
             const rows = [];
             programs.forEach(program => {
                 let placed = false;
@@ -635,17 +697,20 @@
                 }
             });
             
-            // Adjust SVG height based on number of rows
+            // Adjust SVG height based on number of rows and coverage indicator
             const programHeight = 40;
             const rowGap = 5;
-            const neededHeight = Math.max(150, margin.top + margin.bottom + (rows.length * (programHeight + rowGap)) + 20);
+            const neededHeight = Math.max(150, margin.top + margin.bottom + (rows.length * (programHeight + rowGap)) + 50);
             svg.attr('height', neededHeight);
             
             // Re-draw axis at new position
-            svg.select('g').remove();
+            svg.selectAll('.axis').remove();
             svg.append('g')
-                .attr('transform', `translate(0,${neededHeight - margin.bottom})`)
-                .call(xAxis);
+                .attr('class', 'axis')
+                .attr('transform', `translate(0,${neededHeight - margin.bottom - 30})`)
+                .call(xAxis)
+                .selectAll('text')
+                .style('font-weight', d => d.getUTCHours() === 0 || d.getUTCHours() === 12 ? 'bold' : 'normal');
             
             // Draw programs
             const baseY = margin.top + 10;
