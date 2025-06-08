@@ -1073,6 +1073,49 @@
         }
 
         function loadPrograms() {
+            // Check if we should auto-detect the most populated day
+            if (currentPrograms.length > 0) {
+                // Count programs per day
+                const programsByDay = {};
+                
+                currentPrograms.forEach(program => {
+                    const dayKey = program.start.toISOString().split('T')[0];
+                    if (!programsByDay[dayKey]) {
+                        programsByDay[dayKey] = [];
+                    }
+                    programsByDay[dayKey].push(program);
+                    
+                    // Also check if program extends to next day
+                    const endDayKey = program.stop.toISOString().split('T')[0];
+                    if (endDayKey !== dayKey) {
+                        if (!programsByDay[endDayKey]) {
+                            programsByDay[endDayKey] = [];
+                        }
+                        programsByDay[endDayKey].push(program);
+                    }
+                });
+                
+                // Find the day with most programs
+                let maxPrograms = 0;
+                let bestDay = null;
+                
+                Object.entries(programsByDay).forEach(([day, programs]) => {
+                    const uniquePrograms = [...new Set(programs)];
+                    if (uniquePrograms.length > maxPrograms) {
+                        maxPrograms = uniquePrograms.length;
+                        bestDay = day;
+                    }
+                });
+                
+                // If the best day is different from current schedule date, update it
+                if (bestDay && new Date(bestDay).toDateString() !== scheduleDate.toDateString()) {
+                    console.log(`Auto-adjusting to day with most programs: ${bestDay} (${maxPrograms} programs)`);
+                    const [year, month, day] = bestDay.split('-').map(Number);
+                    scheduleDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+                    document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
+                }
+            }
+            
             // Filter programs for the schedule date
             const dayStart = new Date(scheduleDate);
             const dayEnd = new Date(scheduleDate);
