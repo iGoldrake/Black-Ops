@@ -1031,16 +1031,41 @@
             // Sort programs by start time
             currentPrograms.sort((a, b) => a.start - b.start);
             
-            // If schedule date not set from TV element, derive from first program
-            if (!scheduleDate && currentPrograms.length > 0) {
+            // Get schedule date from TV element
+            const tvElement = xmlDoc.querySelector('tv');
+            const tvDate = tvElement ? tvElement.getAttribute('date') : null;
+            
+            if (tvDate) {
+                // Use the date from TV element
+                scheduleDate = parseScheduleDate(tvDate);
+                console.log('Schedule date from TV element:', scheduleDate);
+            } else {
+                // If no TV date, try to determine the best viewing date
+                // For TV schedules that typically run from evening to evening,
+                // we should show the day that contains most of the content
+                
+                // Check if first program starts in the evening (after 18:00)
                 const firstProgram = currentPrograms[0];
-                scheduleDate = new Date(Date.UTC(
-                    firstProgram.start.getUTCFullYear(),
-                    firstProgram.start.getUTCMonth(),
-                    firstProgram.start.getUTCDate(),
-                    0, 0, 0
-                ));
-                console.log('Schedule date derived from first program:', scheduleDate);
+                const firstHour = firstProgram.start.getUTCHours();
+                
+                if (firstHour >= 18) {
+                    // Evening start - use next day as main viewing day
+                    scheduleDate = new Date(Date.UTC(
+                        firstProgram.start.getUTCFullYear(),
+                        firstProgram.start.getUTCMonth(),
+                        firstProgram.start.getUTCDate() + 1,
+                        0, 0, 0
+                    ));
+                    console.log('Evening schedule detected, using next day:', scheduleDate);
+                } else {
+                    // Morning/day start - use same day
+                    scheduleDate = new Date(Date.UTC(
+                        firstProgram.start.getUTCFullYear(),
+                        firstProgram.start.getUTCMonth(),
+                        firstProgram.start.getUTCDate(),
+                        0, 0, 0
+                    ));
+                }
             }
             
             // Update UI
@@ -1073,63 +1098,32 @@
         }
 
         function loadPrograms() {
-            // Check if we should auto-detect the most populated day
-            if (currentPrograms.length > 0) {
-                // Count programs per day
-                const programsByDay = {};
-                
-                currentPrograms.forEach(program => {
-                    const dayKey = program.start.toISOString().split('T')[0];
-                    if (!programsByDay[dayKey]) {
-                        programsByDay[dayKey] = [];
-                    }
-                    programsByDay[dayKey].push(program);
-                    
-                    // Also check if program extends to next day
-                    const endDayKey = program.stop.toISOString().split('T')[0];
-                    if (endDayKey !== dayKey) {
-                        if (!programsByDay[endDayKey]) {
-                            programsByDay[endDayKey] = [];
-                        }
-                        programsByDay[endDayKey].push(program);
-                    }
-                });
-                
-                // Find the day with most programs
-                let maxPrograms = 0;
-                let bestDay = null;
-                
-                Object.entries(programsByDay).forEach(([day, programs]) => {
-                    const uniquePrograms = [...new Set(programs)];
-                    if (uniquePrograms.length > maxPrograms) {
-                        maxPrograms = uniquePrograms.length;
-                        bestDay = day;
-                    }
-                });
-                
-                // If the best day is different from current schedule date, update it
-                if (bestDay && new Date(bestDay).toDateString() !== scheduleDate.toDateString()) {
-                    console.log(`Auto-adjusting to day with most programs: ${bestDay} (${maxPrograms} programs)`);
-                    const [year, month, day] = bestDay.split('-').map(Number);
-                    scheduleDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
-                    document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
-                }
-            }
+            // For TV schedules, we need to handle the broadcast day differently
+            // A broadcast day typically runs from early morning to late night
+            // We'll show programs from previous evening through current day
             
-            // Filter programs for the schedule date
             const dayStart = new Date(scheduleDate);
             const dayEnd = new Date(scheduleDate);
             dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
             
-            console.log('Filtering programs for UTC day:', dayStart.toISOString(), 'to', dayEnd.toISOString());
+            // For TV schedules, also include programs from previous evening
+            const extendedStart = new Date(scheduleDate);
+            extendedStart.setUTCDate(extendedStart.getUTCDate() - 1);
+            extendedStart.setUTCHours(18, 0, 0, 0); // From 18:00 previous day
+            
+            console.log('Filtering programs for broadcast day:', extendedStart.toISOString(), 'to', dayEnd.toISOString());
             
             const dayPrograms = currentPrograms.filter(p => {
-                // Include programs that start on this day OR are still running from previous day
-                return (p.start >= dayStart && p.start < dayEnd) || 
-                       (p.start < dayStart && p.stop > dayStart);
+                // Include programs that:
+                // 1. Start within the extended broadcast day
+                // 2. Are still running from previous day
+                // 3. End within the broadcast day
+                return (p.start >= extendedStart && p.start < dayEnd) || 
+                       (p.start < extendedStart && p.stop > extendedStart) ||
+                       (p.stop > dayStart && p.stop <= dayEnd);
             });
             
-            console.log('Programs for this day:', dayPrograms.length);
+            console.log('Programs for broadcast day:', dayPrograms.length);
             
             // Draw timeline based on current view mode
             if (viewMode === 'circular') {
