@@ -324,7 +324,7 @@
     <div class="container">
         <h1>🔄 Convertitore EPG Multi-Canale Excel → XMLTV</h1>
         <div style="text-align:center;margin-top:-10px;margin-bottom:20px;color:#666;font-size:14px;">
-            Versione 2.5.2 - Ultimo aggiornamento: 08/06/2025
+            Versione 2.5.3 - Ultimo aggiornamento: 08/06/2025
         </div>
         
         <div class="channel-selector">
@@ -440,7 +440,7 @@
     // EPG Converter Application - Modular Architecture
     class EPGConverter {
         constructor() {
-            this.SOFTWARE_VERSION = "2.5.2";
+            this.SOFTWARE_VERSION = "2.5.3";
             this.LAST_UPDATE = "08/06/2025";
             this.fileData = null;
             this.xmltvContent = '';
@@ -1006,8 +1006,8 @@
             const minutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
             const seconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
             
-            // Always return UTC format (+0000)
-            return `${year}${month}${day}${hours}${minutes}${seconds} +0000`;
+            // Return ISO 8601 format with UTC timezone
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
         }
         
         getIconForFormat(format, channel) {
