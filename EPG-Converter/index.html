@@ -1,0 +1,2841 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPG Converter 3.0 - Professional Edition</title>
+    
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --bg-card: #ffffff;
+            
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            
+            --border: #e5e7eb;
+            --border-focus: #3b82f6;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            
+            --radius: 0.5rem;
+            --radius-lg: 0.75rem;
+            
+            --transition: all 0.2s ease;
+            --transition-slow: all 0.3s ease;
+        }
+        
+        /* Dark Mode Variables */
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #60a5fa;
+            --secondary: #8b5cf6;
+            --success: #34d399;
+            --danger: #f87171;
+            --warning: #fbbf24;
+            
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-card: #1e293b;
+            
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            
+            --border: #334155;
+            --border-focus: #60a5fa;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: var(--transition);
+        }
+        
+        /* Layout */
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        .header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        /* Main Content */
+        .main-wrapper {
+            display: flex;
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 2rem;
+            gap: 2rem;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+        
+        .sidebar-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+        
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+        
+        .step-item:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .step-item.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .step-item.completed {
+            color: var(--success);
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: var(--transition);
+        }
+        
+        .step-item.active .step-number {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .step-item.completed .step-number {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .step-label {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        /* Cards */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+        
+        .card-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        /* Channel Selector */
+        .channel-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .channel-card {
+            padding: 2rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .channel-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .channel-card.active {
+            border-color: var(--primary);
+            background-color: var(--bg-tertiary);
+        }
+        
+        .channel-card.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .channel-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            border-radius: var(--radius-lg);
+            transition: var(--transition);
+        }
+        
+        .channel-card.classcnbc .channel-icon {
+            background: linear-gradient(135deg, #003366, #0066cc);
+            color: white;
+        }
+        
+        .channel-card.tvmoda .channel-icon {
+            background: linear-gradient(135deg, #FF1493, #FF69B4);
+            color: white;
+        }
+        
+        .channel-card:hover .channel-icon {
+            transform: scale(1.1);
+        }
+        
+        .channel-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .channel-info {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            background-color: var(--bg-tertiary);
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background-color: var(--bg-secondary);
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            color: var(--text-tertiary);
+        }
+        
+        .upload-text {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-hint {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 500;
+            font-size: 0.875rem;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            line-height: 1;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background-color: var(--bg-secondary);
+            border-color: var(--border-focus);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-ghost {
+            background-color: transparent;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+        }
+        
+        .btn-ghost:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+        }
+        
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            margin-top: 0.25rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-control:disabled {
+            background-color: var(--bg-tertiary);
+            cursor: not-allowed;
+        }
+        
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        /* Toggle Switch */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .toggle {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            background-color: var(--bg-tertiary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .toggle.active {
+            background-color: var(--primary);
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .toggle.active .toggle-slider {
+            transform: translateX(24px);
+        }
+        
+        /* Progress Bar */
+        .progress-wrapper {
+            margin-bottom: 1rem;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Status Messages */
+        .status {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        
+        .status.success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .status.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .status.info {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--info);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        /* Console/Log */
+        .console {
+            background-color: #1a1a1a;
+            color: #10b981;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #333;
+        }
+        
+        .console-title {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .console-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        /* Icon Manager */
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        
+        .icon-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        
+        .icon-preview {
+            width: 60px;
+            height: 35px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        
+        .icon-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .icon-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .icon-url {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .icon-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+        }
+        
+        .tab:hover {
+            color: var(--text-primary);
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 9999px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        
+        .badge-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+        
+        .badge-primary {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1a1a1a;
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            z-index: 1000;
+        }
+        
+        .tooltip:hover .tooltip-content {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-wrapper {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                position: static;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .channel-selector {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .main-wrapper {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+        }
+        
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 0.75rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .font-semibold { font-weight: 600; }
+        .opacity-50 { opacity: 0.5; }
+        .flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .slide-up {
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--text-tertiary);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">📺</div>
+                    <span>EPG Converter</span>
+                    <span class="badge badge-primary">v3.0.1</span>
+                </div>
+                
+                <div class="header-actions">
+                    <div class="tooltip">
+                        <button class="btn btn-ghost btn-icon" onclick="app.showShortcuts()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0110 0v4"/>
+                            </svg>
+                        </button>
+                        <span class="tooltip-content">Shortcuts (Ctrl+/)</span>
+                    </div>
+                    
+                    <div class="tooltip">
+                        <button class="btn btn-ghost btn-icon" onclick="app.toggleTheme()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon">
+                                <circle cx="12" cy="12" r="5"/>
+                                <line x1="12" y1="1" x2="12" y2="3"/>
+                                <line x1="12" y1="21" x2="12" y2="23"/>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                                <line x1="1" y1="12" x2="3" y2="12"/>
+                                <line x1="21" y1="12" x2="23" y2="12"/>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                            </svg>
+                        </button>
+                        <span class="tooltip-content">Dark Mode</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="main-wrapper">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <h3 class="sidebar-title">Passaggi Conversione</h3>
+                <div class="step-list">
+                    <div class="step-item active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Seleziona Canale</div>
+                    </div>
+                    <div class="step-item" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Carica File Excel</div>
+                    </div>
+                    <div class="step-item" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Configura Opzioni</div>
+                    </div>
+                    <div class="step-item" data-step="4">
+                        <div class="step-number">4</div>
+                        <div class="step-label">Converti e Scarica</div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h4 class="sidebar-title">Sessioni Recenti</h4>
+                    <div id="recent-sessions" class="text-sm text-secondary">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- Main Content Area -->
+            <main class="main-content">
+                <!-- Step 1: Channel Selection -->
+                <div class="card step-content" data-step="1">
+                    <div class="card-header">
+                        <h2 class="card-title">Seleziona il Canale</h2>
+                        <p class="card-description">Scegli il canale per cui vuoi generare l'EPG</p>
+                    </div>
+                    
+                    <div class="channel-selector">
+                        <div class="channel-card classcnbc" onclick="app.selectChannel('classcnbc')" id="channel-classcnbc">
+                            <div class="channel-icon">📊</div>
+                            <h3 class="channel-name">Class CNBC</h3>
+                            <p class="channel-info">Business & Finance</p>
+                            <p class="text-xs mt-2 opacity-50">File unico con cambio data</p>
+                        </div>
+                        
+                        <div class="channel-card tvmoda" onclick="app.selectChannel('tvmoda')" id="channel-tvmoda">
+                            <div class="channel-icon">👗</div>
+                            <h3 class="channel-name">Class TV Moda</h3>
+                            <p class="channel-info">Fashion & Style</p>
+                            <p class="text-xs mt-2 opacity-50">Un foglio per giorno</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: File Upload -->
+                <div class="card step-content hidden" data-step="2">
+                    <div class="card-header">
+                        <h2 class="card-title">Carica File Excel</h2>
+                        <p class="card-description">Trascina o seleziona il file EPG in formato Excel</p>
+                    </div>
+                    
+                    <div class="upload-area" id="uploadArea">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        <h3 class="upload-text">Trascina qui il file Excel</h3>
+                        <p class="upload-hint">oppure clicca per selezionarlo</p>
+                        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            Seleziona File
+                        </button>
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" />
+                    </div>
+                    
+                    <div id="file-info" class="hidden mt-4"></div>
+                    
+                    <!-- Navigation button -->
+                    <div class="mt-4 text-right hidden" id="step2-nav">
+                        <button class="btn btn-primary" onclick="app.navigateToStep(3)">
+                            Configura Opzioni
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Configuration -->
+                <div class="card step-content hidden" data-step="3">
+                    <div class="card-header">
+                        <h2 class="card-title">Configurazione</h2>
+                        <p class="card-description">Personalizza le impostazioni di conversione</p>
+                    </div>
+                    
+                    <div class="tabs">
+                        <div class="tab active" data-tab="general">Generale</div>
+                        <div class="tab" data-tab="advanced">Avanzate</div>
+                        <div class="tab" data-tab="icons">Icone Format</div>
+                    </div>
+                    
+                    <!-- General Tab -->
+                    <div class="tab-content" data-tab="general">
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label class="form-label" for="channelId">ID Canale</label>
+                                <input type="text" id="channelId" class="form-control" value="ClassCNBC" />
+                                <p class="form-hint">Identificativo univoco del canale</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="channelName">Nome Canale</label>
+                                <input type="text" id="channelName" class="form-control" value="Class CNBC" />
+                                <p class="form-hint">Nome visualizzato nell'EPG</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="timezone">Timezone Input</label>
+                                <select id="timezone" class="form-control">
+                                    <option value="1" selected>+01:00 (Italia/CET)</option>
+                                    <option value="0">+00:00 (UTC/GMT)</option>
+                                    <option value="2">+02:00 (Italia Estate/CEST)</option>
+                                </select>
+                                <p class="form-hint">Gli orari verranno convertiti in UTC</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="dateRange">Periodo da convertire</label>
+                                <select id="dateRange" class="form-control">
+                                    <option value="all">Tutti i giorni disponibili</option>
+                                    <option value="today">Solo oggi</option>
+                                    <option value="tomorrow" selected>Solo domani</option>
+                                    <option value="week">Prossimi 7 giorni</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="toggle-wrapper">
+                                <div class="toggle active" onclick="app.toggleOption('fillGaps')" id="fillGaps">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                                <label class="form-label" style="margin: 0;">Riempi automaticamente i gap temporali</label>
+                            </div>
+                            <p class="form-hint mt-1">Estende la durata dei programmi per coprire i buchi nella programmazione</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Tab -->
+                    <div class="tab-content hidden" data-tab="advanced">
+                        <div class="form-group">
+                            <label class="form-label" for="iconUrl">URL Base Icone</label>
+                            <input type="text" id="iconUrl" class="form-control" value="https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/" readonly />
+                            <p class="form-hint">URL base per le icone dei format</p>
+                        </div>
+                        
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <div class="toggle-wrapper">
+                                    <div class="toggle" onclick="app.toggleOption('validateData')" id="validateData">
+                                        <div class="toggle-slider"></div>
+                                    </div>
+                                    <label class="form-label" style="margin: 0;">Validazione dati</label>
+                                </div>
+                                <p class="form-hint mt-1">Rimuovi duplicati e sovrapposizioni</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="toggle-wrapper">
+                                    <div class="toggle" onclick="app.toggleOption('debugMode')" id="debugMode">
+                                        <div class="toggle-slider"></div>
+                                    </div>
+                                    <label class="form-label" style="margin: 0;">Modalità debug</label>
+                                </div>
+                                <p class="form-hint mt-1">Log dettagliati nella console</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Icons Tab -->
+                    <div class="tab-content hidden" data-tab="icons">
+                        <div class="mb-4">
+                            <button class="btn btn-secondary btn-sm" onclick="app.scanForMissingFormats()">
+                                🔍 Verifica Format Mancanti
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="app.exportIconMapping()">
+                                💾 Esporta Mappatura
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="app.importIconMapping()">
+                                📂 Importa Mappatura
+                            </button>
+                            <input type="file" id="importFile" accept=".json" class="hidden" onchange="app.handleImport(event)" />
+                        </div>
+                        
+                        <div class="icon-grid" id="iconList">
+                            <!-- Populated by JS -->
+                        </div>
+                        
+                        <div class="card mt-4" style="background-color: var(--bg-secondary);">
+                            <h4 class="font-semibold mb-2">Aggiungi Nuovo Format</h4>
+                            <div class="grid grid-2">
+                                <input type="text" id="newFormatName" class="form-control" placeholder="Nome format" />
+                                <input type="text" id="newFormatIcon" class="form-control" placeholder="nome-file.jpg" />
+                            </div>
+                            <button class="btn btn-primary btn-sm mt-2" onclick="app.addNewFormat()">
+                                + Aggiungi Format
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Navigation buttons -->
+                    <div class="mt-4 flex justify-between">
+                        <button class="btn btn-secondary" onclick="app.navigateToStep(2)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                            Indietro
+                        </button>
+                        <button class="btn btn-primary" onclick="app.navigateToStep(4)">
+                            Procedi alla Conversione
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Convert & Download -->
+                <div class="card step-content hidden" data-step="4">
+                    <div class="card-header">
+                        <h2 class="card-title">Conversione</h2>
+                        <p class="card-description">Genera il file XMLTV</p>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button class="btn btn-primary" id="convertBtn" onclick="app.convertFile()" disabled>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 16 12 12 8 16"/>
+                                <line x1="12" y1="12" x2="12" y2="21"/>
+                                <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+                                <polyline points="16 16 12 12 8 16"/>
+                            </svg>
+                            Converti in XMLTV
+                        </button>
+                    </div>
+                    
+                    <div id="conversion-progress" class="hidden mt-4">
+                        <div class="progress-wrapper">
+                            <div class="progress-label">
+                                <span>Conversione in corso...</span>
+                                <span id="progress-percent">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="status" class="mt-4"></div>
+                    
+                    <div id="downloadSection" class="hidden mt-4 text-center slide-up"></div>
+                    
+                    <!-- Navigation button -->
+                    <div class="mt-4 text-left">
+                        <button class="btn btn-secondary" onclick="app.navigateToStep(3)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                            Torna alle Opzioni
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Console -->
+                <div class="card mt-4">
+                    <div class="console-header">
+                        <span class="console-title">📟 Console Output</span>
+                        <div class="console-actions">
+                            <button class="btn btn-ghost btn-icon" onclick="app.clearLog()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-ghost btn-icon" onclick="app.exportLog()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="console" id="log"></div>
+                </div>
+            </main>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="footer">
+            <p>EPG Converter v3.0.1 - Professional Edition | © 2025 | Ultimo aggiornamento: 09/06/2025</p>
+        </footer>
+    </div>
+    
+    <!-- Load XLSX Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <script>
+    // Modern EPG Converter Application
+    class ModernEPGConverter {
+        constructor() {
+            this.SOFTWARE_VERSION = "3.0.1";
+            this.LAST_UPDATE = "09/06/2025";
+            
+            // State
+            this.currentStep = 1;
+            this.currentChannel = null;
+            this.currentTab = 'general';
+            this.fileData = null;
+            this.xmltvContent = '';
+            this.workbook = null;
+            this.detectedFormats = new Set();
+            this.logContent = [];
+            
+            // Options
+            this.options = {
+                fillGaps: true,
+                validateData: false,
+                debugMode: false
+            };
+            
+            // Configuration
+            this.config = {
+                channels: {
+                    classcnbc: {
+                        id: 'ClassCNBC',
+                        name: 'Class CNBC',
+                        baseIconUrl: 'https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/'
+                    },
+                    tvmoda: {
+                        id: 'ClassTVModa',
+                        name: 'Class TV Moda',
+                        baseIconUrl: 'https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassTVModa_IT_samsung/Images/'
+                    }
+                },
+                formatIcons: {
+                    tvmoda: this.getTVModaFormats(),
+                    classcnbc: this.getClassCNBCFormats()
+                },
+                categoryMapping: this.getCategoryMapping(),
+                ratingMapping: this.getRatingMapping()
+            };
+            
+            this.init();
+        }
+        
+        init() {
+            this.loadPreferences();
+            this.setupEventListeners();
+            this.setupKeyboardShortcuts();
+            this.loadRecentSessions();
+            this.initTabSystem();
+            this.addLog('🚀 EPG Converter 3.0 avviato');
+            this.addLog('Seleziona il canale per iniziare la conversione');
+        }
+        
+        setupEventListeners() {
+            // Upload area
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.handleFile(files[0]);
+                }
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    this.handleFile(e.target.files[0]);
+                }
+            });
+            
+            // Step navigation
+            document.querySelectorAll('.step-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const step = parseInt(item.dataset.step);
+                    if (step <= this.currentStep) {
+                        this.navigateToStep(step);
+                    }
+                });
+            });
+        }
+        
+        setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+O - Open file
+                if (e.ctrlKey && e.key === 'o') {
+                    e.preventDefault();
+                    if (this.currentStep >= 2) {
+                        document.getElementById('fileInput').click();
+                    }
+                }
+                
+                // Ctrl+Enter - Convert
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this.currentStep === 4 && !document.getElementById('convertBtn').disabled) {
+                        this.convertFile();
+                    }
+                }
+                
+                // Ctrl+/ - Show shortcuts
+                if (e.ctrlKey && e.key === '/') {
+                    e.preventDefault();
+                    this.showShortcuts();
+                }
+                
+                // Ctrl+D - Toggle dark mode
+                if (e.ctrlKey && e.key === 'd') {
+                    e.preventDefault();
+                    this.toggleTheme();
+                }
+            });
+        }
+        
+        initTabSystem() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    this.switchTab(tabName);
+                });
+            });
+        }
+        
+        switchTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+            
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('hidden', content.dataset.tab !== tabName);
+            });
+            
+            this.currentTab = tabName;
+            
+            // Load icon list if switching to icons tab
+            if (tabName === 'icons' && this.currentChannel) {
+                this.updateIconList();
+            }
+        }
+        
+        navigateToStep(step) {
+            // Validate if user can navigate to this step
+            if (step > this.currentStep && !this.canProceedToStep(step)) {
+                this.showStatus('Completa prima i passaggi precedenti', 'error');
+                return;
+            }
+            
+            // Update sidebar
+            document.querySelectorAll('.step-item').forEach((item, index) => {
+                const itemStep = index + 1;
+                item.classList.toggle('active', itemStep === step);
+                item.classList.toggle('completed', itemStep < step);
+            });
+            
+            // Update content
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.toggle('hidden', parseInt(content.dataset.step) !== step);
+            });
+            
+            // Animate new content
+            const newContent = document.querySelector(`.step-content[data-step="${step}"]`);
+            if (newContent) {
+                newContent.classList.add('fade-in');
+            }
+            
+            // Update current step if moving forward
+            if (step > this.currentStep) {
+                this.currentStep = step;
+            }
+        }
+        
+        canProceedToStep(step) {
+            switch(step) {
+                case 2:
+                    return this.currentChannel !== null;
+                case 3:
+                    return this.currentChannel !== null && (this.workbook !== null || this.fileData !== null);
+                case 4:
+                    return this.currentChannel !== null && (this.workbook !== null || this.fileData !== null);
+                default:
+                    return true;
+            }
+        }
+        
+        selectChannel(channel) {
+            this.currentChannel = channel;
+            
+            // Update UI
+            document.querySelectorAll('.channel-card').forEach(card => {
+                card.classList.toggle('active', card.id === `channel-${channel}`);
+            });
+            
+            // Update form values
+            const config = this.config.channels[channel];
+            document.getElementById('channelId').value = config.id;
+            document.getElementById('channelName').value = config.name;
+            document.getElementById('iconUrl').value = config.baseIconUrl;
+            
+            this.addLog(`✅ Canale selezionato: ${config.name}`);
+            
+            // Save to session
+            this.saveSession();
+            
+            // Move to next step
+            this.currentStep = 2;
+            this.navigateToStep(2);
+        }
+        
+        handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                this.showStatus('⚠️ Seleziona un file Excel (.xlsx o .xls)', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    this.workbook = XLSX.read(e.target.result, {
+                        type: 'binary',
+                        cellDates: true,
+                        cellNF: false,
+                        cellText: false
+                    });
+                    
+                    this.detectedFormats.clear();
+                    
+                    if (this.currentChannel === 'tvmoda') {
+                        this.handleTVModaFile(file);
+                    } else {
+                        this.handleClassCNBCFile(file);
+                    }
+                    
+                    // Show file info
+                    const fileInfo = document.getElementById('file-info');
+                    fileInfo.innerHTML = `
+                        <div class="status success">
+                            <svg class="status-icon" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <div>
+                                <strong>${file.name}</strong> caricato con successo
+                                <div class="text-xs mt-1">
+                                    ${this.workbook.SheetNames.length} fogli • 
+                                    ${this.detectedFormats.size} format unici • 
+                                    ${(file.size / 1024).toFixed(1)} KB
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    fileInfo.classList.remove('hidden');
+                    
+                    // Show navigation button
+                    document.getElementById('step2-nav').classList.remove('hidden');
+                    
+                    // Enable convert button
+                    document.getElementById('convertBtn').disabled = false;
+                    
+                    // Automatically move to next step after a short delay
+                    setTimeout(() => {
+                        this.currentStep = 3;
+                        this.navigateToStep(3);
+                    }, 1500);
+                    
+                } catch (error) {
+                    this.showStatus('❌ Errore nel leggere il file Excel', 'error');
+                    this.addLog(`Errore: ${error.message}`);
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+        
+        handleTVModaFile(file) {
+            const expectedSheets = ['SABATO', 'DOMENICA', 'LUNEDI', 'MARTEDI', 'MERCOLEDI', 'GIOVEDI', 'VENERDI'];
+            const hasWeekdaySheets = expectedSheets.some(sheet => this.workbook.SheetNames.includes(sheet));
+            
+            if (!hasWeekdaySheets) {
+                this.showStatus('⚠️ File non compatibile con TV Moda', 'error');
+                return;
+            }
+            
+            // Scan formats
+            for (const sheetName of this.workbook.SheetNames) {
+                if (expectedSheets.includes(sheetName)) {
+                    const worksheet = this.workbook.Sheets[sheetName];
+                    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                    
+                    for (let i = 3; i < data.length; i++) {
+                        const row = data[i];
+                        if (row && row[1] && typeof row[1] === 'string') {
+                            this.detectedFormats.add(row[1].trim());
+                        }
+                    }
+                }
+            }
+            
+            this.addLog(`📁 File TV Moda caricato: ${file.name}`);
+            this.addLog(`   Fogli: ${this.workbook.SheetNames.join(', ')}`);
+            this.addLog(`   Format unici: ${this.detectedFormats.size}`);
+        }
+        
+        handleClassCNBCFile(file) {
+            const sheetName = this.workbook.SheetNames[0];
+            const worksheet = this.workbook.Sheets[sheetName];
+            this.fileData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+            
+            // Scan formats
+            for (let i = 1; i < this.fileData.length; i++) {
+                const row = this.fileData[i];
+                if (row && row[1] && typeof row[1] === 'string' && row.length > 10) {
+                    this.detectedFormats.add(row[1].trim());
+                }
+            }
+            
+            this.addLog(`📁 File Class CNBC caricato: ${file.name}`);
+            this.addLog(`   Righe: ${this.fileData.length}`);
+            this.addLog(`   Format unici: ${this.detectedFormats.size}`);
+        }
+        
+        convertFile() {
+            if (!this.workbook && !this.fileData) {
+                this.showStatus('❌ Carica prima un file Excel', 'error');
+                return;
+            }
+            
+            // Show progress
+            const progressSection = document.getElementById('conversion-progress');
+            progressSection.classList.remove('hidden');
+            
+            // Get parameters
+            const channelId = document.getElementById('channelId').value.trim();
+            const channelName = document.getElementById('channelName').value.trim();
+            const timezoneOffset = parseInt(document.getElementById('timezone').value);
+            const dateRange = document.getElementById('dateRange').value;
+            const fillGaps = this.options.fillGaps;
+            const iconUrl = document.getElementById('iconUrl').value.trim();
+            
+            this.addLog('\n🔧 CONFIGURAZIONE:');
+            this.addLog(`- Tipo canale: ${this.currentChannel}`);
+            this.addLog(`- Canale ID: ${channelId}`);
+            this.addLog(`- Nome Canale: ${channelName}`);
+            this.addLog(`- Timezone input: UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset}`);
+            this.addLog(`- Output: UTC (conversione automatica)`);
+            this.addLog(`- Periodo: ${dateRange}`);
+            this.addLog(`- Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
+            
+            // Simulate progress
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 10;
+                this.updateProgress(progress);
+                
+                if (progress >= 90) {
+                    clearInterval(progressInterval);
+                }
+            }, 100);
+            
+            try {
+                const converter = new XMLTVGenerator(this);
+                
+                if (this.currentChannel === 'tvmoda') {
+                    this.xmltvContent = converter.generateXMLTVForTVModa(
+                        this.workbook,
+                        channelId,
+                        channelName,
+                        timezoneOffset,
+                        iconUrl,
+                        dateRange,
+                        fillGaps
+                    );
+                } else {
+                    const today = new Date();
+                    const baseDate = today.getFullYear() + '-' +
+                        String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(today.getDate()).padStart(2, '0');
+                    
+                    this.xmltvContent = converter.generateXMLTVForClassCNBC(
+                        this.fileData,
+                        channelId,
+                        channelName,
+                        baseDate,
+                        timezoneOffset,
+                        iconUrl,
+                        dateRange,
+                        fillGaps
+                    );
+                }
+                
+                // Complete progress
+                this.updateProgress(100);
+                setTimeout(() => {
+                    progressSection.classList.add('hidden');
+                    this.showStatus('✅ Conversione completata con successo!', 'success');
+                    this.showDownload();
+                }, 500);
+                
+            } catch (error) {
+                clearInterval(progressInterval);
+                progressSection.classList.add('hidden');
+                this.showStatus('❌ Errore durante la conversione', 'error');
+                this.addLog(`Errore: ${error.message}`);
+                console.error(error);
+            }
+        }
+        
+        updateProgress(percent) {
+            document.getElementById('progress-percent').textContent = `${percent}%`;
+            document.getElementById('progress-fill').style.width = `${percent}%`;
+        }
+        
+        showDownload() {
+            if (!this.xmltvContent || this.xmltvContent.length < 100) {
+                this.addLog('ERRORE: Contenuto XML troppo piccolo o vuoto');
+                return;
+            }
+            
+            try {
+                const blob = new Blob([this.xmltvContent], { type: 'application/xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const filename = `${year}-${month}-${day}.xml`;
+                
+                const downloadSection = document.getElementById('downloadSection');
+                downloadSection.innerHTML = `
+                    <div class="fade-in">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="margin: 0 auto 1rem;">
+                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <h3 class="font-semibold mb-2">File XMLTV Generato!</h3>
+                        <p class="text-secondary mb-4">${(blob.size / 1024).toFixed(1)} KB • ${filename}</p>
+                        <a href="${url}" download="${filename}" class="btn btn-success">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Scarica XMLTV
+                        </a>
+                    </div>
+                `;
+                downloadSection.classList.remove('hidden');
+                
+                this.addLog(`✅ File pronto: ${filename} (${blob.size} bytes)`);
+                
+                // Save to recent sessions
+                this.saveSession();
+                
+            } catch (error) {
+                this.addLog(`Errore creazione download: ${error.message}`);
+                this.showStatus('❌ Errore nella creazione del file', 'error');
+            }
+        }
+        
+        // UI Helper Methods
+        showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            const icons = {
+                success: '<svg class="status-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>',
+                error: '<svg class="status-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>',
+                info: '<svg class="status-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>'
+            };
+            
+            statusDiv.innerHTML = `
+                <div class="status ${type}">
+                    ${icons[type] || icons.info}
+                    <span>${message}</span>
+                </div>
+            `;
+        }
+        
+        addLog(message) {
+            const timestamp = new Date().toLocaleTimeString('it-IT');
+            const logEntry = `[${timestamp}] ${message}`;
+            this.logContent.push(logEntry);
+            
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += logEntry + '\n';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        clearLog() {
+            this.logContent = [];
+            document.getElementById('log').innerHTML = '';
+            this.addLog('🧹 Console pulita');
+        }
+        
+        exportLog() {
+            const logText = this.logContent.join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `epg-converter-log-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Theme Management
+        toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('epg-theme', newTheme);
+            
+            // Update icon
+            const icon = document.getElementById('theme-icon');
+            if (newTheme === 'dark') {
+                icon.innerHTML = `
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                `;
+            } else {
+                icon.innerHTML = `
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                `;
+            }
+        }
+        
+        // Options Management
+        toggleOption(optionName) {
+            this.options[optionName] = !this.options[optionName];
+            const toggle = document.getElementById(optionName);
+            toggle.classList.toggle('active', this.options[optionName]);
+            
+            this.addLog(`⚙️ ${optionName}: ${this.options[optionName] ? 'ATTIVO' : 'DISATTIVO'}`);
+            this.savePreferences();
+        }
+        
+        // Icon Management
+        updateIconList() {
+            const iconList = document.getElementById('iconList');
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            const baseUrl = this.config.channels[this.currentChannel].baseIconUrl;
+            
+            iconList.innerHTML = '';
+            
+            Object.entries(formatIcons).forEach(([format, filename]) => {
+                const item = document.createElement('div');
+                item.className = 'icon-item fade-in';
+                item.innerHTML = `
+                    <div class="icon-preview" style="background-image: url('${baseUrl}${filename}')"></div>
+                    <div class="icon-details">
+                        <div class="icon-name">${format}</div>
+                        <div class="icon-url">${filename}</div>
+                    </div>
+                    <div class="icon-actions">
+                        <button class="btn btn-ghost btn-icon" onclick="app.editFormat('${format}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-icon" onclick="app.removeFormat('${format}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                iconList.appendChild(item);
+            });
+        }
+        
+        editFormat(format) {
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            const newFilename = prompt(`Modifica filename per "${format}":`, formatIcons[format]);
+            
+            if (newFilename !== null && newFilename.trim() !== '') {
+                formatIcons[format] = newFilename.trim();
+                this.updateIconList();
+                this.addLog(`📝 Icona aggiornata per format "${format}"`);
+            }
+        }
+        
+        removeFormat(format) {
+            if (confirm(`Rimuovere il format "${format}"?`)) {
+                const formatIcons = this.config.formatIcons[this.currentChannel];
+                delete formatIcons[format];
+                this.updateIconList();
+                this.addLog(`🗑️ Format "${format}" rimosso`);
+            }
+        }
+        
+        addNewFormat() {
+            const nameInput = document.getElementById('newFormatName');
+            const iconInput = document.getElementById('newFormatIcon');
+            
+            const name = nameInput.value.trim();
+            const icon = iconInput.value.trim() || 'default.jpg';
+            
+            if (!name) {
+                this.showStatus('Inserisci il nome del format', 'error');
+                return;
+            }
+            
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            formatIcons[name] = icon;
+            
+            nameInput.value = '';
+            iconInput.value = '';
+            
+            this.updateIconList();
+            this.addLog(`✅ Nuovo format aggiunto: "${name}"`);
+            this.showStatus(`Format "${name}" aggiunto con successo`, 'success');
+        }
+        
+        scanForMissingFormats() {
+            if (this.detectedFormats.size === 0) {
+                this.showStatus('Carica prima un file Excel per verificare i format mancanti', 'info');
+                return;
+            }
+            
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            const missingFormats = [];
+            
+            for (const format of this.detectedFormats) {
+                const normalizedFormat = format.trim().toUpperCase();
+                let found = false;
+                
+                for (const key of Object.keys(formatIcons)) {
+                    if (key.toUpperCase() === normalizedFormat) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    missingFormats.push(format);
+                }
+            }
+            
+            if (missingFormats.length === 0) {
+                this.showStatus('✅ Tutti i format hanno un\'icona associata!', 'success');
+            } else {
+                const message = `⚠️ ${missingFormats.length} format senza icona:\n${missingFormats.slice(0, 5).join('\n')}${missingFormats.length > 5 ? '\n...' : ''}`;
+                alert(message);
+                
+                // Auto-add missing formats
+                if (confirm('Vuoi aggiungere automaticamente questi format con icona default?')) {
+                    missingFormats.forEach(format => {
+                        formatIcons[format] = 'default.jpg';
+                    });
+                    this.updateIconList();
+                    this.showStatus(`Aggiunti ${missingFormats.length} format con icona default`, 'success');
+                }
+            }
+        }
+        
+        exportIconMapping() {
+            const formatIcons = this.config.formatIcons[this.currentChannel];
+            const data = {
+                channel: this.currentChannel,
+                channelName: this.config.channels[this.currentChannel].name,
+                formatIcons: formatIcons,
+                defaultIcon: this.config.channels[this.currentChannel].baseIconUrl + 'default.jpg',
+                exportDate: new Date().toISOString(),
+                version: this.SOFTWARE_VERSION
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `format-icons-${this.currentChannel}-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            this.addLog(`💾 Mappatura icone esportata per ${this.config.channels[this.currentChannel].name}`);
+        }
+        
+        importIconMapping() {
+            document.getElementById('importFile').click();
+        }
+        
+        handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.formatIcons) {
+                        const formatIcons = this.config.formatIcons[this.currentChannel];
+                        
+                        Object.keys(formatIcons).forEach(key => delete formatIcons[key]);
+                        Object.assign(formatIcons, data.formatIcons);
+                        
+                        this.updateIconList();
+                        this.addLog(`📂 Mappatura importata: ${Object.keys(data.formatIcons).length} format`);
+                        this.showStatus('Mappatura icone importata con successo', 'success');
+                    } else {
+                        this.showStatus('File non valido', 'error');
+                    }
+                } catch (error) {
+                    this.showStatus('Errore nel leggere il file', 'error');
+                    this.addLog(`Errore importazione: ${error.message}`);
+                }
+            };
+            reader.readAsText(file);
+            
+            event.target.value = '';
+        }
+        
+        // Preferences Management
+        savePreferences() {
+            const prefs = {
+                theme: document.documentElement.getAttribute('data-theme') || 'light',
+                options: this.options,
+                lastChannel: this.currentChannel
+            };
+            localStorage.setItem('epg-preferences', JSON.stringify(prefs));
+        }
+        
+        loadPreferences() {
+            const saved = localStorage.getItem('epg-preferences');
+            if (saved) {
+                try {
+                    const prefs = JSON.parse(saved);
+                    
+                    // Apply theme
+                    if (prefs.theme) {
+                        document.documentElement.setAttribute('data-theme', prefs.theme);
+                    }
+                    
+                    // Apply options
+                    if (prefs.options) {
+                        Object.assign(this.options, prefs.options);
+                        
+                        // Update UI
+                        Object.keys(this.options).forEach(key => {
+                            const toggle = document.getElementById(key);
+                            if (toggle) {
+                                toggle.classList.toggle('active', this.options[key]);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading preferences:', e);
+                }
+            }
+        }
+        
+        // Session Management
+        saveSession() {
+            const session = {
+                date: new Date().toISOString(),
+                channel: this.currentChannel,
+                channelName: this.config.channels[this.currentChannel]?.name || '',
+                settings: {
+                    channelId: document.getElementById('channelId').value,
+                    timezone: document.getElementById('timezone').value,
+                    dateRange: document.getElementById('dateRange').value
+                }
+            };
+            
+            let sessions = JSON.parse(localStorage.getItem('epg-sessions') || '[]');
+            sessions.unshift(session);
+            sessions = sessions.slice(0, 5); // Keep last 5
+            
+            localStorage.setItem('epg-sessions', JSON.stringify(sessions));
+            this.loadRecentSessions();
+        }
+        
+        loadRecentSessions() {
+            const sessions = JSON.parse(localStorage.getItem('epg-sessions') || '[]');
+            const container = document.getElementById('recent-sessions');
+            
+            if (sessions.length === 0) {
+                container.innerHTML = '<p class="text-xs opacity-50">Nessuna sessione recente</p>';
+                return;
+            }
+            
+            container.innerHTML = sessions.map((session, index) => {
+                const date = new Date(session.date);
+                const timeAgo = this.getTimeAgo(date);
+                
+                return `
+                    <div class="mb-2 text-xs">
+                        <div class="font-semibold">${session.channelName}</div>
+                        <div class="opacity-50">${timeAgo}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            const intervals = {
+                anno: 31536000,
+                mese: 2592000,
+                settimana: 604800,
+                giorno: 86400,
+                ora: 3600,
+                minuto: 60
+            };
+            
+            for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+                const interval = Math.floor(seconds / secondsInUnit);
+                if (interval >= 1) {
+                    return interval === 1 ? `1 ${unit} fa` : `${interval} ${unit === 'mese' ? 'mesi' : unit + 'i'} fa`;
+                }
+            }
+            
+            return 'Adesso';
+        }
+        
+        // Keyboard Shortcuts
+        showShortcuts() {
+            const shortcuts = [
+                { key: 'Ctrl + O', action: 'Apri file' },
+                { key: 'Ctrl + Enter', action: 'Converti' },
+                { key: 'Ctrl + D', action: 'Dark mode' },
+                { key: 'Ctrl + /', action: 'Mostra shortcuts' }
+            ];
+            
+            const content = shortcuts.map(s => `${s.key} - ${s.action}`).join('\n');
+            alert(`Scorciatoie da tastiera:\n\n${content}`);
+        }
+        
+        // Format Data
+        getTVModaFormats() {
+            return {
+                "(UN)ACCESSING BACKSTAGE": "default.jpg",
+                "CATWALKS": "default.jpg",
+                "CLASS TV MODA STORIES": "default.jpg",
+                "DESIGN MAP": "default.jpg",
+                "DISTRICTS": "default.jpg",
+                "FASHION NEWS": "default.jpg",
+                "FASHION&BEYOND": "default.jpg",
+                "FRONT ROW": "default.jpg",
+                "GREEN REVOLUTION FORWARD": "default.jpg",
+                "SOUND OF FASHION": "default.jpg",
+                "SPOTLIGHT": "default.jpg",
+                "VOICES": "default.jpg",
+                "WHAT WOMEN WEAR": "default.jpg",
+                "Programmazione notturna": "default.jpg",
+                "Programmazione": "default.jpg"
+            };
+        }
+        
+        getClassCNBCFormats() {
+            return {
+                "Tradingroom": "default.jpg",
+                "Report": "default.jpg",
+                "Gli speciali settimanali di Class Cnbc": "default.jpg",
+                "4cLegal Academy Pt 5": "default.jpg",
+                "Caffe' Affari": "default.jpg",
+                "Analisi Tecnica": "default.jpg",
+                "Linea Mercati": "default.jpg",
+                "Growth Italia": "default.jpg",
+                "Gli speciali di Class Cnbc": "default.jpg",
+                "Trading Nation": "default.jpg",
+                "Market Movers": "default.jpg",
+                "Linea Mercati Wall Street": "default.jpg",
+                "Linea Mercati Notte": "default.jpg",
+                "La giornata di Class Cnbc": "default.jpg",
+                "4cLegal Academy Pt 6": "default.jpg",
+                "Fabi risponde": "default.jpg",
+                "Speciale Mondi da scoprire Pt 4": "default.jpg",
+                "BCE - annuncio tassi": "default.jpg",
+                "BCE - conferenza stampa": "default.jpg",
+                "The Floor": "default.jpg",
+                "5 Giorni Sui Mercati": "default.jpg",
+                "4cLegal Academy Pt 7": "default.jpg",
+                "Gli speciali di ClassCnbc": "default.jpg",
+                "4cLegal Academy Pt 8": "default.jpg",
+                "Speciale FED": "default.jpg",
+                "4cLegal Academy Pt 9": "default.jpg",
+                "Programmazione notturna": "default.jpg",
+                "Programmazione": "default.jpg"
+            };
+        }
+        
+        getCategoryMapping() {
+            return {
+                'Informazione': 'News',
+                'Economia': 'Business',
+                'Intrattenimento': 'Entertainment',
+                'Sport': 'Sports',
+                'Musica': 'Music',
+                'Documentario': 'Documentary',
+                'Cultura': 'Arts/Culture',
+                'Cucina': 'Cooking',
+                'Travel': 'Travel',
+                'Talk': 'Talk Show',
+                'Reality': 'Reality',
+                'Film': 'Movie',
+                'Fashion': 'Fashion',
+                'Lifestyle': 'Lifestyle'
+            };
+        }
+        
+        getRatingMapping() {
+            return {
+                'U': '0',
+                'T': '6',
+                'VM14': '14',
+                'VM18': '18',
+                '6': '6',
+                '12': '12',
+                '14': '14',
+                '16': '16',
+                '18': '18'
+            };
+        }
+    }
+    
+    // XMLTV Generator (same logic as before, integrated with new UI)
+    class XMLTVGenerator {
+        constructor(app) {
+            this.app = app;
+        }
+        
+        // [Include all the XML generation methods from the original code here]
+        // The logic remains exactly the same, just wrapped in this class
+        
+        escapeXml(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        
+        formatXMLTVDate(date, timezoneOffset) {
+            const utcDate = new Date(date.getTime() - (timezoneOffset * 60 * 60 * 1000));
+            const year = utcDate.getUTCFullYear();
+            const month = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(utcDate.getUTCDate()).padStart(2, '0');
+            const hours = String(utcDate.getUTCHours()).padStart(2, '0');
+            const minutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
+        }
+        
+        getIconForFormat(format, channel) {
+            if (!format) return this.app.config.channels[channel].baseIconUrl + 'default.jpg';
+            const formatIcons = this.app.config.formatIcons[channel];
+            const normalizedFormat = format.trim().toUpperCase();
+            
+            for (const [key, value] of Object.entries(formatIcons)) {
+                if (key.toUpperCase() === normalizedFormat) {
+                    return this.app.config.channels[channel].baseIconUrl + value;
+                }
+            }
+            
+            return this.app.config.channels[channel].baseIconUrl + 'default.jpg';
+        }
+        
+        // [Continue with all other methods from the original XMLTVGenerator class]
+        // generateXMLTVForTVModa, generateXMLTVForClassCNBC, etc.
+        // The implementation remains identical to maintain functionality
+        
+        generateXMLTVForTVModa(workbook, channelId, channelName, timezoneOffset, iconUrl, dateRange, fillGaps) {
+            this.app.addLog('Generazione XMLTV per TV Moda...');
+            this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
+            
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
+            xml += `  <channel id="${channelId}">\n`;
+            xml += `    <display-name lang="it">${channelName}</display-name>\n`;
+            xml += `  </channel>\n\n`;
+            
+            const programs = this.parseTVModaPrograms(workbook, dateRange);
+            const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'tvmoda');
+            
+            for (const program of processedPrograms) {
+                xml += this.generateProgrammeXML(program, channelId, timezoneOffset, 'tvmoda');
+            }
+            
+            xml += '</tv>';
+            
+            this.app.addLog(`\nGenerati ${processedPrograms.length} programmi XML`);
+            this.app.addLog(`Lunghezza XML: ${xml.length} caratteri`);
+            
+            return xml;
+        }
+        
+        generateXMLTVForClassCNBC(data, channelId, channelName, baseDate, timezoneOffset, iconUrl, dateRange, fillGaps) {
+            this.app.addLog('Generazione XMLTV per Class CNBC...');
+            this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
+            
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
+            xml += `  <channel id="${channelId}">\n`;
+            xml += `    <display-name lang="it">${channelName}</display-name>\n`;
+            xml += `  </channel>\n\n`;
+            
+            const programs = this.parseClassCNBCPrograms(data, baseDate, dateRange);
+            const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'classcnbc');
+            
+            for (const program of processedPrograms) {
+                xml += this.generateProgrammeXML(program, channelId, timezoneOffset, 'classcnbc');
+            }
+            
+            xml += '</tv>';
+            
+            this.app.addLog(`\nGenerati ${processedPrograms.length} programmi XML`);
+            this.app.addLog(`Lunghezza XML: ${xml.length} caratteri`);
+            
+            return xml;
+        }
+        
+        parseTVModaPrograms(workbook, dateRange) {
+            const weekdayMap = {
+                'DOMENICA': 0, 'LUNEDI': 1, 'MARTEDI': 2, 'MERCOLEDI': 3,
+                'GIOVEDI': 4, 'VENERDI': 5, 'SABATO': 6
+            };
+            
+            const targetDates = this.getTargetDates(dateRange, workbook, weekdayMap);
+            const allPrograms = [];
+            const processedProgramKeys = new Set();
+            
+            for (const targetDate of targetDates) {
+                const targetWeekday = targetDate.getDay();
+                const sheetName = Object.keys(weekdayMap).find(key => weekdayMap[key] === targetWeekday);
+                
+                if (!sheetName || !workbook.Sheets[sheetName]) continue;
+                
+                this.app.addLog(`\nProcesso ${sheetName} per ${targetDate.toLocaleDateString('it-IT')}...`);
+                
+                const worksheet = workbook.Sheets[sheetName];
+                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                
+                const dayPrograms = this.parseTVModaDayPrograms(data, targetDate);
+                
+                for (const program of dayPrograms) {
+                    const key = `${program.startTime.getTime()}_${program.title}`;
+                    if (!processedProgramKeys.has(key)) {
+                        processedProgramKeys.add(key);
+                        allPrograms.push(program);
+                    }
+                }
+                
+                this.app.addLog(`  Trovati ${dayPrograms.length} programmi in ${sheetName}`);
+            }
+            
+            return allPrograms;
+        }
+        
+        parseTVModaDayPrograms(data, currentDate) {
+            const programs = [];
+            
+            for (let i = 3; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length < 4) continue;
+                
+                const startTime = row[0];
+                const title = row[1];
+                const duration = row[2];
+                const description = row[3];
+                
+                if (!title || !startTime) continue;
+                
+                const programTime = this.parseTime(startTime, currentDate);
+                if (!programTime) continue;
+                
+                const durationMinutes = this.parseDuration(duration);
+                
+                programs.push({
+                    startTime: programTime,
+                    endTime: new Date(programTime.getTime() + durationMinutes * 60 * 1000),
+                    title: title,
+                    description: description || '',
+                    duration: durationMinutes * 60,
+                    category: 'Fashion',
+                    format: title
+                });
+            }
+            
+            return programs;
+        }
+        
+        parseClassCNBCPrograms(data, baseDate, dateRange) {
+            const allPrograms = [];
+            let currentDate = new Date(baseDate);
+            const extendedDates = this.getExtendedDatesForRange(dateRange);
+            
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                
+                if (!row || row.length === 0) continue;
+                
+                if (row.length === 1 && row[0]) {
+                    const newDate = this.parseDate(row[0]);
+                    if (newDate) {
+                        currentDate = newDate;
+                        this.app.addLog(`Cambio giorno: ${currentDate.toDateString()}`);
+                    }
+                    continue;
+                }
+                
+                if (row.length < 10) continue;
+                
+                const program = this.parseClassCNBCProgram(row, currentDate);
+                if (program && this.isProgramInDateRange(program, extendedDates)) {
+                    allPrograms.push(program);
+                }
+            }
+            
+            return allPrograms;
+        }
+        
+        parseClassCNBCProgram(row, currentDate) {
+            const timeObj = row[0];
+            const title = row[1];
+            const programId = row[2];
+            const category = row[6] || row[7];
+            const rating = row[13];
+            const shortDesc = row[15];
+            const longDesc = row[16];
+            
+            if (!title || !programId) return null;
+            
+            const programTime = this.parseTime(timeObj, currentDate);
+            if (!programTime) return null;
+            
+            return {
+                startTime: programTime,
+                title: title,
+                programId: programId,
+                category: category,
+                rating: rating,
+                shortDesc: shortDesc,
+                longDesc: longDesc,
+                format: title
+            };
+        }
+        
+        processProgramsForOutput(allPrograms, dateRange, fillGaps, channel) {
+            allPrograms.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+            
+            this.calculateDurations(allPrograms, fillGaps);
+            
+            const targetDates = this.getOutputTargetDates(dateRange);
+            const finalPrograms = [];
+            const processedKeys = new Set();
+            
+            for (const targetDate of targetDates) {
+                const dayPrograms = this.processDayPrograms(allPrograms, targetDate, channel);
+                
+                for (const program of dayPrograms) {
+                    const key = `${program.startTime.getTime()}_${program.title}`;
+                    if (!processedKeys.has(key)) {
+                        processedKeys.add(key);
+                        finalPrograms.push(program);
+                    }
+                }
+            }
+            
+            return finalPrograms;
+        }
+        
+        processDayPrograms(allPrograms, targetDate, channel) {
+            const targetStart = new Date(targetDate);
+            targetStart.setHours(0, 0, 0, 0);
+            const targetEnd = new Date(targetDate);
+            targetEnd.setHours(23, 59, 59, 999);
+            
+            this.app.addLog(`\nProcesso programmi per ${targetDate.toLocaleDateString('it-IT')}...`);
+            
+            const dayPrograms = allPrograms.filter(program => {
+                return (program.startTime >= targetStart && program.startTime <= targetEnd) ||
+                       (program.endTime >= targetStart && program.endTime <= targetEnd) ||
+                       (program.startTime < targetStart && program.endTime > targetEnd);
+            });
+            
+            this.app.addLog(`  Trovati ${dayPrograms.length} programmi che toccano questa giornata`);
+            
+            const uniquePrograms = this.removeDuplicatePrograms(dayPrograms);
+            this.app.addLog(`  Dopo rimozione duplicati: ${uniquePrograms.length} programmi`);
+            
+            this.checkForOverlaps(uniquePrograms);
+            
+            const adjustedPrograms = this.adjustProgramsForDay(uniquePrograms, targetStart, targetEnd);
+            const filledPrograms = this.fillGapsInDay(adjustedPrograms, targetStart, targetEnd, channel);
+            
+            const totalMinutes = filledPrograms.reduce((sum, p) => sum + (p.duration / 60), 0);
+            this.app.addLog(`  ✅ Copertura totale: ${totalMinutes.toFixed(0)} minuti (su 1440 attesi)`);
+            
+            return filledPrograms;
+        }
+        
+        adjustProgramsForDay(programs, targetStart, targetEnd) {
+            const adjusted = [];
+            
+            for (const program of programs) {
+                const adjustedProgram = { ...program };
+                
+                if (program.startTime < targetStart) {
+                    adjustedProgram.startTime = new Date(targetStart);
+                    adjustedProgram.wasAdjustedStart = true;
+                    this.app.addLog(`  Adattato inizio di "${program.title}" da ${program.startTime.toLocaleTimeString('it-IT')} a 00:00:00`);
+                }
+                
+                if (program.endTime > targetEnd) {
+                    adjustedProgram.endTime = new Date(targetEnd);
+                    adjustedProgram.endTime.setSeconds(59);
+                    adjustedProgram.wasAdjustedEnd = true;
+                    this.app.addLog(`  Adattato fine di "${program.title}" da ${program.endTime.toLocaleTimeString('it-IT')} a 23:59:59`);
+                }
+                
+                adjustedProgram.duration = Math.floor((adjustedProgram.endTime - adjustedProgram.startTime) / 1000);
+                
+                if (adjustedProgram.duration > 0) {
+                    adjusted.push(adjustedProgram);
+                }
+            }
+            
+            return adjusted.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+        }
+        
+        fillGapsInDay(programs, targetStart, targetEnd, channel) {
+            if (programs.length === 0) {
+                this.app.addLog(`  ⚠️ Nessun programma trovato - creo filler per l'intera giornata`);
+                return [this.createFillerProgram(targetStart, targetEnd, channel, true)];
+            }
+            
+            const filled = [];
+            let currentTime = new Date(targetStart);
+            
+            for (const program of programs) {
+                if (program.startTime > currentTime) {
+                    const gapMinutes = (program.startTime - currentTime) / (1000 * 60);
+                    this.app.addLog(`  ⚠️ Buco di ${gapMinutes.toFixed(0)} minuti prima di "${program.title}"`);
+                    filled.push(this.createFillerProgram(currentTime, program.startTime, channel, false));
+                }
+                
+                filled.push(program);
+                currentTime = new Date(program.endTime);
+            }
+            
+            if (currentTime < targetEnd) {
+                const gapMinutes = (targetEnd - currentTime) / (1000 * 60);
+                this.app.addLog(`  ⚠️ Buco di ${gapMinutes.toFixed(0)} minuti alla fine della giornata`);
+                
+                const fillerEnd = new Date(targetEnd);
+                fillerEnd.setSeconds(59);
+                filled.push(this.createFillerProgram(currentTime, fillerEnd, channel, false));
+            }
+            
+            return filled;
+        }
+        
+        createFillerProgram(startTime, endTime, channel, isFullDay) {
+            const title = isFullDay ? "Programmazione" : "Programmazione notturna";
+            return {
+                startTime: new Date(startTime),
+                endTime: new Date(endTime),
+                title: title,
+                programId: channel === 'classcnbc' ? (isFullDay ? "FILLER_DAY" : "FILLER_NIGHT") : undefined,
+                description: title,
+                duration: (endTime - startTime) / 1000,
+                category: channel === 'tvmoda' ? 'Fashion' : 'Informazione',
+                format: title,
+                isFiller: true
+            };
+        }
+        
+        generateProgrammeXML(program, channelId, timezoneOffset, channel) {
+            let xml = `  <programme start="${this.formatXMLTVDate(program.startTime, timezoneOffset)}" stop="${this.formatXMLTVDate(program.endTime, timezoneOffset)}" channel="${channelId}">\n`;
+            
+            if (program.programId) {
+                xml += `    <episode-num system="assetID">${this.escapeXml(program.programId)}</episode-num>\n`;
+            }
+            
+            xml += `    <title lang="it">${this.escapeXml(program.title)}</title>\n`;
+            
+            const description = this.getDescription(program);
+            if (description) {
+                xml += `    <desc lang="it">${this.escapeXml(description)}</desc>\n`;
+            }
+            
+            xml += `    <length units="seconds">${program.duration}</length>\n`;
+            
+            const rating = this.getRating(program);
+            xml += `    <rating system="Italy Parental Rating">\n`;
+            xml += `      <value>${rating}</value>\n`;
+            xml += `    </rating>\n`;
+            
+            if (program.category) {
+                const mappedCategory = this.app.config.categoryMapping[program.category] || program.category;
+                xml += `    <category lang="it">${this.escapeXml(mappedCategory)}</category>\n`;
+            }
+            
+            const formatIcon = this.getIconForFormat(program.format, channel);
+            xml += `    <icon src="${this.escapeXml(formatIcon)}" width="1920" height="1080"></icon>\n`;
+            xml += `  </programme>\n\n`;
+            
+            return xml;
+        }
+        
+        parseTime(timeObj, baseDate) {
+            let programTime;
+            
+            try {
+                if (timeObj instanceof Date || Object.prototype.toString.call(timeObj) === '[object Date]') {
+                    programTime = new Date(baseDate);
+                    programTime.setHours(timeObj.getHours(), timeObj.getMinutes(), timeObj.getSeconds() || 0, 0);
+                } else if (typeof timeObj === 'string') {
+                    const tempDate = new Date(timeObj);
+                    if (!isNaN(tempDate.getTime())) {
+                        programTime = new Date(baseDate);
+                        programTime.setHours(tempDate.getHours(), tempDate.getMinutes(), 0, 0);
+                    }
+                }
+            } catch (e) {
+                return null;
+            }
+            
+            return programTime;
+        }
+        
+        removeDuplicatePrograms(programs) {
+            const seen = new Map();
+            const unique = [];
+            
+            for (const program of programs) {
+                const key = `${program.startTime.getTime()}_${program.title}`;
+                
+                if (!seen.has(key)) {
+                    seen.set(key, true);
+                    unique.push(program);
+                } else {
+                    this.app.addLog(`  ⚠️ Duplicato rimosso: "${program.title}" alle ${program.startTime.toLocaleTimeString('it-IT')}`);
+                }
+            }
+            
+            return unique.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+        }
+        
+        checkForOverlaps(programs) {
+            for (let i = 0; i < programs.length - 1; i++) {
+                const current = programs[i];
+                const next = programs[i + 1];
+                
+                if (current.endTime > next.startTime) {
+                    const overlapMinutes = (current.endTime - next.startTime) / (1000 * 60);
+                    this.app.addLog(`  ⚠️ SOVRAPPOSIZIONE: "${current.title}" finisce alle ${current.endTime.toLocaleTimeString('it-IT')} ma "${next.title}" inizia alle ${next.startTime.toLocaleTimeString('it-IT')} (${overlapMinutes.toFixed(1)} minuti di sovrapposizione)`);
+                    
+                    current.endTime = new Date(next.startTime);
+                    current.duration = Math.floor((current.endTime - current.startTime) / 1000);
+                    this.app.addLog(`  ✅ Auto-fix: aggiustata fine di "${current.title}" alle ${current.endTime.toLocaleTimeString('it-IT')}`);
+                }
+            }
+        }
+        
+        parseDate(dateObj) {
+            try {
+                let date = dateObj;
+                if (typeof dateObj === 'string') {
+                    date = new Date(dateObj);
+                }
+                
+                if (date instanceof Date && !isNaN(date.getTime())) {
+                    return date;
+                }
+            } catch (e) {
+                return null;
+            }
+            return null;
+        }
+        
+        parseDuration(duration) {
+            let durationMinutes = 30;
+            
+            if (duration) {
+                if (duration instanceof Date || Object.prototype.toString.call(duration) === '[object Date]') {
+                    durationMinutes = duration.getHours() * 60 + duration.getMinutes();
+                } else if (typeof duration === 'string') {
+                    const colonMatch = duration.match(/(\d+):(\d+)(?::(\d+))?/);
+                    if (colonMatch) {
+                        const hours = parseInt(colonMatch[1]) || 0;
+                        const minutes = parseInt(colonMatch[2]) || 0;
+                        durationMinutes = hours * 60 + minutes;
+                    } else if (/^\d+$/.test(duration)) {
+                        durationMinutes = parseInt(duration);
+                    }
+                }
+            }
+            
+            return durationMinutes;
+        }
+        
+        calculateDurations(programs, fillGaps) {
+            if (!fillGaps || programs.length < 2) {
+                programs.forEach(program => {
+                    if (!program.endTime) {
+                        program.endTime = new Date(program.startTime.getTime() + 30 * 60 * 1000);
+                        program.duration = 30 * 60;
+                    }
+                });
+                return;
+            }
+            
+            this.app.addLog('\nApplico gap filling...');
+            
+            for (let i = 0; i < programs.length; i++) {
+                const currentProgram = programs[i];
+                let endTime;
+                
+                if (i + 1 < programs.length) {
+                    const nextProgram = programs[i + 1];
+                    const currentDay = currentProgram.startTime.toDateString();
+                    const nextDay = nextProgram.startTime.toDateString();
+                    
+                    if (currentDay === nextDay) {
+                        endTime = new Date(nextProgram.startTime);
+                    } else {
+                        endTime = new Date(currentProgram.startTime);
+                        endTime.setMinutes(endTime.getMinutes() + 30);
+                    }
+                } else {
+                    endTime = new Date(currentProgram.startTime);
+                    endTime.setMinutes(endTime.getMinutes() + 30);
+                }
+                
+                currentProgram.endTime = endTime;
+                currentProgram.duration = Math.max(60, Math.floor((endTime - currentProgram.startTime) / 1000));
+            }
+        }
+        
+        getTargetDates(dateRange, workbook, weekdayMap) {
+            const today = new Date();
+            const targetDates = [];
+            
+            if (dateRange === 'today') {
+                targetDates.push(today);
+            } else if (dateRange === 'tomorrow') {
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                targetDates.push(tomorrow);
+            } else if (dateRange === 'week') {
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    targetDates.push(date);
+                }
+            } else {
+                for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
+                    for (const sheetName of Object.keys(weekdayMap)) {
+                        if (workbook && workbook.Sheets[sheetName]) {
+                            const targetWeekday = weekdayMap[sheetName];
+                            const date = new Date(today);
+                            const daysUntilTarget = (targetWeekday - today.getDay() + 7) % 7;
+                            date.setDate(today.getDate() + daysUntilTarget + (weekOffset * 7));
+                            targetDates.push(date);
+                        }
+                    }
+                }
+            }
+            
+            return targetDates;
+        }
+        
+        getExtendedDatesForRange(dateRange) {
+            const today = new Date();
+            const dates = new Set();
+            
+            if (dateRange === 'today' || dateRange === 'tomorrow' || dateRange === 'week') {
+                const targetDates = this.getOutputTargetDates(dateRange);
+                for (const date of targetDates) {
+                    const dayBefore = new Date(date);
+                    dayBefore.setDate(date.getDate() - 1);
+                    dates.add(this.formatDateString(dayBefore));
+                    dates.add(this.formatDateString(date));
+                    const dayAfter = new Date(date);
+                    dayAfter.setDate(date.getDate() + 1);
+                    dates.add(this.formatDateString(dayAfter));
+                }
+            }
+            
+            return dates;
+        }
+        
+        getOutputTargetDates(dateRange) {
+            const today = new Date();
+            const dates = [];
+            
+            if (dateRange === 'today') {
+                dates.push(today);
+            } else if (dateRange === 'tomorrow') {
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                dates.push(tomorrow);
+            } else if (dateRange === 'week') {
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    dates.push(date);
+                }
+            } else {
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    dates.push(date);
+                }
+            }
+            
+            return dates;
+        }
+        
+        formatDateString(date) {
+            return date.getFullYear() + '-' +
+                String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                String(date.getDate()).padStart(2, '0');
+        }
+        
+        isProgramInDateRange(program, extendedDates) {
+            if (extendedDates.size === 0) return true;
+            
+            const programDateStr = this.formatDateString(program.startTime);
+            return extendedDates.has(programDateStr);
+        }
+        
+        getDescription(program) {
+            if (program.longDesc && program.longDesc !== program.title && program.longDesc.trim() !== '') {
+                return program.longDesc;
+            } else if (program.shortDesc && program.shortDesc !== program.title && program.shortDesc.trim() !== '') {
+                return program.shortDesc;
+            } else if (program.description && program.description.trim() !== '') {
+                return program.description;
+            } else if (program.isFiller) {
+                return program.description || program.title;
+            }
+            return null;
+        }
+        
+        getRating(program) {
+            if (program.rating && program.rating !== 'U' && program.rating.trim() !== '') {
+                return this.app.config.ratingMapping[program.rating] || '0';
+            }
+            return '0';
+        }
+    }
+    
+    // Initialize application
+    const app = new ModernEPGConverter();
+    
+    </script>
+</body>
+</html>
