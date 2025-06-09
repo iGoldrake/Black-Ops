@@ -3,104 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v3.0 - Circular Sequential Timeline</title>
+    <title>XMLTV Viewer v4.0 - Treemap Sequential Timeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
-        /* Circular Timeline Styles */
-        .circular-timeline {
+        /* Treemap Timeline Styles */
+        .treemap-container {
             position: relative;
             width: 100%;
-            max-width: 700px;
+            max-width: 800px;
             margin: 0 auto;
             aspect-ratio: 1;
-        }
-
-        .clock-face {
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: radial-gradient(circle at center, 
-                rgba(255, 255, 255, 0.95) 0%, 
-                rgba(248, 250, 252, 0.95) 100%);
+            background: #f8fafc;
+            border-radius: 16px;
+            overflow: hidden;
             box-shadow: 
                 inset 0 0 40px rgba(0, 0, 0, 0.05),
                 0 20px 60px rgba(0, 0, 0, 0.1);
         }
 
-        .clock-center {
+        .treemap-program {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 24px;
-            height: 24px;
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .hour-mark {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            width: 2px;
-            height: 20px;
-            background: #94a3b8;
-            transform-origin: center 340px;
-        }
-
-        .hour-mark.major {
-            width: 4px;
-            height: 30px;
-            background: #475569;
-        }
-
-        .hour-number {
-            position: absolute;
-            font-weight: 700;
-            font-size: 16px;
-            color: #334155;
-            transform: translate(-50%, -50%);
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
-        }
-
-        .program-arc {
-            fill: none;
-            stroke-width: 50;
-            stroke-linecap: butt;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid white;
             cursor: pointer;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
         }
 
-        .program-arc:hover {
-            stroke-width: 60;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+        .treemap-program:hover {
+            transform: scale(1.05);
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
-        .time-hand {
+        .treemap-icon {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             position: absolute;
-            background: linear-gradient(to top, #ef4444 0%, #dc2626 100%);
-            transform-origin: bottom center;
-            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            top: 0;
+            left: 0;
+        }
+
+        .treemap-label {
+            position: relative;
+            z-index: 2;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            padding: 4px;
+            background: rgba(0, 0, 0, 0.7);
             border-radius: 4px;
+            font-size: clamp(10px, 1.5vw, 14px);
+            max-width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            backdrop-filter: blur(4px);
         }
 
-        .hour-hand {
-            width: 8px;
-            height: 120px;
-            bottom: 50%;
-            left: calc(50% - 4px);
-        }
-
-        .minute-hand {
-            width: 6px;
-            height: 160px;
-            bottom: 50%;
-            left: calc(50% - 3px);
+        .treemap-gap {
+            position: absolute;
+            background-image: repeating-linear-gradient(
+                45deg,
+                #ef4444,
+                #ef4444 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            opacity: 0.3;
+            border: 2px dashed #dc2626;
+            border-radius: 8px;
         }
 
         /* Program preview tooltip */
@@ -173,42 +150,27 @@
             }
         }
 
-        @keyframes rotateIn {
+        @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: rotate(-180deg) scale(0.5);
+                transform: scale(0.8);
             }
             to {
                 opacity: 1;
-                transform: rotate(0) scale(1);
+                transform: scale(1);
             }
         }
 
-        .program-arc.new {
-            animation: rotateIn 0.6s ease-out;
+        .treemap-program.new {
+            animation: fadeIn 0.6s ease-out;
         }
 
         /* Dark mode support */
-        .dark .clock-face {
-            background: radial-gradient(circle at center, 
-                rgba(30, 41, 59, 0.95) 0%, 
-                rgba(15, 23, 42, 0.95) 100%);
+        .dark .treemap-container {
+            background: #1e293b;
             box-shadow: 
                 inset 0 0 40px rgba(0, 0, 0, 0.3),
                 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        .dark .hour-number {
-            color: #e2e8f0;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-        }
-
-        .dark .hour-mark {
-            background: #64748b;
-        }
-
-        .dark .hour-mark.major {
-            background: #94a3b8;
         }
 
         .dark .stat-card {
@@ -311,16 +273,6 @@
             flex-shrink: 0;
         }
 
-        /* Gap indicator on timeline */
-        .gap-arc {
-            fill: none;
-            stroke: #ef4444;
-            stroke-width: 50;
-            stroke-dasharray: 5, 5;
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
         /* Loading state */
         .loading {
             display: inline-block;
@@ -335,6 +287,62 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Treemap layout algorithms */
+        .layout-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .layout-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            background: white;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .layout-btn:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .layout-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        /* Fill percentage indicator */
+        .fill-indicator {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            backdrop-filter: blur(8px);
+            z-index: 10;
+        }
+
+        .fill-indicator.complete {
+            background: rgba(34, 197, 94, 0.9);
+        }
+
+        .fill-indicator.warning {
+            background: rgba(245, 158, 11, 0.9);
+        }
+
+        .fill-indicator.error {
+            background: rgba(239, 68, 68, 0.9);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen">
@@ -345,9 +353,9 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v3.0
+                        XMLTV Viewer v4.0
                     </h1>
-                    <p class="text-gray-600 mt-2">Timeline Circolare Sequenziale - Modalità UTC</p>
+                    <p class="text-gray-600 mt-2">Treemap Sequenziale - Modalità UTC</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Dark Mode">
@@ -445,63 +453,26 @@
                 </div>
             </div>
 
-            <!-- Circular Timeline -->
+            <!-- Treemap Timeline -->
             <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
                 <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
                     <span class="flex items-center gap-2">
-                        <i data-lucide="clock" class="w-6 h-6 text-blue-600"></i>
-                        Timeline Circolare Sequenziale
+                        <i data-lucide="grid-3x3" class="w-6 h-6 text-blue-600"></i>
+                        Treemap Sequenziale
                     </span>
-                    <span class="text-sm font-normal text-gray-600">
-                        Visualizzazione basata su durata (86.400 secondi = 24h)
-                    </span>
+                    <div class="layout-selector">
+                        <span class="text-sm font-normal text-gray-600 mr-3">Layout:</span>
+                        <button class="layout-btn active" onclick="setLayout('squarify')" data-layout="squarify">Squarify</button>
+                        <button class="layout-btn" onclick="setLayout('binary')" data-layout="binary">Binary</button>
+                        <button class="layout-btn" onclick="setLayout('slice')" data-layout="slice">Slice & Dice</button>
+                    </div>
                 </h3>
                 
-                <div class="circular-timeline" id="circularTimeline">
-                    <svg width="100%" height="100%" viewBox="0 0 700 700">
-                        <defs>
-                            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/>
-                            </filter>
-                            <filter id="glow">
-                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                                <feMerge>
-                                    <feMergeNode in="coloredBlur"/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                            </filter>
-                        </defs>
-                        
-                        <!-- Clock face background -->
-                        <circle cx="350" cy="350" r="340" fill="url(#clockFaceGradient)" stroke="#e5e7eb" stroke-width="2" filter="url(#shadow)"/>
-                        <defs>
-                            <radialGradient id="clockFaceGradient">
-                                <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95"/>
-                                <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:0.95"/>
-                            </radialGradient>
-                        </defs>
-                        
-                        <g id="clockMarks">
-                            <!-- Hour marks will be added here -->
-                        </g>
-                        
-                        <g id="programArcs">
-                            <!-- Program arcs will be added here -->
-                        </g>
-                        
-                        <g id="clockHands">
-                            <!-- Clock hands will be added here -->
-                        </g>
-                        
-                        <!-- Center cap -->
-                        <circle cx="350" cy="350" r="12" fill="url(#centerGradient)" filter="url(#shadow)"/>
-                        <defs>
-                            <linearGradient id="centerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#1e293b"/>
-                                <stop offset="100%" style="stop-color:#334155"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
+                <div class="treemap-container" id="treemapContainer">
+                    <div class="fill-indicator" id="fillIndicator">
+                        <span id="fillPercent">0%</span> riempito
+                    </div>
+                    <!-- Treemap elements will be added here -->
                 </div>
                 
                 <!-- Format Legend -->
@@ -634,6 +605,10 @@
                     <span class="text-gray-400">Posizione:</span>
                     <span class="font-semibold" id="previewPosition"></span>
                 </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Area:</span>
+                    <span class="font-semibold" id="previewArea"></span>
+                </div>
             </div>
             <p class="text-xs text-gray-400 mt-4 italic" id="previewDesc"></p>
         </div>
@@ -646,8 +621,8 @@
         });
 
         // Version
-        const APP_VERSION = '3.0';
-        console.log(`XMLTV Viewer v${APP_VERSION} - Circular Sequential Timeline`);
+        const APP_VERSION = '4.0';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Treemap Sequential Timeline`);
 
         // Global state
         let xmlDoc = null;
@@ -659,6 +634,7 @@
         let colorIndex = 0;
         let currentPreviewTimeout = null;
         let totalDaySeconds = 86400; // 24 hours in seconds
+        let currentLayout = 'squarify'; // Layout algorithm
 
         // Modern color palette
         const colorPalette = [
@@ -906,8 +882,8 @@
             
             document.getElementById('programCount').textContent = dayPrograms.length;
             
-            // Draw circular timeline
-            drawCircularTimeline(dayPrograms);
+            // Draw treemap
+            drawTreemap(dayPrograms);
             
             // Update table
             updateProgramTable(dayPrograms);
@@ -922,67 +898,18 @@
             updateFormatLegend(dayPrograms);
         }
 
-        function drawCircularTimeline(programs) {
-            const svg = document.querySelector('#circularTimeline svg');
-            const clockMarks = svg.getElementById('clockMarks');
-            const programArcs = svg.getElementById('programArcs');
-            const clockHands = svg.getElementById('clockHands');
+        function drawTreemap(programs) {
+            const container = document.getElementById('treemapContainer');
             
-            // Clear existing content
-            clockMarks.innerHTML = '';
-            programArcs.innerHTML = '';
-            clockHands.innerHTML = '';
+            // Clear existing content (except fill indicator)
+            const fillIndicator = document.getElementById('fillIndicator');
+            container.innerHTML = '';
+            container.appendChild(fillIndicator);
             
-            const centerX = 350;
-            const centerY = 350;
-            const radius = 340;
-            const innerRadius = 200;
+            const containerWidth = 800;
+            const containerHeight = 800;
             
-            // Draw hour marks and numbers
-            for (let hour = 0; hour < 24; hour++) {
-                const angle = (hour * 15) - 90; // 15 degrees per hour
-                const radian = angle * Math.PI / 180;
-                
-                // Hour marks
-                const markLength = hour % 6 === 0 ? 30 : hour % 3 === 0 ? 20 : 10;
-                const markStart = radius - markLength;
-                
-                const x1 = centerX + markStart * Math.cos(radian);
-                const y1 = centerY + markStart * Math.sin(radian);
-                const x2 = centerX + radius * Math.cos(radian);
-                const y2 = centerY + radius * Math.sin(radian);
-                
-                const mark = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                mark.setAttribute('x1', x1);
-                mark.setAttribute('y1', y1);
-                mark.setAttribute('x2', x2);
-                mark.setAttribute('y2', y2);
-                mark.setAttribute('stroke', hour % 6 === 0 ? '#475569' : '#94a3b8');
-                mark.setAttribute('stroke-width', hour % 6 === 0 ? '4' : hour % 3 === 0 ? '2' : '1');
-                mark.setAttribute('stroke-linecap', 'round');
-                clockMarks.appendChild(mark);
-                
-                // Hour numbers (every 3 hours)
-                if (hour % 3 === 0) {
-                    const textRadius = radius - 45;
-                    const textX = centerX + textRadius * Math.cos(radian);
-                    const textY = centerY + textRadius * Math.sin(radian);
-                    
-                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('x', textX);
-                    text.setAttribute('y', textY);
-                    text.setAttribute('text-anchor', 'middle');
-                    text.setAttribute('dominant-baseline', 'middle');
-                    text.setAttribute('font-size', '20');
-                    text.setAttribute('font-weight', '700');
-                    text.setAttribute('fill', '#334155');
-                    text.setAttribute('class', 'hour-number');
-                    text.textContent = hour.toString().padStart(2, '0');
-                    clockMarks.appendChild(text);
-                }
-            }
-            
-            // Calculate sequential positions
+            // Calculate total used seconds
             let currentSecond = 0;
             const programsWithPosition = [];
             
@@ -994,138 +921,328 @@
                     ...program,
                     sequentialStart: startSecond,
                     sequentialEnd: endSecond,
+                    value: program.duration,
                     index
                 });
                 
                 currentSecond = endSecond;
             });
             
-            // Draw programs as arcs
-            programsWithPosition.forEach((program) => {
-                const startAngle = (program.sequentialStart / totalDaySeconds * 360) - 90;
-                const endAngle = (program.sequentialEnd / totalDaySeconds * 360) - 90;
-                
-                // Create arc path
-                const path = createArcPath(centerX, centerY, innerRadius, radius - 40, startAngle, endAngle);
-                
-                const programPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                programPath.setAttribute('d', path);
-                programPath.setAttribute('fill', formatColors[program.title]);
-                programPath.setAttribute('stroke', 'white');
-                programPath.setAttribute('stroke-width', '3');
-                programPath.setAttribute('class', 'program-arc');
-                programPath.style.filter = 'url(#shadow)';
-                
-                // Event handlers
-                programPath.onclick = () => showProgramDetails(program);
-                programPath.onmouseenter = (e) => showProgramPreview(e, program);
-                programPath.onmouseleave = hideProgramPreview;
-                
-                programArcs.appendChild(programPath);
-                
-                // Add label if space allows
-                const arcLength = Math.abs(endAngle - startAngle);
-                if (arcLength > 10) {
-                    const midAngle = (startAngle + endAngle) / 2;
-                    const labelRadius = (innerRadius + radius - 40) / 2;
-                    const radian = midAngle * Math.PI / 180;
-                    
-                    const labelX = centerX + labelRadius * Math.cos(radian);
-                    const labelY = centerY + labelRadius * Math.sin(radian);
-                    
-                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    label.setAttribute('x', labelX);
-                    label.setAttribute('y', labelY);
-                    label.setAttribute('text-anchor', 'middle');
-                    label.setAttribute('dominant-baseline', 'middle');
-                    label.setAttribute('font-size', '14');
-                    label.setAttribute('font-weight', '600');
-                    label.setAttribute('fill', 'white');
-                    label.setAttribute('pointer-events', 'none');
-                    label.style.textShadow = '0 1px 2px rgba(0,0,0,0.5)';
-                    
-                    const title = program.title.length > 20 ? 
-                        program.title.substring(0, 20) + '...' : program.title;
-                    label.textContent = title;
-                    
-                    // Rotate text to follow arc
-                    const rotation = midAngle > 90 && midAngle < 270 ? midAngle + 180 : midAngle;
-                    label.setAttribute('transform', `rotate(${rotation} ${labelX} ${labelY})`);
-                    
-                    programArcs.appendChild(label);
-                }
-            });
+            // Update fill indicator
+            const fillPercent = (currentSecond / totalDaySeconds) * 100;
+            document.getElementById('fillPercent').textContent = `${fillPercent.toFixed(1)}%`;
             
-            // Draw gaps
-            if (currentSecond < totalDaySeconds) {
-                const gapStartAngle = (currentSecond / totalDaySeconds * 360) - 90;
-                const gapEndAngle = 270; // Full circle
-                
-                const gapPath = createArcPath(centerX, centerY, innerRadius, radius - 40, gapStartAngle, gapEndAngle);
-                
-                const gap = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                gap.setAttribute('d', gapPath);
-                gap.setAttribute('class', 'gap-arc');
-                programArcs.appendChild(gap);
+            if (fillPercent >= 100) {
+                fillIndicator.className = 'fill-indicator complete';
+            } else if (fillPercent >= 80) {
+                fillIndicator.className = 'fill-indicator warning';
+            } else {
+                fillIndicator.className = 'fill-indicator error';
             }
             
-            // Add current time hands
-            const now = new Date();
-            const currentHour = now.getUTCHours() + now.getUTCMinutes() / 60;
-            const hourAngle = (currentHour * 15) - 90;
-            const minuteAngle = ((now.getUTCMinutes() / 60) * 360) - 90;
+            // Calculate treemap layout
+            const root = {
+                x0: 0,
+                y0: 0,
+                x1: containerWidth,
+                y1: containerHeight,
+                value: totalDaySeconds,
+                children: programsWithPosition
+            };
             
-            // Hour hand
-            const hourHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            hourHand.setAttribute('x1', centerX);
-            hourHand.setAttribute('y1', centerY);
-            hourHand.setAttribute('x2', centerX + 120 * Math.cos(hourAngle * Math.PI / 180));
-            hourHand.setAttribute('y2', centerY + 120 * Math.sin(hourAngle * Math.PI / 180));
-            hourHand.setAttribute('stroke', 'url(#handGradient)');
-            hourHand.setAttribute('stroke-width', '8');
-            hourHand.setAttribute('stroke-linecap', 'round');
-            hourHand.setAttribute('filter', 'url(#shadow)');
-            clockHands.appendChild(hourHand);
+            // Apply treemap algorithm
+            if (currentLayout === 'squarify') {
+                squarify(root.children, root, totalDaySeconds);
+            } else if (currentLayout === 'binary') {
+                binary(root.children, root, totalDaySeconds);
+            } else if (currentLayout === 'slice') {
+                sliceDice(root.children, root, totalDaySeconds);
+            }
             
-            // Minute hand
-            const minuteHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            minuteHand.setAttribute('x1', centerX);
-            minuteHand.setAttribute('y1', centerY);
-            minuteHand.setAttribute('x2', centerX + 160 * Math.cos(minuteAngle * Math.PI / 180));
-            minuteHand.setAttribute('y2', centerY + 160 * Math.sin(minuteAngle * Math.PI / 180));
-            minuteHand.setAttribute('stroke', 'url(#handGradient)');
-            minuteHand.setAttribute('stroke-width', '6');
-            minuteHand.setAttribute('stroke-linecap', 'round');
-            minuteHand.setAttribute('filter', 'url(#shadow)');
-            clockHands.appendChild(minuteHand);
+            // Draw programs
+            programsWithPosition.forEach((program) => {
+                const div = document.createElement('div');
+                div.className = 'treemap-program new';
+                
+                const width = program.x1 - program.x0;
+                const height = program.y1 - program.y0;
+                
+                div.style.left = `${program.x0}px`;
+                div.style.top = `${program.y0}px`;
+                div.style.width = `${width}px`;
+                div.style.height = `${height}px`;
+                div.style.backgroundColor = formatColors[program.title];
+                
+                // Add icon if available and space allows
+                if (program.icon && width > 40 && height > 40) {
+                    const img = document.createElement('img');
+                    img.src = program.icon;
+                    img.className = 'treemap-icon';
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                    };
+                    div.appendChild(img);
+                }
+                
+                // Add label if space allows
+                if (width > 50 && height > 30) {
+                    const label = document.createElement('div');
+                    label.className = 'treemap-label';
+                    label.textContent = program.title;
+                    div.appendChild(label);
+                }
+                
+                // Event handlers
+                div.onclick = () => showProgramDetails(program);
+                div.onmouseenter = (e) => showProgramPreview(e, program, width * height);
+                div.onmouseleave = hideProgramPreview;
+                
+                container.appendChild(div);
+            });
             
-            // Add gradient for hands
-            const defs = svg.querySelector('defs');
-            const handGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-            handGradient.setAttribute('id', 'handGradient');
-            handGradient.innerHTML = `
-                <stop offset="0%" style="stop-color:#ef4444"/>
-                <stop offset="100%" style="stop-color:#dc2626"/>
-            `;
-            defs.appendChild(handGradient);
+            // Draw gap area if any
+            if (currentSecond < totalDaySeconds) {
+                const gapValue = totalDaySeconds - currentSecond;
+                const gapArea = (gapValue / totalDaySeconds) * containerWidth * containerHeight;
+                
+                // Simple placement for gap - fill remaining space
+                const div = document.createElement('div');
+                div.className = 'treemap-gap';
+                
+                // Calculate gap dimensions based on remaining area
+                const gapWidth = Math.sqrt(gapArea);
+                const gapHeight = gapArea / gapWidth;
+                
+                div.style.right = '0';
+                div.style.bottom = '0';
+                div.style.width = `${gapWidth}px`;
+                div.style.height = `${gapHeight}px`;
+                
+                container.appendChild(div);
+            }
         }
 
-        function createArcPath(cx, cy, innerRadius, outerRadius, startAngle, endAngle) {
-            const startRad = startAngle * Math.PI / 180;
-            const endRad = endAngle * Math.PI / 180;
+        // Treemap layout algorithms
+        function squarify(children, parent, totalValue) {
+            const area = (parent.x1 - parent.x0) * (parent.y1 - parent.y0);
             
-            const x1 = cx + innerRadius * Math.cos(startRad);
-            const y1 = cy + innerRadius * Math.sin(startRad);
-            const x2 = cx + outerRadius * Math.cos(startRad);
-            const y2 = cy + outerRadius * Math.sin(startRad);
-            const x3 = cx + outerRadius * Math.cos(endRad);
-            const y3 = cy + outerRadius * Math.sin(endRad);
-            const x4 = cx + innerRadius * Math.cos(endRad);
-            const y4 = cy + innerRadius * Math.sin(endRad);
+            children.forEach((child) => {
+                const childArea = (child.value / totalValue) * area;
+                child.area = childArea;
+            });
             
-            const largeArc = Math.abs(endAngle - startAngle) > 180 ? 1 : 0;
+            squarifyRecursive(children, parent.x0, parent.y0, parent.x1, parent.y1);
+        }
+
+        function squarifyRecursive(children, x0, y0, x1, y1) {
+            if (children.length === 0) return;
             
-            return `M ${x1} ${y1} L ${x2} ${y2} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x3} ${y3} L ${x4} ${y4} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1} ${y1} Z`;
+            const totalArea = (x1 - x0) * (y1 - y0);
+            const totalValue = children.reduce((sum, child) => sum + child.area, 0);
+            
+            if (children.length === 1) {
+                const child = children[0];
+                child.x0 = x0;
+                child.y0 = y0;
+                child.x1 = x1;
+                child.y1 = y1;
+                return;
+            }
+            
+            const width = x1 - x0;
+            const height = y1 - y0;
+            const vertical = width <= height;
+            
+            let accumulatedArea = 0;
+            let i = 0;
+            
+            while (i < children.length) {
+                const child = children[i];
+                accumulatedArea += child.area;
+                
+                const ratio = accumulatedArea / totalArea;
+                
+                if (vertical) {
+                    const splitY = y0 + ratio * height;
+                    
+                    if (i === children.length - 1 || wouldImproveRatio(children, i + 1, width, splitY - y0)) {
+                        // Place children 0 to i
+                        layoutRow(children.slice(0, i + 1), x0, y0, x1, splitY, true);
+                        
+                        // Recursively layout remaining children
+                        if (i < children.length - 1) {
+                            squarifyRecursive(children.slice(i + 1), x0, splitY, x1, y1);
+                        }
+                        break;
+                    }
+                } else {
+                    const splitX = x0 + ratio * width;
+                    
+                    if (i === children.length - 1 || wouldImproveRatio(children, i + 1, splitX - x0, height)) {
+                        // Place children 0 to i
+                        layoutRow(children.slice(0, i + 1), x0, y0, splitX, y1, false);
+                        
+                        // Recursively layout remaining children
+                        if (i < children.length - 1) {
+                            squarifyRecursive(children.slice(i + 1), splitX, y0, x1, y1);
+                        }
+                        break;
+                    }
+                }
+                
+                i++;
+            }
+        }
+
+        function wouldImproveRatio(children, nextIndex, width, height) {
+            if (nextIndex >= children.length) return false;
+            
+            const currentRatio = Math.max(width / height, height / width);
+            const nextArea = children[nextIndex].area;
+            const newHeight = height * (1 + nextArea / (width * height));
+            const newRatio = Math.max(width / newHeight, newHeight / width);
+            
+            return newRatio < currentRatio;
+        }
+
+        function layoutRow(children, x0, y0, x1, y1, vertical) {
+            const totalArea = children.reduce((sum, child) => sum + child.area, 0);
+            
+            if (vertical) {
+                const width = x1 - x0;
+                let currentX = x0;
+                
+                children.forEach(child => {
+                    const childWidth = (child.area / totalArea) * width;
+                    child.x0 = currentX;
+                    child.y0 = y0;
+                    child.x1 = currentX + childWidth;
+                    child.y1 = y1;
+                    currentX += childWidth;
+                });
+            } else {
+                const height = y1 - y0;
+                let currentY = y0;
+                
+                children.forEach(child => {
+                    const childHeight = (child.area / totalArea) * height;
+                    child.x0 = x0;
+                    child.y0 = currentY;
+                    child.x1 = x1;
+                    child.y1 = currentY + childHeight;
+                    currentY += childHeight;
+                });
+            }
+        }
+
+        function binary(children, parent, totalValue) {
+            binaryRecursive(children, parent.x0, parent.y0, parent.x1, parent.y1, totalValue);
+        }
+
+        function binaryRecursive(children, x0, y0, x1, y1, totalValue) {
+            if (children.length === 0) return;
+            
+            if (children.length === 1) {
+                const child = children[0];
+                child.x0 = x0;
+                child.y0 = y0;
+                child.x1 = x1;
+                child.y1 = y1;
+                return;
+            }
+            
+            const mid = Math.floor(children.length / 2);
+            const leftChildren = children.slice(0, mid);
+            const rightChildren = children.slice(mid);
+            
+            const leftValue = leftChildren.reduce((sum, child) => sum + child.value, 0);
+            const rightValue = rightChildren.reduce((sum, child) => sum + child.value, 0);
+            
+            const width = x1 - x0;
+            const height = y1 - y0;
+            
+            if (width > height) {
+                // Split vertically
+                const splitX = x0 + (leftValue / totalValue) * width;
+                binaryRecursive(leftChildren, x0, y0, splitX, y1, leftValue);
+                binaryRecursive(rightChildren, splitX, y0, x1, y1, rightValue);
+            } else {
+                // Split horizontally
+                const splitY = y0 + (leftValue / totalValue) * height;
+                binaryRecursive(leftChildren, x0, y0, x1, splitY, leftValue);
+                binaryRecursive(rightChildren, x0, splitY, x1, y1, rightValue);
+            }
+        }
+
+        function sliceDice(children, parent, totalValue) {
+            const width = parent.x1 - parent.x0;
+            const height = parent.y1 - parent.y0;
+            const area = width * height;
+            
+            let currentX = parent.x0;
+            let currentY = parent.y0;
+            let rowHeight = 0;
+            let rowChildren = [];
+            let rowValue = 0;
+            
+            children.forEach((child, index) => {
+                const childArea = (child.value / totalValue) * area;
+                const childWidth = Math.sqrt(childArea);
+                
+                if (currentX + childWidth > parent.x1 && rowChildren.length > 0) {
+                    // Layout current row
+                    layoutRowSlice(rowChildren, parent.x0, currentY, parent.x1, currentY + rowHeight);
+                    
+                    // Start new row
+                    currentY += rowHeight;
+                    currentX = parent.x0;
+                    rowHeight = 0;
+                    rowChildren = [];
+                    rowValue = 0;
+                }
+                
+                rowChildren.push(child);
+                rowValue += child.value;
+                rowHeight = Math.max(rowHeight, childArea / childWidth);
+                currentX += childWidth;
+            });
+            
+            // Layout last row
+            if (rowChildren.length > 0) {
+                layoutRowSlice(rowChildren, parent.x0, currentY, parent.x1, Math.min(parent.y1, currentY + rowHeight));
+            }
+        }
+
+        function layoutRowSlice(children, x0, y0, x1, y1) {
+            const totalValue = children.reduce((sum, child) => sum + child.value, 0);
+            const width = x1 - x0;
+            let currentX = x0;
+            
+            children.forEach(child => {
+                const childWidth = (child.value / totalValue) * width;
+                child.x0 = currentX;
+                child.y0 = y0;
+                child.x1 = Math.min(currentX + childWidth, x1);
+                child.y1 = y1;
+                currentX += childWidth;
+            });
+        }
+
+        function setLayout(layout) {
+            currentLayout = layout;
+            
+            // Update UI
+            document.querySelectorAll('.layout-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-layout="${layout}"]`).classList.add('active');
+            
+            // Redraw
+            if (currentPrograms.length > 0) {
+                loadPrograms();
+            }
+            
+            showToast(`Layout cambiato in ${layout}`, 'success');
         }
 
         function updateStatistics(programs) {
@@ -1180,7 +1297,7 @@
             });
         }
 
-        function showProgramPreview(event, program) {
+        function showProgramPreview(event, program, area) {
             if (currentPreviewTimeout) {
                 clearTimeout(currentPreviewTimeout);
             }
@@ -1197,6 +1314,11 @@
                 const dayPrograms = getCurrentDayPrograms();
                 const position = dayPrograms.findIndex(p => p === program) + 1;
                 document.getElementById('previewPosition').textContent = `${position}° di ${dayPrograms.length}`;
+                
+                // Show area percentage
+                const totalArea = 800 * 800;
+                const areaPercent = (area / totalArea) * 100;
+                document.getElementById('previewArea').textContent = `${areaPercent.toFixed(1)}% del quadrato`;
                 
                 document.getElementById('previewDesc').textContent = program.desc ? 
                     (program.desc.length > 150 ? program.desc.substring(0, 150) + '...' : program.desc) : 
@@ -1594,7 +1716,7 @@
             const a = document.createElement('a');
             a.href = url;
             const date = new Date().toISOString().split('T')[0];
-            a.download = `${currentChannelId}_sequential_${date}.xml`;
+            a.download = `${currentChannelId}_treemap_${date}.xml`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1660,34 +1782,11 @@
 
         // Show info
         function showInfo() {
-            alert(`XMLTV Viewer v${APP_VERSION}\n\nTimeline Circolare Sequenziale\n\nNuove Funzionalità v3.0:\n- Timeline SOLO circolare\n- Visualizzazione sequenziale basata su durata (non su orario)\n- Il cerchio rappresenta 86.400 secondi (24 ore)\n- Statistiche complete: copertura, gaps, format unici\n- Supporto palinsesti TV con programmazione 21:00-20:59\n- Auto-rilevamento giorno principale\n- Editor programmi migliorato\n- Gestione gaps visuale\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer v${APP_VERSION}\n\nTreemap Sequenziale\n\nNuove Funzionalità v4.0:\n- Visualizzazione TREEMAP: quadrato che rappresenta 86.400 secondi\n- Ogni programma è un rettangolo proporzionale alla durata\n- Icone format visibili nei rettangoli (quando disponibili)\n- 3 algoritmi di layout: Squarify, Binary, Slice & Dice\n- Indicatore di riempimento con codice colore\n- Gap visualizzati con pattern rosso tratteggiato\n- Tutte le funzionalità della v3.0 mantenute\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
 
-        // Auto-update clock hands every minute
-        setInterval(() => {
-            const hands = document.getElementById('clockHands');
-            if (hands && hands.children.length > 0) {
-                const now = new Date();
-                const currentHour = now.getUTCHours() + now.getUTCMinutes() / 60;
-                const hourAngle = (currentHour * 15) - 90;
-                const minuteAngle = ((now.getUTCMinutes() / 60) * 360) - 90;
-                
-                if (hands.children[0]) {
-                    hands.children[0].setAttribute('x2', 350 + 120 * Math.cos(hourAngle * Math.PI / 180));
-                    hands.children[0].setAttribute('y2', 350 + 120 * Math.sin(hourAngle * Math.PI / 180));
-                }
-                
-                if (hands.children[1]) {
-                    hands.children[1].setAttribute('x2', 350 + 160 * Math.cos(minuteAngle * Math.PI / 180));
-                    hands.children[1].setAttribute('y2', 350 + 160 * Math.sin(minuteAngle * Math.PI / 180));
-                }
-            }
-        }, 60000);
-
         // Initialize
-        console.log('XMLTV Viewer v3.0 - Circular Sequential Timeline ready!');
+        console.log('XMLTV Viewer v4.0 - Treemap Sequential Timeline ready!');
     </script>
 </body>
 </html>
-            
-            
