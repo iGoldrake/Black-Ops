@@ -854,20 +854,40 @@
         }
 
         function parseXMLTVDateUTC(dateStr) {
-            const year = parseInt(dateStr.substr(0, 4));
-            const month = parseInt(dateStr.substr(4, 2)) - 1;
-            const day = parseInt(dateStr.substr(6, 2));
-            const hour = parseInt(dateStr.substr(8, 2));
-            const minute = parseInt(dateStr.substr(10, 2));
-            const second = parseInt(dateStr.substr(12, 2));
-            
-            return new Date(Date.UTC(year, month, day, hour, minute, second));
+            // Check if it's ISO 8601 format (contains 'T')
+            if (dateStr.includes('T')) {
+                // ISO 8601 format: 2025-06-09T21:00:00+0000
+                // Remove timezone info and parse as UTC
+                const cleanDate = dateStr.replace(/[+-]\d{4}$/, '');
+                const [datePart, timePart] = cleanDate.split('T');
+                const [year, month, day] = datePart.split('-').map(Number);
+                const [hour, minute, second] = timePart.split(':').map(Number);
+                
+                return new Date(Date.UTC(year, month - 1, day, hour, minute, second || 0));
+            } else {
+                // Classic XMLTV format: YYYYMMDDHHmmss +0000
+                const year = parseInt(dateStr.substr(0, 4));
+                const month = parseInt(dateStr.substr(4, 2)) - 1;
+                const day = parseInt(dateStr.substr(6, 2));
+                const hour = parseInt(dateStr.substr(8, 2));
+                const minute = parseInt(dateStr.substr(10, 2));
+                const second = parseInt(dateStr.substr(12, 2));
+                
+                return new Date(Date.UTC(year, month, day, hour, minute, second));
+            }
         }
 
         function formatXMLTVDate(date) {
+            // Use ISO 8601 format for better compatibility
             const pad = (n) => String(n).padStart(2, '0');
-            return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}` +
-                   `${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())} +0000`;
+            const year = date.getUTCFullYear();
+            const month = pad(date.getUTCMonth() + 1);
+            const day = pad(date.getUTCDate());
+            const hours = pad(date.getUTCHours());
+            const minutes = pad(date.getUTCMinutes());
+            const seconds = pad(date.getUTCSeconds());
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
         }
 
         function loadPrograms() {
@@ -1670,4 +1690,4 @@
 </body>
 </html>
             
-            //
+            
