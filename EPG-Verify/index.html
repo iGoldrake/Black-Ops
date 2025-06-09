@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v4.1.0 - Treemap Sequential Timeline</title>
+    <title>XMLTV Viewer v4.1.1 - Treemap Sequential Timeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -38,17 +38,17 @@
 
         /* Glass morphism effects */
         .glass-morphism {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.7);
         }
 
         .glass-morphism-light {
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
         /* Animated background */
@@ -187,9 +187,9 @@
 
         /* Statistics Cards */
         .stat-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(229, 231, 235, 0.8);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
         }
@@ -564,7 +564,7 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600 dark:text-blue-400"></i>
-                        XMLTV Viewer v4.1.0
+                        XMLTV Viewer v4.1.1
                     </h1>
                     <p class="text-gray-600 dark:text-gray-400 mt-2">Treemap Sequenziale - Modalità UTC</p>
                 </div>
@@ -776,7 +776,7 @@
         <!-- Footer -->
         <footer class="footer">
             <p>
-                <strong>XMLTV Viewer v4.1.0</strong> | 
+                <strong>XMLTV Viewer v4.1.1</strong> | 
                 Sviluppato da <a href="https://www.telesia.it" target="_blank">Telesia S.p.A.</a> © 2025
             </p>
             <p class="mt-2 text-sm">
@@ -841,7 +841,7 @@
         });
 
         // Version
-        const APP_VERSION = '4.1.0';
+        const APP_VERSION = '4.1.1';
         console.log(`XMLTV Viewer v${APP_VERSION} - Treemap Sequential Timeline`);
         console.log('Developed by Telesia S.p.A. © 2025');
 
@@ -2132,7 +2132,12 @@ Developed by Telesia S.p.A. © 2025
 
 Treemap Aggregato per Format
 
-Nuove Funzionalità v4.1.0:
+Nuove Funzionalità v4.1.1:
+- Fix contrasti e leggibilità in modalità chiara
+- Migliorato sfondo delle card statistiche
+- Ottimizzati i colori per entrambi i temi
+
+Funzionalità v4.1.0:
 - Dark Mode completamente ridisegnata
 - Interfaccia glass morphism migliorata
 - Animazioni fluide e transizioni ottimizzate
@@ -2158,7 +2163,7 @@ Ottimizzato per Class CNBC e Class TV Moda`);
         }
 
         // Initialize
-        console.log('XMLTV Viewer v4.1.0 - Treemap Sequential Timeline ready!');
+        console.log('XMLTV Viewer v4.1.1 - Treemap Sequential Timeline ready!');
         console.log('© 2025 Telesia S.p.A. - All rights reserved');
     </script>
 </body>
