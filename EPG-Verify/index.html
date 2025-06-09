@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v4.0 - Treemap Sequential Timeline</title>
+    <title>XMLTV Viewer v4.0.1 - Treemap Sequential Timeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -353,7 +353,7 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v4.0
+                        XMLTV Viewer v4.0.1
                     </h1>
                     <p class="text-gray-600 mt-2">Treemap Sequenziale - Modalità UTC</p>
                 </div>
@@ -621,7 +621,7 @@
         });
 
         // Version
-        const APP_VERSION = '4.0';
+        const APP_VERSION = '4.0.1';
         console.log(`XMLTV Viewer v${APP_VERSION} - Treemap Sequential Timeline`);
 
         // Global state
@@ -866,6 +866,9 @@
             return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
         }
 
+        // Add global variable to store format groups
+        let formatGroups = {};
+
         function loadPrograms() {
             // Get programs for the schedule day (including evening programs from previous day)
             const dayStart = new Date(scheduleDate);
@@ -910,7 +913,7 @@
             const containerHeight = 800;
             
             // Group programs by format and calculate total duration per format
-            const formatGroups = {};
+            formatGroups = {};
             let totalUsedSeconds = 0;
             
             programs.forEach((program) => {
@@ -1421,10 +1424,10 @@
                 document.getElementById('previewCategory').textContent = formatNode.category || 'N/A';
                 
                 // Show format rank by duration
-                const allFormats = Object.values(formatColors).length;
-                const formatRank = Object.values(formatGroups)
-                    .sort((a, b) => b.totalDuration - a.totalDuration)
-                    .findIndex(f => f.title === formatNode.title) + 1;
+                const allFormats = Object.keys(formatGroups).length;
+                const sortedFormats = Object.values(formatGroups)
+                    .sort((a, b) => b.totalDuration - a.totalDuration);
+                const formatRank = sortedFormats.findIndex(f => f.title === formatNode.title) + 1;
                 
                 document.getElementById('previewPosition').textContent = `${formatRank}° su ${allFormats} format`;
                 
@@ -1466,9 +1469,6 @@
                 preview.classList.add('show');
             }, 300);
         }
-
-        // Add global variable to store format groups
-        let formatGroups = {};
 
         function hideProgramPreview() {
             if (currentPreviewTimeout) {
@@ -1903,11 +1903,11 @@
 
         // Show info
         function showInfo() {
-            alert(`XMLTV Viewer v${APP_VERSION}\n\nTreemap Aggregato per Format\n\nNuove Funzionalità v4.0:\n- Visualizzazione TREEMAP AGGREGATA: ogni format ha un unico rettangolo\n- L'area di ogni rettangolo è proporzionale al tempo totale del format\n- Mostra numero episodi, ore totali e percentuale per format\n- Icone format visibili nei rettangoli (quando disponibili)\n- 3 algoritmi di layout: Squarify, Binary, Slice & Dice\n- Indicatore di riempimento con codice colore\n- Gap visualizzati con pattern rosso tratteggiato\n- Click su un format mostra tutti gli episodi\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer v${APP_VERSION}\n\nTreemap Aggregato per Format\n\nNuove Funzionalità v4.0.1:\n- Fix calcolo posizione format nel preview\n\nFunzionalità v4.0:\n- Visualizzazione TREEMAP AGGREGATA: ogni format ha un unico rettangolo\n- L'area di ogni rettangolo è proporzionale al tempo totale del format\n- Mostra numero episodi, ore totali e percentuale per format\n- Icone format visibili nei rettangoli (quando disponibili)\n- 3 algoritmi di layout: Squarify, Binary, Slice & Dice\n- Indicatore di riempimento con codice colore\n- Gap visualizzati con pattern rosso tratteggiato\n- Click su un format mostra tutti gli episodi\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
 
         // Initialize
-        console.log('XMLTV Viewer v4.0 - Treemap Sequential Timeline ready!');
+        console.log('XMLTV Viewer v4.0.1 - Treemap Sequential Timeline ready!');
     </script>
 </body>
 </html>
