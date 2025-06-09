@@ -854,10 +854,14 @@
         .mt-4 { margin-top: 1rem; }
         .mb-4 { margin-bottom: 1rem; }
         .text-center { text-align: center; }
+        .text-right { text-align: right; }
         .text-sm { font-size: 0.875rem; }
         .text-xs { font-size: 0.75rem; }
         .font-semibold { font-weight: 600; }
         .opacity-50 { opacity: 0.5; }
+        .flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
         
         /* Animation Classes */
         .fade-in {
@@ -1027,6 +1031,16 @@
                     </div>
                     
                     <div id="file-info" class="hidden mt-4"></div>
+                    
+                    <!-- Navigation button -->
+                    <div class="mt-4 text-right hidden" id="step2-nav">
+                        <button class="btn btn-primary" onclick="app.navigateToStep(3)">
+                            Configura Opzioni
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Step 3: Configuration -->
@@ -1150,6 +1164,22 @@
                             </button>
                         </div>
                     </div>
+                    
+                    <!-- Navigation buttons -->
+                    <div class="mt-4 flex justify-between">
+                        <button class="btn btn-secondary" onclick="app.navigateToStep(2)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                            Indietro
+                        </button>
+                        <button class="btn btn-primary" onclick="app.navigateToStep(4)">
+                            Procedi alla Conversione
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Step 4: Convert & Download -->
@@ -1186,6 +1216,16 @@
                     <div id="status" class="mt-4"></div>
                     
                     <div id="downloadSection" class="hidden mt-4 text-center slide-up"></div>
+                    
+                    <!-- Navigation button -->
+                    <div class="mt-4 text-left">
+                        <button class="btn btn-secondary" onclick="app.navigateToStep(3)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                            Torna alle Opzioni
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Console -->
@@ -1382,11 +1422,17 @@
         }
         
         navigateToStep(step) {
+            // Validate if user can navigate to this step
+            if (step > this.currentStep && !this.canProceedToStep(step)) {
+                this.showStatus('Completa prima i passaggi precedenti', 'error');
+                return;
+            }
+            
             // Update sidebar
             document.querySelectorAll('.step-item').forEach((item, index) => {
                 const itemStep = index + 1;
                 item.classList.toggle('active', itemStep === step);
-                item.classList.toggle('completed', itemStep < this.currentStep);
+                item.classList.toggle('completed', itemStep < step);
             });
             
             // Update content
@@ -1398,6 +1444,24 @@
             const newContent = document.querySelector(`.step-content[data-step="${step}"]`);
             if (newContent) {
                 newContent.classList.add('fade-in');
+            }
+            
+            // Update current step if moving forward
+            if (step > this.currentStep) {
+                this.currentStep = step;
+            }
+        }
+        
+        canProceedToStep(step) {
+            switch(step) {
+                case 2:
+                    return this.currentChannel !== null;
+                case 3:
+                    return this.currentChannel !== null && (this.workbook !== null || this.fileData !== null);
+                case 4:
+                    return this.currentChannel !== null && (this.workbook !== null || this.fileData !== null);
+                default:
+                    return true;
             }
         }
         
@@ -1468,12 +1532,17 @@
                     `;
                     fileInfo.classList.remove('hidden');
                     
+                    // Show navigation button
+                    document.getElementById('step2-nav').classList.remove('hidden');
+                    
                     // Enable convert button
                     document.getElementById('convertBtn').disabled = false;
                     
-                    // Move to next step
-                    this.currentStep = 3;
-                    this.navigateToStep(3);
+                    // Automatically move to next step after a short delay
+                    setTimeout(() => {
+                        this.currentStep = 3;
+                        this.navigateToStep(3);
+                    }, 1500);
                     
                 } catch (error) {
                     this.showStatus('❌ Errore nel leggere il file Excel', 'error');
