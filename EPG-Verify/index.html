@@ -55,15 +55,15 @@
             color: white;
             font-weight: 600;
             text-align: center;
-            padding: 4px;
+            padding: 8px;
             background: rgba(0, 0, 0, 0.7);
             border-radius: 4px;
             font-size: clamp(10px, 1.5vw, 14px);
             max-width: 90%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal;
+            word-wrap: break-word;
             backdrop-filter: blur(4px);
+            line-height: 1.2;
         }
 
         .treemap-gap {
@@ -458,7 +458,7 @@
                 <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
                     <span class="flex items-center gap-2">
                         <i data-lucide="grid-3x3" class="w-6 h-6 text-blue-600"></i>
-                        Treemap Sequenziale
+                        Treemap Aggregato per Format
                     </span>
                     <div class="layout-selector">
                         <span class="text-sm font-normal text-gray-600 mr-3">Layout:</span>
@@ -477,7 +477,7 @@
                 
                 <!-- Format Legend -->
                 <div class="mt-6">
-                    <h4 class="font-semibold text-gray-700 mb-2">Legenda Format</h4>
+                    <h4 class="font-semibold text-gray-700 mb-2">Riepilogo Format</h4>
                     <div class="format-legend" id="formatLegend">
                         <!-- Format items will be added here -->
                     </div>
@@ -909,27 +909,45 @@
             const containerWidth = 800;
             const containerHeight = 800;
             
-            // Calculate total used seconds
-            let currentSecond = 0;
-            const programsWithPosition = [];
+            // Group programs by format and calculate total duration per format
+            const formatGroups = {};
+            let totalUsedSeconds = 0;
             
-            programs.forEach((program, index) => {
-                const startSecond = currentSecond;
-                const endSecond = Math.min(currentSecond + program.duration, totalDaySeconds);
+            programs.forEach((program) => {
+                const format = program.title;
+                if (!formatGroups[format]) {
+                    formatGroups[format] = {
+                        title: format,
+                        programs: [],
+                        totalDuration: 0,
+                        icon: program.icon,
+                        category: program.category,
+                        color: formatColors[format]
+                    };
+                }
                 
-                programsWithPosition.push({
-                    ...program,
-                    sequentialStart: startSecond,
-                    sequentialEnd: endSecond,
-                    value: program.duration,
-                    index
-                });
+                formatGroups[format].programs.push(program);
+                formatGroups[format].totalDuration += program.duration;
+                totalUsedSeconds += program.duration;
                 
-                currentSecond = endSecond;
+                // Use the first icon found for this format
+                if (!formatGroups[format].icon && program.icon) {
+                    formatGroups[format].icon = program.icon;
+                }
             });
             
+            // Convert to array and prepare for treemap
+            const formatNodes = Object.values(formatGroups).map(group => ({
+                ...group,
+                value: group.totalDuration,
+                programCount: group.programs.length
+            }));
+            
+            // Sort by duration (largest first)
+            formatNodes.sort((a, b) => b.value - a.value);
+            
             // Update fill indicator
-            const fillPercent = (currentSecond / totalDaySeconds) * 100;
+            const fillPercent = (totalUsedSeconds / totalDaySeconds) * 100;
             document.getElementById('fillPercent').textContent = `${fillPercent.toFixed(1)}%`;
             
             if (fillPercent >= 100) {
@@ -947,7 +965,7 @@
                 x1: containerWidth,
                 y1: containerHeight,
                 value: totalDaySeconds,
-                children: programsWithPosition
+                children: formatNodes
             };
             
             // Apply treemap algorithm
@@ -959,24 +977,24 @@
                 sliceDice(root.children, root, totalDaySeconds);
             }
             
-            // Draw programs
-            programsWithPosition.forEach((program) => {
+            // Draw format blocks
+            formatNodes.forEach((formatNode) => {
                 const div = document.createElement('div');
                 div.className = 'treemap-program new';
                 
-                const width = program.x1 - program.x0;
-                const height = program.y1 - program.y0;
+                const width = formatNode.x1 - formatNode.x0;
+                const height = formatNode.y1 - formatNode.y0;
                 
-                div.style.left = `${program.x0}px`;
-                div.style.top = `${program.y0}px`;
+                div.style.left = `${formatNode.x0}px`;
+                div.style.top = `${formatNode.y0}px`;
                 div.style.width = `${width}px`;
                 div.style.height = `${height}px`;
-                div.style.backgroundColor = formatColors[program.title];
+                div.style.backgroundColor = formatNode.color;
                 
                 // Add icon if available and space allows
-                if (program.icon && width > 40 && height > 40) {
+                if (formatNode.icon && width > 60 && height > 60) {
                     const img = document.createElement('img');
-                    img.src = program.icon;
+                    img.src = formatNode.icon;
                     img.className = 'treemap-icon';
                     img.onerror = function() {
                         this.style.display = 'none';
@@ -984,25 +1002,36 @@
                     div.appendChild(img);
                 }
                 
-                // Add label if space allows
-                if (width > 50 && height > 30) {
+                // Add enhanced label
+                if (width > 50 && height > 40) {
                     const label = document.createElement('div');
                     label.className = 'treemap-label';
-                    label.textContent = program.title;
+                    label.style.fontSize = Math.min(16, width / 10) + 'px';
+                    
+                    // Multi-line label with format name and stats
+                    const durationHours = (formatNode.totalDuration / 3600).toFixed(1);
+                    const percentage = ((formatNode.totalDuration / totalDaySeconds) * 100).toFixed(1);
+                    
+                    label.innerHTML = `
+                        <div style="font-weight: 700;">${formatNode.title}</div>
+                        ${height > 60 ? `<div style="font-size: 0.8em; margin-top: 4px;">${formatNode.programCount} episodi</div>` : ''}
+                        ${height > 80 ? `<div style="font-size: 0.8em;">${durationHours}h (${percentage}%)</div>` : ''}
+                    `;
+                    
                     div.appendChild(label);
                 }
                 
-                // Event handlers
-                div.onclick = () => showProgramDetails(program);
-                div.onmouseenter = (e) => showProgramPreview(e, program, width * height);
+                // Event handlers - show aggregated format info
+                div.onclick = () => showFormatDetails(formatNode);
+                div.onmouseenter = (e) => showFormatPreview(e, formatNode, width * height);
                 div.onmouseleave = hideProgramPreview;
                 
                 container.appendChild(div);
             });
             
             // Draw gap area if any
-            if (currentSecond < totalDaySeconds) {
-                const gapValue = totalDaySeconds - currentSecond;
+            if (totalUsedSeconds < totalDaySeconds) {
+                const gapValue = totalDaySeconds - totalUsedSeconds;
                 const gapArea = (gapValue / totalDaySeconds) * containerWidth * containerHeight;
                 
                 // Simple placement for gap - fill remaining space
@@ -1017,6 +1046,21 @@
                 div.style.bottom = '0';
                 div.style.width = `${gapWidth}px`;
                 div.style.height = `${gapHeight}px`;
+                
+                const gapHours = (gapValue / 3600).toFixed(1);
+                const gapPercent = ((gapValue / totalDaySeconds) * 100).toFixed(1);
+                
+                // Add gap label if space allows
+                if (gapWidth > 80 && gapHeight > 60) {
+                    const gapLabel = document.createElement('div');
+                    gapLabel.className = 'treemap-label';
+                    gapLabel.style.background = 'rgba(220, 38, 38, 0.8)';
+                    gapLabel.innerHTML = `
+                        <div style="font-weight: 700;">VUOTO</div>
+                        <div style="font-size: 0.8em; margin-top: 4px;">${gapHours}h (${gapPercent}%)</div>
+                    `;
+                    div.appendChild(gapLabel);
+                }
                 
                 container.appendChild(div);
             }
@@ -1285,19 +1329,80 @@
             const legend = document.getElementById('formatLegend');
             legend.innerHTML = '';
             
-            const formats = [...new Set(programs.map(p => p.title))];
-            formats.forEach(format => {
-                const item = document.createElement('div');
-                item.className = 'format-item';
-                item.innerHTML = `
-                    <div class="format-color" style="background: ${formatColors[format]}"></div>
-                    <span>${format}</span>
-                `;
-                legend.appendChild(item);
-            });
+            // Usa i format groups se disponibili
+            if (Object.keys(formatGroups).length > 0) {
+                const sortedFormats = Object.values(formatGroups)
+                    .sort((a, b) => b.totalDuration - a.totalDuration);
+                
+                sortedFormats.forEach(format => {
+                    const item = document.createElement('div');
+                    item.className = 'format-item';
+                    const hours = (format.totalDuration / 3600).toFixed(1);
+                    const percentage = ((format.totalDuration / totalDaySeconds) * 100).toFixed(1);
+                    
+                    item.innerHTML = `
+                        <div class="format-color" style="background: ${format.color}"></div>
+                        <span>${format.title}</span>
+                        <span style="margin-left: auto; font-size: 11px; color: #666;">
+                            ${format.programCount} ep. • ${hours}h • ${percentage}%
+                        </span>
+                    `;
+                    legend.appendChild(item);
+                });
+            } else {
+                // Fallback alla vecchia versione
+                const formats = [...new Set(programs.map(p => p.title))];
+                formats.forEach(format => {
+                    const item = document.createElement('div');
+                    item.className = 'format-item';
+                    item.innerHTML = `
+                        <div class="format-color" style="background: ${formatColors[format]}"></div>
+                        <span>${format}</span>
+                    `;
+                    legend.appendChild(item);
+                });
+            }
         }
 
-        function showProgramPreview(event, program, area) {
+        function showFormatDetails(formatNode) {
+            const detailsDiv = document.getElementById('programDetails');
+            detailsDiv.style.display = 'block';
+            
+            // Mostra informazioni aggregate del format
+            document.getElementById('detailTitle').textContent = formatNode.title;
+            
+            // Calcola orari di inizio e fine del format
+            const sortedPrograms = formatNode.programs.sort((a, b) => a.start - b.start);
+            const firstProgram = sortedPrograms[0];
+            const lastProgram = sortedPrograms[sortedPrograms.length - 1];
+            
+            document.getElementById('detailTime').textContent = `Prima: ${formatTimeUTC(firstProgram.start)} - Ultima: ${formatTimeUTC(lastProgram.stop)}`;
+            document.getElementById('detailDuration').textContent = `${(formatNode.totalDuration / 3600).toFixed(1)} ore totali (${formatNode.programCount} episodi)`;
+            document.getElementById('detailCategory').textContent = formatNode.category || '-';
+            
+            // Lista tutti gli episodi
+            const episodesList = sortedPrograms.map(p => 
+                `• ${formatTimeUTC(p.start)} - ${formatTimeUTC(p.stop)} (${formatDuration(p.duration)})`
+            ).join('\n');
+            
+            document.getElementById('detailDescription').textContent = `Episodi:\n${episodesList}`;
+            
+            const iconDiv = document.getElementById('detailIcon');
+            const iconUrl = document.getElementById('detailIconUrl');
+            
+            if (formatNode.icon) {
+                iconDiv.style.backgroundImage = `url(${formatNode.icon})`;
+                iconUrl.textContent = formatNode.icon;
+            } else {
+                iconDiv.style.backgroundImage = 'none';
+                iconDiv.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400">Nessuna icona</div>';
+                iconUrl.textContent = 'Nessuna icona specificata';
+            }
+            
+            detailsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showFormatPreview(event, formatNode, area) {
             if (currentPreviewTimeout) {
                 clearTimeout(currentPreviewTimeout);
             }
@@ -1305,28 +1410,41 @@
             currentPreviewTimeout = setTimeout(() => {
                 const preview = document.getElementById('programPreview');
                 
-                document.getElementById('previewTitle').textContent = program.title;
-                document.getElementById('previewTime').textContent = `${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`;
-                document.getElementById('previewDuration').textContent = formatDuration(program.duration);
-                document.getElementById('previewCategory').textContent = program.category || 'N/A';
+                document.getElementById('previewTitle').textContent = formatNode.title;
                 
-                // Show sequential position
-                const dayPrograms = getCurrentDayPrograms();
-                const position = dayPrograms.findIndex(p => p === program) + 1;
-                document.getElementById('previewPosition').textContent = `${position}° di ${dayPrograms.length}`;
+                // Mostra info aggregate
+                const durationHours = (formatNode.totalDuration / 3600).toFixed(1);
+                const percentage = ((formatNode.totalDuration / totalDaySeconds) * 100).toFixed(1);
+                
+                document.getElementById('previewTime').textContent = `${formatNode.programCount} episodi`;
+                document.getElementById('previewDuration').textContent = `${durationHours} ore totali`;
+                document.getElementById('previewCategory').textContent = formatNode.category || 'N/A';
+                
+                // Show format rank by duration
+                const allFormats = Object.values(formatColors).length;
+                const formatRank = Object.values(formatGroups)
+                    .sort((a, b) => b.totalDuration - a.totalDuration)
+                    .findIndex(f => f.title === formatNode.title) + 1;
+                
+                document.getElementById('previewPosition').textContent = `${formatRank}° su ${allFormats} format`;
                 
                 // Show area percentage
                 const totalArea = 800 * 800;
                 const areaPercent = (area / totalArea) * 100;
-                document.getElementById('previewArea').textContent = `${areaPercent.toFixed(1)}% del quadrato`;
+                document.getElementById('previewArea').textContent = `${percentage}% del tempo`;
                 
-                document.getElementById('previewDesc').textContent = program.desc ? 
-                    (program.desc.length > 150 ? program.desc.substring(0, 150) + '...' : program.desc) : 
-                    'Nessuna descrizione disponibile';
+                // Show time slots
+                const timeSlots = formatNode.programs
+                    .sort((a, b) => a.start - b.start)
+                    .slice(0, 3)
+                    .map(p => formatTimeUTC(p.start))
+                    .join(', ');
+                
+                document.getElementById('previewDesc').textContent = `Orari: ${timeSlots}${formatNode.programs.length > 3 ? '...' : ''}`;
                 
                 const iconDiv = document.getElementById('previewIcon');
-                if (program.icon) {
-                    iconDiv.style.backgroundImage = `url(${program.icon})`;
+                if (formatNode.icon) {
+                    iconDiv.style.backgroundImage = `url(${formatNode.icon})`;
                     iconDiv.style.display = 'block';
                 } else {
                     iconDiv.style.display = 'none';
@@ -1348,6 +1466,9 @@
                 preview.classList.add('show');
             }, 300);
         }
+
+        // Add global variable to store format groups
+        let formatGroups = {};
 
         function hideProgramPreview() {
             if (currentPreviewTimeout) {
@@ -1782,7 +1903,7 @@
 
         // Show info
         function showInfo() {
-            alert(`XMLTV Viewer v${APP_VERSION}\n\nTreemap Sequenziale\n\nNuove Funzionalità v4.0:\n- Visualizzazione TREEMAP: quadrato che rappresenta 86.400 secondi\n- Ogni programma è un rettangolo proporzionale alla durata\n- Icone format visibili nei rettangoli (quando disponibili)\n- 3 algoritmi di layout: Squarify, Binary, Slice & Dice\n- Indicatore di riempimento con codice colore\n- Gap visualizzati con pattern rosso tratteggiato\n- Tutte le funzionalità della v3.0 mantenute\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer v${APP_VERSION}\n\nTreemap Aggregato per Format\n\nNuove Funzionalità v4.0:\n- Visualizzazione TREEMAP AGGREGATA: ogni format ha un unico rettangolo\n- L'area di ogni rettangolo è proporzionale al tempo totale del format\n- Mostra numero episodi, ore totali e percentuale per format\n- Icone format visibili nei rettangoli (quando disponibili)\n- 3 algoritmi di layout: Squarify, Binary, Slice & Dice\n- Indicatore di riempimento con codice colore\n- Gap visualizzati con pattern rosso tratteggiato\n- Click su un format mostra tutti gli episodi\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
 
         // Initialize
