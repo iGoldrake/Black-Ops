@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v4.3 - Analisi Fasce Orarie</title>
+    <title>XMLTV Viewer v5.0 - Analisi Fasce Orarie</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -67,41 +67,6 @@
             line-height: 1.3;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
-
-        .treemap-gap {
-            position: absolute;
-            background-image: repeating-linear-gradient(
-                45deg,
-                #dc2626,
-                #dc2626 10px,
-                transparent 10px,
-                transparent 20px
-            );
-            opacity: 0.4;
-            border: 3px solid #dc2626;
-            border-radius: 8px;
-            box-shadow: inset 0 0 20px rgba(220, 38, 38, 0.3);
-        }
-
-        /* Time slot heatmap styles */
-        .heatmap-cell {
-            position: relative;
-            border-radius: 4px;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .heatmap-cell:hover {
-            transform: scale(1.1);
-            z-index: 10;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .heatmap-intensity-0 { background: #f3f4f6; }
-        .heatmap-intensity-1 { background: #dbeafe; }
-        .heatmap-intensity-2 { background: #93c5fd; }
-        .heatmap-intensity-3 { background: #3b82f6; }
-        .heatmap-intensity-4 { background: #1d4ed8; }
 
         /* Program preview tooltip */
         .program-preview {
@@ -179,43 +144,7 @@
             color: white;
         }
 
-        .morning-badge {
-            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-            color: white;
-        }
-
-        .afternoon-badge {
-            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-            color: white;
-        }
-
-        .evening-badge {
-            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-            color: white;
-        }
-
-        .night-badge {
-            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-            color: white;
-        }
-
         /* Animations */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -231,7 +160,7 @@
             animation: fadeIn 0.6s ease-out;
         }
 
-        /* Dark mode improvements */
+        /* Dark mode */
         .dark .treemap-container {
             background: #0f172a;
             box-shadow: 
@@ -262,12 +191,6 @@
             color: #f1f5f9;
         }
 
-        .dark .heatmap-intensity-0 { background: #1e293b; }
-        .dark .heatmap-intensity-1 { background: #1e3a8a; }
-        .dark .heatmap-intensity-2 { background: #1d4ed8; }
-        .dark .heatmap-intensity-3 { background: #2563eb; }
-        .dark .heatmap-intensity-4 { background: #3b82f6; }
-
         .dark .time-analysis-card {
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
             border-color: rgba(255, 255, 255, 0.1);
@@ -289,7 +212,7 @@
             color: #e2e8f0;
         }
 
-        /* Toast improvements */
+        /* Toast */
         .toast {
             animation: slideInRight 0.3s ease-out;
             backdrop-filter: blur(10px);
@@ -388,22 +311,7 @@
             flex-shrink: 0;
         }
 
-        /* Loading state */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Treemap layout algorithms */
+        /* Layout selector */
         .layout-selector {
             display: flex;
             gap: 8px;
@@ -483,21 +391,6 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border-color: rgba(59, 130, 246, 0.2);
         }
-
-        .best-practice-tip {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-            border-left: 4px solid #3b82f6;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #1e3a8a;
-        }
-
-        .dark .best-practice-tip {
-            background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(29, 78, 216, 0.2) 100%);
-            color: #93c5fd;
-            border-left-color: #3b82f6;
-        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen">
@@ -508,7 +401,7 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v4.3
+                        XMLTV Viewer v5.0
                     </h1>
                     <p class="text-gray-600 mt-2">Treemap Sequenziale con Analisi Fasce Orarie - Modalità UTC</p>
                 </div>
@@ -608,7 +501,7 @@
                 </div>
             </div>
 
-            <!-- Time Slot Analysis (NEW) -->
+            <!-- Time Slot Analysis -->
             <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50 time-analysis-card">
                 <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
                     <span class="flex items-center gap-2">
@@ -624,7 +517,7 @@
                 </h3>
                 
                 <!-- Time Slots Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Morning Slot -->
                     <div class="time-slot-card rounded-xl p-4">
                         <div class="flex items-center justify-between mb-3">
@@ -733,41 +626,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Weekly Heatmap -->
-                <div class="mt-6">
-                    <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <i data-lucide="calendar-range" class="w-4 h-4 text-blue-600"></i>
-                        Heatmap Settimanale (Intensità Programmazione)
-                    </h4>
-                    <div class="overflow-x-auto">
-                        <div id="weeklyHeatmap" class="grid grid-cols-25 gap-1 min-w-[800px]">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4 mt-3 text-xs text-gray-600">
-                        <span>Meno intenso</span>
-                        <div class="flex gap-1">
-                            <div class="w-4 h-4 heatmap-intensity-0 rounded"></div>
-                            <div class="w-4 h-4 heatmap-intensity-1 rounded"></div>
-                            <div class="w-4 h-4 heatmap-intensity-2 rounded"></div>
-                            <div class="w-4 h-4 heatmap-intensity-3 rounded"></div>
-                            <div class="w-4 h-4 heatmap-intensity-4 rounded"></div>
-                        </div>
-                        <span>Più intenso</span>
-                    </div>
-                </div>
-                
-                <!-- Best Practices Suggestions -->
-                <div class="mt-6 space-y-3">
-                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                        <i data-lucide="lightbulb" class="w-4 h-4 text-yellow-500"></i>
-                        Suggerimenti Best Practice
-                    </h4>
-                    <div id="bestPractices" class="space-y-2">
-                        <!-- Populated dynamically based on analysis -->
-                    </div>
-                </div>
             </div>
 
             <!-- Treemap Timeline -->
@@ -789,15 +647,12 @@
                     <div class="fill-indicator" id="fillIndicator">
                         <span id="fillPercent">0%</span> riempito
                     </div>
-                    <!-- Treemap elements will be added here -->
                 </div>
                 
                 <!-- Format Legend -->
                 <div class="mt-6">
                     <h4 class="font-semibold text-gray-800 mb-2">Riepilogo Format</h4>
-                    <div class="format-legend" id="formatLegend">
-                        <!-- Format items will be added here -->
-                    </div>
+                    <div class="format-legend" id="formatLegend"></div>
                 </div>
             </div>
 
@@ -862,9 +717,7 @@
                                 <th class="px-4 py-3 text-left font-semibold text-gray-800">Azioni</th>
                             </tr>
                         </thead>
-                        <tbody id="programTable" class="divide-y divide-gray-200">
-                            <!-- Populated dynamically -->
-                        </tbody>
+                        <tbody id="programTable" class="divide-y divide-gray-200"></tbody>
                     </table>
                 </div>
             </div>
@@ -875,9 +728,7 @@
                     <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-600"></i>
                     Report Problemi
                 </h3>
-                <div id="problemsReport" class="space-y-2">
-                    <!-- Populated dynamically -->
-                </div>
+                <div id="problemsReport" class="space-y-2"></div>
             </div>
         </div>
 
@@ -938,8 +789,8 @@
         });
 
         // Version
-        const APP_VERSION = '4.3';
-        console.log(`XMLTV Viewer v${APP_VERSION} - Bug Fix e Completamento`);
+        const APP_VERSION = '5.0';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Ottimizzato`);
 
         // Global state
         let xmlDoc = null;
@@ -949,9 +800,8 @@
         let scheduleDate = null;
         let formatColors = {};
         let colorIndex = 0;
-        let currentPreviewTimeout = null;
         let totalDaySeconds = 86400; // 24 hours in seconds
-        let currentLayout = 'squarify'; // Layout algorithm
+        let currentLayout = 'squarify';
 
         // Modern color palette
         const colorPalette = [
@@ -1160,7 +1010,6 @@
             // Check if it's ISO 8601 format (contains 'T')
             if (dateStr.includes('T')) {
                 // ISO 8601 format: 2025-06-09T21:00:00+0000
-                // Remove timezone info and parse as UTC
                 const cleanDate = dateStr.replace(/[+-]\d{4}$/, '');
                 const [datePart, timePart] = cleanDate.split('T');
                 const [year, month, day] = datePart.split('-').map(Number);
@@ -1181,7 +1030,6 @@
         }
 
         function formatXMLTVDate(date) {
-            // Use ISO 8601 format for better compatibility
             const pad = (n) => String(n).padStart(2, '0');
             const year = date.getUTCFullYear();
             const month = pad(date.getUTCMonth() + 1);
@@ -1194,13 +1042,13 @@
         }
 
         function loadPrograms() {
-            // Get programs for the schedule day (including evening programs from previous day)
+            // Get programs for the schedule day
             const dayStart = new Date(scheduleDate);
-            dayStart.setUTCHours(21, 0, 0, 0); // Start from 21:00 previous day
+            dayStart.setUTCHours(21, 0, 0, 0);
             dayStart.setUTCDate(dayStart.getUTCDate() - 1);
             
             const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCHours(21, 0, 0, 0); // End at 21:00 current day
+            dayEnd.setUTCHours(21, 0, 0, 0);
             
             const dayPrograms = currentPrograms.filter(p => {
                 return (p.start >= dayStart && p.start < dayEnd) || 
@@ -1226,29 +1074,22 @@
             
             // Analyze time slots
             analyzeTimeSlots(dayPrograms);
-            
-            // Generate weekly heatmap
-            generateWeeklyHeatmap();
         }
 
         // Analyze time slots
         function analyzeTimeSlots(programs) {
-            // Analyze each time slot
             Object.entries(timeSlots).forEach(([slotKey, slot]) => {
                 const slotPrograms = programs.filter(p => {
                     const startHour = p.start.getUTCHours() + p.start.getUTCMinutes() / 60;
                     const stopHour = p.stop.getUTCHours() + p.stop.getUTCMinutes() / 60;
                     
-                    // Handle slots that cross midnight
                     if (slot.end > 24) {
                         return (startHour >= slot.start || startHour < slot.end - 24) ||
                                (stopHour > slot.start || stopHour < slot.end - 24);
                     } else if (slotKey === 'night') {
-                        // Night slot: 1:00-6:00
                         return (startHour >= slot.start && startHour < slot.end) ||
                                (stopHour > slot.start && stopHour <= slot.end);
                     } else {
-                        // Normal slots
                         return (startHour < slot.end && stopHour > slot.start);
                     }
                 });
@@ -1263,7 +1104,6 @@
                 const formatCounts = {};
                 
                 slotPrograms.forEach(p => {
-                    // Calculate overlap with slot
                     const slotStart = new Date(scheduleDate);
                     slotStart.setUTCHours(Math.floor(slot.start), (slot.start % 1) * 60, 0, 0);
                     
@@ -1276,7 +1116,6 @@
                     }
                     
                     if (slotKey === 'night') {
-                        // Special handling for night slot
                         slotStart.setUTCHours(1, 0, 0, 0);
                         slotEnd.setUTCHours(6, 0, 0, 0);
                     }
@@ -1288,7 +1127,6 @@
                         const overlapSeconds = (overlapEnd - overlapStart) / 1000;
                         coveredSeconds += overlapSeconds;
                         
-                        // Count formats
                         if (!formatCounts[p.title]) {
                             formatCounts[p.title] = 0;
                         }
@@ -1319,9 +1157,6 @@
                     `;
                 }
             });
-            
-            // Generate best practice suggestions
-            generateBestPractices(programs);
         }
         
         function getSlotColorClass(slotKey) {
@@ -1334,182 +1169,6 @@
                 night: 'bg-gray-600'
             };
             return colorMap[slotKey] || 'bg-gray-400';
-        }
-        
-        // Generate weekly heatmap
-        function generateWeeklyHeatmap() {
-            const heatmapDiv = document.getElementById('weeklyHeatmap');
-            heatmapDiv.innerHTML = '';
-            
-            // Create header row
-            const headerRow = document.createElement('div');
-            headerRow.className = 'contents';
-            headerRow.innerHTML = '<div class="h-6"></div>'; // Empty corner
-            
-            // Hour headers
-            for (let h = 0; h < 24; h++) {
-                const hourDiv = document.createElement('div');
-                hourDiv.className = 'text-xs text-gray-600 text-center';
-                hourDiv.textContent = h.toString().padStart(2, '0');
-                headerRow.appendChild(hourDiv);
-            }
-            heatmapDiv.appendChild(headerRow);
-            
-            // Days of week
-            const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
-            const today = new Date();
-            const currentDayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
-            
-            // Generate heatmap for current week (simulated data based on current day)
-            days.forEach((day, dayIndex) => {
-                const dayRow = document.createElement('div');
-                dayRow.className = 'contents';
-                
-                // Day label
-                const dayLabel = document.createElement('div');
-                dayLabel.className = 'text-xs text-gray-600 pr-2 flex items-center justify-end';
-                dayLabel.textContent = day;
-                dayRow.appendChild(dayLabel);
-                
-                // Hour cells
-                for (let hour = 0; hour < 24; hour++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'heatmap-cell w-full h-6';
-                    
-                    // Simulate intensity based on typical TV patterns
-                    let intensity = 0;
-                    if (dayIndex === currentDayIndex && currentPrograms.length > 0) {
-                        // Use real data for current day
-                        const hourPrograms = currentPrograms.filter(p => {
-                            const startHour = p.start.getUTCHours();
-                            return startHour === hour;
-                        });
-                        intensity = Math.min(4, hourPrograms.length);
-                    } else {
-                        // Simulate for other days
-                        if (hour >= 6 && hour < 9) intensity = 2; // Morning
-                        else if (hour >= 12 && hour < 14) intensity = 3; // Lunch
-                        else if (hour >= 18 && hour < 20) intensity = 3; // Evening
-                        else if (hour >= 20 && hour < 23) intensity = 4; // Prime time
-                        else if (hour >= 23 || hour < 1) intensity = 2; // Late night
-                        else intensity = 1;
-                        
-                        // Weekend adjustments
-                        if (dayIndex >= 5) {
-                            if (hour >= 9 && hour < 12) intensity = 3;
-                            if (hour >= 14 && hour < 18) intensity = 3;
-                        }
-                    }
-                    
-                    cell.classList.add(`heatmap-intensity-${intensity}`);
-                    cell.title = `${day} ${hour}:00 - Intensità: ${intensity}`;
-                    
-                    dayRow.appendChild(cell);
-                }
-                
-                heatmapDiv.appendChild(dayRow);
-            });
-        }
-        
-        // Generate best practice suggestions
-        function generateBestPractices(programs) {
-            const practicesDiv = document.getElementById('bestPractices');
-            practicesDiv.innerHTML = '';
-            
-            const suggestions = [];
-            
-            // Analyze prime time
-            const primeTimeSlot = timeSlots.primeTime;
-            const primeTimePrograms = programs.filter(p => {
-                const startHour = p.start.getUTCHours() + p.start.getUTCMinutes() / 60;
-                return startHour >= primeTimeSlot.start && startHour < primeTimeSlot.end;
-            });
-            
-            if (primeTimePrograms.length === 0) {
-                suggestions.push({
-                    type: 'error',
-                    icon: 'alert-circle',
-                    text: 'Nessun programma in Prime Time (20:30-22:30). Considera di posizionare i contenuti più forti in questa fascia.'
-                });
-            } else if (primeTimePrograms.length === 1) {
-                suggestions.push({
-                    type: 'warning',
-                    icon: 'alert-triangle',
-                    text: 'Solo un programma in Prime Time. Valuta se il format ha la durata ottimale per massimizzare l\'audience.'
-                });
-            }
-            
-            // Check morning coverage
-            const morningCoverage = parseInt(document.querySelector('#morningStats span.font-semibold')?.textContent || '0');
-            if (morningCoverage < 80) {
-                suggestions.push({
-                    type: 'info',
-                    icon: 'info',
-                    text: `Copertura mattutina al ${morningCoverage}%. Considera di aggiungere programmi per catturare l'audience del mattino.`
-                });
-            }
-            
-            // Check for very short programs
-            const shortPrograms = programs.filter(p => p.duration < 900); // Less than 15 minutes
-            if (shortPrograms.length > 5) {
-                suggestions.push({
-                    type: 'warning',
-                    icon: 'clock',
-                    text: `${shortPrograms.length} programmi sotto i 15 minuti. Troppi cambi possono confondere gli spettatori.`
-                });
-            }
-            
-            // Check format variety
-            const uniqueFormats = [...new Set(programs.map(p => p.title))];
-            if (uniqueFormats.length < 5) {
-                suggestions.push({
-                    type: 'info',
-                    icon: 'shuffle',
-                    text: 'Poca varietà di format. Diversificare la programmazione può attrarre pubblici diversi.'
-                });
-            }
-            
-            // Check late night programming
-            const nightPrograms = programs.filter(p => {
-                const hour = p.start.getUTCHours();
-                return hour >= 1 && hour < 6;
-            });
-            
-            if (nightPrograms.length === 0) {
-                suggestions.push({
-                    type: 'info',
-                    icon: 'moon',
-                    text: 'Nessuna programmazione notturna (01:00-06:00). Considera repliche o contenuti evergreen.'
-                });
-            }
-            
-            // Display suggestions
-            if (suggestions.length === 0) {
-                suggestions.push({
-                    type: 'success',
-                    icon: 'check-circle',
-                    text: 'Il palinsesto segue le best practice di programmazione TV!'
-                });
-            }
-            
-            suggestions.forEach(suggestion => {
-                const div = document.createElement('div');
-                div.className = 'best-practice-tip flex items-start gap-3';
-                
-                const iconColor = suggestion.type === 'error' ? 'text-red-600' : 
-                                 suggestion.type === 'warning' ? 'text-yellow-600' :
-                                 suggestion.type === 'success' ? 'text-green-600' : 'text-blue-600';
-                
-                div.innerHTML = `
-                    <i data-lucide="${suggestion.icon}" class="w-5 h-5 ${iconColor} flex-shrink-0 mt-0.5"></i>
-                    <span class="text-sm">${suggestion.text}</span>
-                `;
-                
-                practicesDiv.appendChild(div);
-            });
-            
-            // Re-initialize icons
-            lucide.createIcons();
         }
 
         // Draw treemap
@@ -2091,8 +1750,6 @@
                   'Visualizzatore e editor avanzato per file XMLTV con:\n' +
                   '- Treemap aggregato per format\n' +
                   '- Analisi fasce orarie (6 fasce)\n' +
-                  '- Heatmap settimanale\n' +
-                  '- Suggerimenti best practice\n' +
                   '- Editor programmi inline\n' +
                   '- Export/import XMLTV\n\n' +
                   'Modalità: UTC (tutti gli orari)');
@@ -2100,7 +1757,6 @@
         
         // Edit program
         function editProgram(index) {
-            // TODO: Implement program editing
             showToast('Funzione di modifica in sviluppo', 'info');
         }
         
@@ -2115,7 +1771,6 @@
         
         // Add program
         function addProgram() {
-            // TODO: Implement program adding
             showToast('Funzione di aggiunta in sviluppo', 'info');
         }
         
