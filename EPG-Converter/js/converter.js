@@ -33,39 +33,52 @@ export class XMLTVGenerator {
      * Format date for XMLTV (converts to UTC)
      */
     formatXMLTVDate(date, timezoneOffset) {
-        // IMPORTANTE: La data che riceviamo è già in GMT+0200 (come mostra il log)
-        // Quindi dobbiamo usare getTime() che ci dà già il tempo UTC corretto
+        // IMPORTANTE: Le date da Excel potrebbero non avere il timezone corretto
+        // Dobbiamo forzare la conversione manuale
         
         // Log per debug
         if (!this._debugLogged) {
-            this.app.log(`🕐 Timezone offset ricevuto in formatXMLTVDate: ${timezoneOffset}`);
-            this.app.log(`🕐 Data ricevuta: ${date.toString()}`);
-            this.app.log(`🕐 getTime(): ${date.getTime()}`);
+            this.app.log(`🕐 DEBUG formatXMLTVDate:`);
+            this.app.log(`- Timezone offset: ${timezoneOffset}`);
+            this.app.log(`- Data input: ${date.toString()}`);
+            this.app.log(`- Data input ISO: ${date.toISOString()}`);
             this._debugLogged = true;
         }
         
-        // Usiamo direttamente la data UTC dal timestamp
-        const utcDate = new Date(date.getTime());
+        // Prendiamo i componenti della data in ora locale
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const day = date.getDate();
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        const seconds = date.getSeconds();
+        
+        // Creiamo una nuova data UTC con i valori locali
+        // e poi sottraiamo l'offset
+        const localDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
+        const utcTime = localDate.getTime() - (timezoneOffset * 60 * 60 * 1000);
+        const utcDate = new Date(utcTime);
         
         // Formattiamo usando i metodi UTC
-        const year = utcDate.getUTCFullYear();
-        const month = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(utcDate.getUTCDate()).padStart(2, '0');
-        const hours = String(utcDate.getUTCHours()).padStart(2, '0');
-        const minutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
-        const seconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
+        const utcYear = utcDate.getUTCFullYear();
+        const utcMonth = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
+        const utcDay = String(utcDate.getUTCDate()).padStart(2, '0');
+        const utcHours = String(utcDate.getUTCHours()).padStart(2, '0');
+        const utcMinutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
+        const utcSeconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
         
         // Debug: verifichiamo la conversione
         if (!this._logCount) this._logCount = 0;
         if (this._logCount < 3) {
-            const localStr = date.toString();
-            const utcStr = `${day}/${month}/${year} ${hours}:${minutes} UTC`;
-            this.app.log(`📅 Conversione: ${localStr} → ${utcStr}`);
+            this.app.log(`📅 Conversione dettagliata:`);
+            this.app.log(`   - Locale: ${day}/${month+1}/${year} ${hours}:${minutes}`);
+            this.app.log(`   - UTC: ${utcDay}/${utcMonth}/${utcYear} ${utcHours}:${utcMinutes}`);
+            this.app.log(`   - Differenza ore: ${hours - parseInt(utcHours)}`);
             this._logCount++;
         }
         
         // Formato XMLTV: YYYYMMDDTHH:MM:SS+0000
-        return `${year}${month}${day}T${hours}:${minutes}:${seconds}+0000`;
+        return `${utcYear}${utcMonth}${utcDay}T${utcHours}:${utcMinutes}:${utcSeconds}+0000`;
     }
     
     /**
@@ -92,9 +105,6 @@ export class XMLTVGenerator {
     async generateXMLForTVModaSheet(sheetData, dateInfo, params) {
         this.app.log(`\n📺 Generazione XMLTV per ${dateInfo.sheetName} - ${dateInfo.date.toLocaleDateString('it-IT')}...`);
         this.app.log(`🕐 Conversione orari da UTC${params.timezoneOffset >= 0 ? '+' : ''}${params.timezoneOffset} a UTC`);
-        
-        // DEBUG: Verifichiamo il parametro timezoneOffset
-        this.app.log(`🔍 DEBUG: timezoneOffset in generateXMLForTVModaSheet = ${params.timezoneOffset}`);
         
         let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
         xml += `<tv date="${dateInfo.date.toISOString().split('T')[0]}">\n`;
@@ -129,9 +139,6 @@ export class XMLTVGenerator {
         this.app.log(`\n📺 Generazione XMLTV per Class CNBC - ${targetDate.toLocaleDateString('it-IT')}...`);
         this.app.log(`🕐 Conversione orari da UTC${params.timezoneOffset >= 0 ? '+' : ''}${params.timezoneOffset} a UTC`);
         
-        // DEBUG: Verifichiamo il parametro timezoneOffset
-        this.app.log(`🔍 DEBUG: timezoneOffset in generateXMLForClassCNBCDate = ${params.timezoneOffset}`);
-        
         let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
         xml += `<tv date="${targetDate.toISOString().split('T')[0]}">\n`;
         xml += `  <channel id="${params.channelId}">\n`;
@@ -163,9 +170,6 @@ export class XMLTVGenerator {
     parseTVModaDayPrograms(data, currentDate) {
         const programs = [];
         
-        // DEBUG: Log della prima riga di programma
-        let debugFirst = true;
-        
         for (let i = 3; i < data.length; i++) {
             const row = data[i];
             if (!row || row.length < 4) continue;
@@ -179,16 +183,6 @@ export class XMLTVGenerator {
             
             const programTime = this.parseTime(startTime, currentDate);
             if (!programTime) continue;
-            
-            // DEBUG: Log del primo programma
-            if (debugFirst) {
-                this.app.log(`\n🔍 DEBUG parseTVModaDayPrograms:`);
-                this.app.log(`- Primo programma: "${title}"`);
-                this.app.log(`- startTime raw: ${startTime}`);
-                this.app.log(`- programTime parsed: ${programTime}`);
-                this.app.log(`- currentDate: ${currentDate}`);
-                debugFirst = false;
-            }
             
             const durationMinutes = this.parseDuration(duration);
             
@@ -507,25 +501,8 @@ export class XMLTVGenerator {
      * Generate programme XML element
      */
     generateProgrammeXML(program, channelId, timezoneOffset, channel) {
-        // DEBUG: Verifichiamo cosa stiamo ricevendo
-        if (!this._debugProgrammeXML) {
-            this.app.log(`\n🔍 DEBUG generateProgrammeXML:`);
-            this.app.log(`- Primo programma: "${program.title}"`);
-            this.app.log(`- startTime: ${program.startTime}`);
-            this.app.log(`- endTime: ${program.endTime}`);
-            this.app.log(`- timezoneOffset ricevuto: ${timezoneOffset}`);
-            this._debugProgrammeXML = true;
-        }
-        
         const startFormatted = this.formatXMLTVDate(program.startTime, timezoneOffset);
         const stopFormatted = this.formatXMLTVDate(program.endTime, timezoneOffset);
-        
-        // DEBUG: Verifichiamo il risultato
-        if (!this._debugFormattedDates) {
-            this.app.log(`- Start formattato: ${startFormatted}`);
-            this.app.log(`- Stop formattato: ${stopFormatted}`);
-            this._debugFormattedDates = true;
-        }
         
         let xml = `  <programme start="${startFormatted}" stop="${stopFormatted}" channel="${channelId}">\n`;
         
