@@ -459,11 +459,6 @@
             border-radius: 50%;
         }
         
-        .btn-sm {
-            padding: 0.5rem 1rem;
-            font-size: 0.75rem;
-        }
-        
         /* Forms */
         .form-group {
             margin-bottom: 1.5rem;
@@ -922,7 +917,7 @@
                 <div class="logo">
                     <div class="logo-icon">📺</div>
                     <span>EPG Converter</span>
-                    <span class="badge badge-primary">v3.0.5</span>
+                    <span class="badge badge-primary">v3.0.6</span>
                 </div>
                 
                 <div class="header-actions">
@@ -1260,7 +1255,7 @@
         
         <!-- Footer -->
         <footer class="footer">
-            <p>EPG Converter v3.0.5 - Professional Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 16/12/2024</p>
+            <p>EPG Converter v3.0.6 - Professional Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 10/06/2025</p>
         </footer>
     </div>
     
@@ -1271,8 +1266,8 @@
     // Modern EPG Converter Application
     class ModernEPGConverter {
         constructor() {
-            this.SOFTWARE_VERSION = "3.0.5";
-            this.LAST_UPDATE = "16/12/2024";
+            this.SOFTWARE_VERSION = "3.0.6";
+            this.LAST_UPDATE = "10/06/2025";
             
             // State
             this.currentStep = 1;
@@ -1322,9 +1317,7 @@
             this.setupKeyboardShortcuts();
             this.loadRecentSessions();
             this.initTabSystem();
-            this.addLog('🚀 EPG Converter 3.0.5 avviato');
-            this.addLog('✅ Fix timezone UTC applicato');
-            this.addLog('✅ Fix capitalizzazione titoli applicato');
+            this.addLog('🚀 EPG Converter 3.0.6 avviato');
             this.addLog('Seleziona il canale per iniziare la conversione');
         }
         
@@ -2208,3 +2201,652 @@
             };
         }
     }
+    
+    // XMLTV Generator Class
+    class XMLTVGenerator {
+        constructor(app) {
+            this.app = app;
+        }
+        
+        escapeXml(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        
+        capitalizeTitle(title) {
+            if (!title) return '';
+            // Converte in minuscolo e capitalizza solo la prima lettera
+            return title.charAt(0).toUpperCase() + title.slice(1).toLowerCase();
+        }
+        
+        formatXMLTVDate(date, timezoneOffset) {
+            // FIX CRITICO: Conversione corretta da ora locale italiana a UTC
+            // Sottrai l'offset timezone per ottenere UTC
+            const utcTime = date.getTime() - (timezoneOffset * 60 * 60 * 1000);
+            const utcDate = new Date(utcTime);
+            
+            const year = utcDate.getUTCFullYear();
+            const month = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(utcDate.getUTCDate()).padStart(2, '0');
+            const hours = String(utcDate.getUTCHours()).padStart(2, '0');
+            const minutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
+            
+            // Debug logging
+            if (this.app.options.debugMode) {
+                this.app.addLog(`DEBUG: ${date.toLocaleString('it-IT')} (UTC+${timezoneOffset}) → ${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`);
+            }
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
+        }
+        
+        getIconForFormat(format, channel) {
+            if (!format) return this.app.config.channels[channel].baseIconUrl + 'default.jpg';
+            const formatIcons = this.app.config.formatIcons[channel];
+            const normalizedFormat = format.trim().toUpperCase();
+            
+            for (const [key, value] of Object.entries(formatIcons)) {
+                if (key.toUpperCase() === normalizedFormat) {
+                    return this.app.config.channels[channel].baseIconUrl + value;
+                }
+            }
+            
+            return this.app.config.channels[channel].baseIconUrl + 'default.jpg';
+        }
+        
+        generateXMLTVForTVModa(workbook, channelId, channelName, timezoneOffset, iconUrl, dateRange, fillGaps) {
+            this.app.addLog('Generazione XMLTV per TV Moda...');
+            this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
+            
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
+            xml += `  <channel id="${channelId}">\n`;
+            xml += `    <display-name lang="it">${channelName}</display-name>\n`;
+            xml += `  </channel>\n\n`;
+            
+            const programs = this.parseTVModaPrograms(workbook, dateRange);
+            const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'tvmoda');
+            
+            for (const program of processedPrograms) {
+                xml += this.generateProgrammeXML(program, channelId, timezoneOffset, 'tvmoda');
+            }
+            
+            xml += '</tv>';
+            
+            this.app.addLog(`\nGenerati ${processedPrograms.length} programmi XML`);
+            this.app.addLog(`Lunghezza XML: ${xml.length} caratteri`);
+            
+            return xml;
+        }
+        
+        generateXMLTVForClassCNBC(data, channelId, channelName, baseDate, timezoneOffset, iconUrl, dateRange, fillGaps) {
+            this.app.addLog('Generazione XMLTV per Class CNBC...');
+            this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
+            
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
+            xml += `  <channel id="${channelId}">\n`;
+            xml += `    <display-name lang="it">${channelName}</display-name>\n`;
+            xml += `  </channel>\n\n`;
+            
+            const programs = this.parseClassCNBCPrograms(data, baseDate, dateRange);
+            const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'classcnbc');
+            
+            for (const program of processedPrograms) {
+                xml += this.generateProgrammeXML(program, channelId, timezoneOffset, 'classcnbc');
+            }
+            
+            xml += '</tv>';
+            
+            this.app.addLog(`\nGenerati ${processedPrograms.length} programmi XML`);
+            this.app.addLog(`Lunghezza XML: ${xml.length} caratteri`);
+            
+            return xml;
+        }
+        
+        parseTVModaPrograms(workbook, dateRange) {
+            const weekdayMap = {
+                'DOMENICA': 0, 'LUNEDI': 1, 'MARTEDI': 2, 'MERCOLEDI': 3,
+                'GIOVEDI': 4, 'VENERDI': 5, 'SABATO': 6
+            };
+            
+            const targetDates = this.getTargetDates(dateRange, workbook, weekdayMap);
+            const allPrograms = [];
+            const processedProgramKeys = new Set();
+            
+            for (const targetDate of targetDates) {
+                const targetWeekday = targetDate.getDay();
+                const sheetName = Object.keys(weekdayMap).find(key => weekdayMap[key] === targetWeekday);
+                
+                if (!sheetName || !workbook.Sheets[sheetName]) continue;
+                
+                this.app.addLog(`\nProcesso ${sheetName} per ${targetDate.toLocaleDateString('it-IT')}...`);
+                
+                const worksheet = workbook.Sheets[sheetName];
+                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                
+                const dayPrograms = this.parseTVModaDayPrograms(data, targetDate);
+                
+                for (const program of dayPrograms) {
+                    const key = `${program.startTime.getTime()}_${program.title}`;
+                    if (!processedProgramKeys.has(key)) {
+                        processedProgramKeys.add(key);
+                        allPrograms.push(program);
+                    }
+                }
+                
+                this.app.addLog(`  Trovati ${dayPrograms.length} programmi in ${sheetName}`);
+            }
+            
+            return allPrograms;
+        }
+        
+        parseTVModaDayPrograms(data, currentDate) {
+            const programs = [];
+            
+            for (let i = 3; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length < 4) continue;
+                
+                const startTime = row[0];
+                const title = row[1];
+                const duration = row[2];
+                const description = row[3];
+                
+                if (!title || !startTime) continue;
+                
+                const programTime = this.parseTime(startTime, currentDate);
+                if (!programTime) continue;
+                
+                const durationMinutes = this.parseDuration(duration);
+                
+                programs.push({
+                    startTime: programTime,
+                    endTime: new Date(programTime.getTime() + durationMinutes * 60 * 1000),
+                    title: title,
+                    description: description || '',
+                    duration: durationMinutes * 60,
+                    category: 'Fashion',
+                    format: title
+                });
+            }
+            
+            return programs;
+        }
+        
+        parseClassCNBCPrograms(data, baseDate, dateRange) {
+            const allPrograms = [];
+            let currentDate = new Date(baseDate);
+            const extendedDates = this.getExtendedDatesForRange(dateRange);
+            
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                
+                if (!row || row.length === 0) continue;
+                
+                if (row.length === 1 && row[0]) {
+                    const newDate = this.parseDate(row[0]);
+                    if (newDate) {
+                        currentDate = newDate;
+                        this.app.addLog(`Cambio giorno: ${currentDate.toDateString()}`);
+                    }
+                    continue;
+                }
+                
+                if (row.length < 10) continue;
+                
+                const program = this.parseClassCNBCProgram(row, currentDate);
+                if (program && this.isProgramInDateRange(program, extendedDates)) {
+                    allPrograms.push(program);
+                }
+            }
+            
+            return allPrograms;
+        }
+        
+        parseClassCNBCProgram(row, currentDate) {
+            const timeObj = row[0];
+            const title = row[1];
+            const programId = row[2];
+            const category = row[6] || row[7];
+            const rating = row[13];
+            const shortDesc = row[15];
+            const longDesc = row[16];
+            
+            if (!title || !programId) return null;
+            
+            const programTime = this.parseTime(timeObj, currentDate);
+            if (!programTime) return null;
+            
+            return {
+                startTime: programTime,
+                title: title,
+                programId: programId,
+                category: category,
+                rating: rating,
+                shortDesc: shortDesc,
+                longDesc: longDesc,
+                format: title
+            };
+        }
+        
+        processProgramsForOutput(allPrograms, dateRange, fillGaps, channel) {
+            allPrograms.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+            
+            this.calculateDurations(allPrograms, fillGaps);
+            
+            const targetDates = this.getOutputTargetDates(dateRange);
+            const finalPrograms = [];
+            const processedKeys = new Set();
+            
+            for (const targetDate of targetDates) {
+                const dayPrograms = this.processDayPrograms(allPrograms, targetDate, channel);
+                
+                for (const program of dayPrograms) {
+                    const key = `${program.startTime.getTime()}_${program.title}`;
+                    if (!processedKeys.has(key)) {
+                        processedKeys.add(key);
+                        finalPrograms.push(program);
+                    }
+                }
+            }
+            
+            return finalPrograms;
+        }
+        
+        processDayPrograms(allPrograms, targetDate, channel) {
+            const targetStart = new Date(targetDate);
+            targetStart.setHours(0, 0, 0, 0);
+            const targetEnd = new Date(targetDate);
+            targetEnd.setHours(23, 59, 59, 999);
+            
+            this.app.addLog(`\nProcesso programmi per ${targetDate.toLocaleDateString('it-IT')}...`);
+            
+            const dayPrograms = allPrograms.filter(program => {
+                return (program.startTime >= targetStart && program.startTime <= targetEnd) ||
+                       (program.endTime >= targetStart && program.endTime <= targetEnd) ||
+                       (program.startTime < targetStart && program.endTime > targetEnd);
+            });
+            
+            this.app.addLog(`  Trovati ${dayPrograms.length} programmi che toccano questa giornata`);
+            
+            const uniquePrograms = this.removeDuplicatePrograms(dayPrograms);
+            this.app.addLog(`  Dopo rimozione duplicati: ${uniquePrograms.length} programmi`);
+            
+            this.checkForOverlaps(uniquePrograms);
+            
+            const adjustedPrograms = this.adjustProgramsForDay(uniquePrograms, targetStart, targetEnd);
+            const filledPrograms = this.fillGapsInDay(adjustedPrograms, targetStart, targetEnd, channel);
+            
+            const totalMinutes = filledPrograms.reduce((sum, p) => sum + (p.duration / 60), 0);
+            this.app.addLog(`  ✅ Copertura totale: ${totalMinutes.toFixed(0)} minuti (su 1440 attesi)`);
+            
+            return filledPrograms;
+        }
+        
+        adjustProgramsForDay(programs, targetStart, targetEnd) {
+            const adjusted = [];
+            
+            for (const program of programs) {
+                const adjustedProgram = { ...program };
+                
+                if (program.startTime < targetStart) {
+                    adjustedProgram.startTime = new Date(targetStart);
+                    adjustedProgram.wasAdjustedStart = true;
+                    this.app.addLog(`  Adattato inizio di "${program.title}" da ${program.startTime.toLocaleTimeString('it-IT')} a 00:00:00`);
+                }
+                
+                if (program.endTime > targetEnd) {
+                    adjustedProgram.endTime = new Date(targetEnd);
+                    adjustedProgram.endTime.setSeconds(59);
+                    adjustedProgram.wasAdjustedEnd = true;
+                    this.app.addLog(`  Adattato fine di "${program.title}" da ${program.endTime.toLocaleTimeString('it-IT')} a 23:59:59`);
+                }
+                
+                adjustedProgram.duration = Math.floor((adjustedProgram.endTime - adjustedProgram.startTime) / 1000);
+                
+                if (adjustedProgram.duration > 0) {
+                    adjusted.push(adjustedProgram);
+                }
+            }
+            
+            return adjusted.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+        }
+        
+        fillGapsInDay(programs, targetStart, targetEnd, channel) {
+            if (programs.length === 0) {
+                this.app.addLog(`  ⚠️ Nessun programma trovato - creo filler per l'intera giornata`);
+                return [this.createFillerProgram(targetStart, targetEnd, channel, true)];
+            }
+            
+            const filled = [];
+            let currentTime = new Date(targetStart);
+            
+            for (const program of programs) {
+                if (program.startTime > currentTime) {
+                    const gapMinutes = (program.startTime - currentTime) / (1000 * 60);
+                    this.app.addLog(`  ⚠️ Buco di ${gapMinutes.toFixed(0)} minuti prima di "${program.title}"`);
+                    filled.push(this.createFillerProgram(currentTime, program.startTime, channel, false));
+                }
+                
+                filled.push(program);
+                currentTime = new Date(program.endTime);
+            }
+            
+            if (currentTime < targetEnd) {
+                const gapMinutes = (targetEnd - currentTime) / (1000 * 60);
+                this.app.addLog(`  ⚠️ Buco di ${gapMinutes.toFixed(0)} minuti alla fine della giornata`);
+                
+                const fillerEnd = new Date(targetEnd);
+                fillerEnd.setSeconds(59);
+                filled.push(this.createFillerProgram(currentTime, fillerEnd, channel, false));
+            }
+            
+            return filled;
+        }
+        
+        createFillerProgram(startTime, endTime, channel, isFullDay) {
+            const title = isFullDay ? "Programmazione" : "Programmazione notturna";
+            return {
+                startTime: new Date(startTime),
+                endTime: new Date(endTime),
+                title: title,
+                programId: channel === 'classcnbc' ? (isFullDay ? "FILLER_DAY" : "FILLER_NIGHT") : undefined,
+                description: title,
+                duration: (endTime - startTime) / 1000,
+                category: channel === 'tvmoda' ? 'Fashion' : 'Informazione',
+                format: title,
+                isFiller: true
+            };
+        }
+        
+        generateProgrammeXML(program, channelId, timezoneOffset, channel) {
+            let xml = `  <programme start="${this.formatXMLTVDate(program.startTime, timezoneOffset)}" stop="${this.formatXMLTVDate(program.endTime, timezoneOffset)}" channel="${channelId}">\n`;
+            
+            if (program.programId) {
+                xml += `    <episode-num system="assetID">${this.escapeXml(program.programId)}</episode-num>\n`;
+            }
+            
+            // FIX: Capitalizza SEMPRE il titolo per entrambi i canali
+            const displayTitle = this.capitalizeTitle(program.title);
+            xml += `    <title lang="it">${this.escapeXml(displayTitle)}</title>\n`;
+            
+            const description = this.getDescription(program);
+            if (description) {
+                xml += `    <desc lang="it">${this.escapeXml(description)}</desc>\n`;
+            }
+            
+            xml += `    <length units="seconds">${program.duration}</length>\n`;
+            
+            const rating = this.getRating(program);
+            xml += `    <rating system="Italy Parental Rating">\n`;
+            xml += `      <value>${rating}</value>\n`;
+            xml += `    </rating>\n`;
+            
+            if (program.category) {
+                const mappedCategory = this.app.config.categoryMapping[program.category] || program.category;
+                xml += `    <category lang="it">${this.escapeXml(mappedCategory)}</category>\n`;
+            }
+            
+            const formatIcon = this.getIconForFormat(program.format, channel);
+            xml += `    <icon src="${this.escapeXml(formatIcon)}" width="1920" height="1080"></icon>\n`;
+            xml += `  </programme>\n\n`;
+            
+            return xml;
+        }
+        
+        parseTime(timeObj, baseDate) {
+            let programTime;
+            
+            try {
+                if (timeObj instanceof Date || Object.prototype.toString.call(timeObj) === '[object Date]') {
+                    programTime = new Date(baseDate);
+                    programTime.setHours(timeObj.getHours(), timeObj.getMinutes(), timeObj.getSeconds() || 0, 0);
+                } else if (typeof timeObj === 'string') {
+                    const tempDate = new Date(timeObj);
+                    if (!isNaN(tempDate.getTime())) {
+                        programTime = new Date(baseDate);
+                        programTime.setHours(tempDate.getHours(), tempDate.getMinutes(), 0, 0);
+                    }
+                }
+            } catch (e) {
+                return null;
+            }
+            
+            return programTime;
+        }
+        
+        removeDuplicatePrograms(programs) {
+            const seen = new Map();
+            const unique = [];
+            
+            for (const program of programs) {
+                const key = `${program.startTime.getTime()}_${program.title}`;
+                
+                if (!seen.has(key)) {
+                    seen.set(key, true);
+                    unique.push(program);
+                } else {
+                    this.app.addLog(`  ⚠️ Duplicato rimosso: "${program.title}" alle ${program.startTime.toLocaleTimeString('it-IT')}`);
+                }
+            }
+            
+            return unique.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+        }
+        
+        checkForOverlaps(programs) {
+            for (let i = 0; i < programs.length - 1; i++) {
+                const current = programs[i];
+                const next = programs[i + 1];
+                
+                if (current.endTime > next.startTime) {
+                    const overlapMinutes = (current.endTime - next.startTime) / (1000 * 60);
+                    this.app.addLog(`  ⚠️ SOVRAPPOSIZIONE: "${current.title}" finisce alle ${current.endTime.toLocaleTimeString('it-IT')} ma "${next.title}" inizia alle ${next.startTime.toLocaleTimeString('it-IT')} (${overlapMinutes.toFixed(1)} minuti di sovrapposizione)`);
+                    
+                    current.endTime = new Date(next.startTime);
+                    current.duration = Math.floor((current.endTime - current.startTime) / 1000);
+                    this.app.addLog(`  ✅ Auto-fix: aggiustata fine di "${current.title}" alle ${current.endTime.toLocaleTimeString('it-IT')}`);
+                }
+            }
+        }
+        
+        parseDate(dateObj) {
+            try {
+                let date = dateObj;
+                if (typeof dateObj === 'string') {
+                    date = new Date(dateObj);
+                }
+                
+                if (date instanceof Date && !isNaN(date.getTime())) {
+                    return date;
+                }
+            } catch (e) {
+                return null;
+            }
+            return null;
+        }
+        
+        parseDuration(duration) {
+            let durationMinutes = 30;
+            
+            if (duration) {
+                if (duration instanceof Date || Object.prototype.toString.call(duration) === '[object Date]') {
+                    durationMinutes = duration.getHours() * 60 + duration.getMinutes();
+                } else if (typeof duration === 'string') {
+                    const colonMatch = duration.match(/(\d+):(\d+)(?::(\d+))?/);
+                    if (colonMatch) {
+                        const hours = parseInt(colonMatch[1]) || 0;
+                        const minutes = parseInt(colonMatch[2]) || 0;
+                        durationMinutes = hours * 60 + minutes;
+                    } else if (/^\d+$/.test(duration)) {
+                        durationMinutes = parseInt(duration);
+                    }
+                }
+            }
+            
+            return durationMinutes;
+        }
+        
+        calculateDurations(programs, fillGaps) {
+            if (!fillGaps || programs.length < 2) {
+                programs.forEach(program => {
+                    if (!program.endTime) {
+                        program.endTime = new Date(program.startTime.getTime() + 30 * 60 * 1000);
+                        program.duration = 30 * 60;
+                    }
+                });
+                return;
+            }
+            
+            this.app.addLog('\nApplico gap filling...');
+            
+            for (let i = 0; i < programs.length; i++) {
+                const currentProgram = programs[i];
+                let endTime;
+                
+                if (i + 1 < programs.length) {
+                    const nextProgram = programs[i + 1];
+                    const currentDay = currentProgram.startTime.toDateString();
+                    const nextDay = nextProgram.startTime.toDateString();
+                    
+                    if (currentDay === nextDay) {
+                        endTime = new Date(nextProgram.startTime);
+                    } else {
+                        endTime = new Date(currentProgram.startTime);
+                        endTime.setMinutes(endTime.getMinutes() + 30);
+                    }
+                } else {
+                    endTime = new Date(currentProgram.startTime);
+                    endTime.setMinutes(endTime.getMinutes() + 30);
+                }
+                
+                currentProgram.endTime = endTime;
+                currentProgram.duration = Math.max(60, Math.floor((endTime - currentProgram.startTime) / 1000));
+            }
+        }
+        
+        getTargetDates(dateRange, workbook, weekdayMap) {
+            const today = new Date();
+            const targetDates = [];
+            
+            if (dateRange === 'today') {
+                targetDates.push(today);
+            } else if (dateRange === 'tomorrow') {
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                targetDates.push(tomorrow);
+            } else if (dateRange === 'week') {
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    targetDates.push(date);
+                }
+            } else {
+                for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
+                    for (const sheetName of Object.keys(weekdayMap)) {
+                        if (workbook && workbook.Sheets[sheetName]) {
+                            const targetWeekday = weekdayMap[sheetName];
+                            const date = new Date(today);
+                            const daysUntilTarget = (targetWeekday - today.getDay() + 7) % 7;
+                            date.setDate(today.getDate() + daysUntilTarget + (weekOffset * 7));
+                            targetDates.push(date);
+                        }
+                    }
+                }
+            }
+            
+            return targetDates;
+        }
+        
+        getExtendedDatesForRange(dateRange) {
+            const today = new Date();
+            const dates = new Set();
+            
+            if (dateRange === 'today' || dateRange === 'tomorrow' || dateRange === 'week') {
+                const targetDates = this.getOutputTargetDates(dateRange);
+                for (const date of targetDates) {
+                    const dayBefore = new Date(date);
+                    dayBefore.setDate(date.getDate() - 1);
+                    dates.add(this.formatDateString(dayBefore));
+                    dates.add(this.formatDateString(date));
+                    const dayAfter = new Date(date);
+                    dayAfter.setDate(date.getDate() + 1);
+                    dates.add(this.formatDateString(dayAfter));
+                }
+            }
+            
+            return dates;
+        }
+        
+        getOutputTargetDates(dateRange) {
+            const today = new Date();
+            const dates = [];
+            
+            if (dateRange === 'today') {
+                dates.push(today);
+            } else if (dateRange === 'tomorrow') {
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                dates.push(tomorrow);
+            } else if (dateRange === 'week') {
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    dates.push(date);
+                }
+            } else {
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    dates.push(date);
+                }
+            }
+            
+            return dates;
+        }
+        
+        formatDateString(date) {
+            return date.getFullYear() + '-' +
+                String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                String(date.getDate()).padStart(2, '0');
+        }
+        
+        isProgramInDateRange(program, extendedDates) {
+            if (extendedDates.size === 0) return true;
+            
+            const programDateStr = this.formatDateString(program.startTime);
+            return extendedDates.has(programDateStr);
+        }
+        
+        getDescription(program) {
+            if (program.longDesc && program.longDesc !== program.title && program.longDesc.trim() !== '') {
+                return program.longDesc;
+            } else if (program.shortDesc && program.shortDesc !== program.title && program.shortDesc.trim() !== '') {
+                return program.shortDesc;
+            } else if (program.description && program.description.trim() !== '') {
+                return program.description;
+            } else if (program.isFiller) {
+                return program.description || program.title;
+            }
+            return null;
+        }
+        
+        getRating(program) {
+            if (program.rating && program.rating !== 'U' && program.rating.trim() !== '') {
+                return this.app.config.ratingMapping[program.rating] || '0';
+            }
+            return '0';
+        }
+    }
+    
+    // Initialize application
+    const app = new ModernEPGConverter();
+    
+    </script>
+</body>
+</html>
