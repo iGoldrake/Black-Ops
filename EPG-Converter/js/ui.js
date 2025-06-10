@@ -216,7 +216,8 @@ export class UIManager {
             channelId: document.getElementById('channelId').value.trim(),
             channelName: document.getElementById('channelName').value.trim(),
             timezoneOffset: parseInt(timezoneValue, 10), // Forziamo la conversione a numero
-            iconUrl: document.getElementById('iconUrl').value.trim()
+            iconUrl: document.getElementById('iconUrl').value.trim(),
+            fillGaps: this.app.options.fillGaps
         };
     }
     
