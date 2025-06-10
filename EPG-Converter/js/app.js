@@ -509,9 +509,24 @@ class EPGConverter {
     }
     
     /**
-     * Show download options
+     * Show individual downloads
      */
-    async showDownload() {
+    showIndividualDownloads() {
+        this.ui.showIndividualDownloads(this.state.xmltvFiles);
+    }
+    
+    /**
+     * Show main download view
+     */
+    showDownload() {
+        // Re-create ZIP and show main download
+        this.showDownloadSection();
+    }
+    
+    /**
+     * Re-show download section
+     */
+    async showDownloadSection() {
         if (this.state.xmltvFiles.length > 0) {
             try {
                 // Create ZIP file

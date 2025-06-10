@@ -129,10 +129,9 @@ export class UIManager {
     }
     
     /**
-     * Show date preview
+     * Show date preview grid
      */
     showDatePreview(detectedDates) {
-        // TODO: Implement date preview grid
         const previewDiv = document.getElementById('date-preview');
         const gridDiv = document.getElementById('date-grid');
         
@@ -141,27 +140,75 @@ export class UIManager {
             return;
         }
         
-        // TODO: Generate date items
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        gridDiv.innerHTML = '';
+        
+        for (const dateInfo of detectedDates) {
+            const dateItem = document.createElement('div');
+            dateItem.className = 'date-item';
+            
+            // Check if date is in the past
+            if (dateInfo.date < today) {
+                dateItem.classList.add('past');
+            }
+            
+            const dayName = dateInfo.date.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase();
+            const dateStr = dateInfo.date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            
+            dateItem.innerHTML = `
+                <div class="date-item-day">${dayName}</div>
+                <div class="date-item-date">${dateStr}</div>
+                <div class="date-item-sheet">Foglio: ${dateInfo.sheetName}</div>
+            `;
+            
+            gridDiv.appendChild(dateItem);
+        }
         
         previewDiv.classList.remove('hidden');
     }
     
     /**
-     * Update icon list
+     * Update icon list display
      */
     updateIconList(channel) {
-        // TODO: Implement icon list update
         const iconList = document.getElementById('iconList');
         const formatIcons = this.app.config.formatIcons[channel];
         const baseUrl = this.app.config.channels[channel].baseIconUrl;
         
         iconList.innerHTML = '';
         
-        // TODO: Generate icon items
+        Object.entries(formatIcons).forEach(([format, filename]) => {
+            const item = document.createElement('div');
+            item.className = 'icon-item fade-in';
+            item.innerHTML = `
+                <div class="icon-preview" style="background-image: url('${baseUrl}${filename}')"></div>
+                <div class="icon-details">
+                    <div class="icon-name">${format}</div>
+                    <div class="icon-url">${filename}</div>
+                </div>
+                <div class="icon-actions">
+                    <button class="btn btn-ghost btn-icon" onclick="window.app.editFormat('${format}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-ghost btn-icon" onclick="window.app.removeFormat('${format}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            iconList.appendChild(item);
+        });
     }
     
     /**
-     * Get conversion parameters
+     * Get conversion parameters from form
      */
     getConversionParameters() {
         return {
@@ -192,7 +239,7 @@ export class UIManager {
     }
     
     /**
-     * Update progress bar
+     * Update overall progress bar
      */
     updateProgress(percent) {
         document.getElementById('progress-percent').textContent = `${percent}%`;
@@ -200,17 +247,49 @@ export class UIManager {
     }
     
     /**
-     * Update multi-file progress
+     * Update multi-file progress item
      */
     updateMultiProgress(index, dateInfo, status) {
-        // TODO: Implement multi-file progress update
+        const progressItemId = `progress-${index}`;
+        let progressItem = document.getElementById(progressItemId);
+        
+        if (!progressItem) {
+            // Create progress item if it doesn't exist
+            progressItem = document.createElement('div');
+            progressItem.className = 'file-progress-item';
+            progressItem.id = progressItemId;
+            document.getElementById('multi-progress').appendChild(progressItem);
+        }
+        
+        if (status === 'processing') {
+            progressItem.innerHTML = `
+                <div class="file-progress-header">
+                    <span class="file-progress-name">${dateInfo.date.toLocaleDateString('it-IT')} - ${dateInfo.dateString}.xml (${dateInfo.sheetName})</span>
+                    <span class="file-progress-status">
+                        <span class="spinner"></span>
+                        In elaborazione...
+                    </span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+            `;
+        } else if (status === 'complete') {
+            progressItem.classList.add('complete');
+            progressItem.querySelector('.file-progress-status').innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="color: var(--success)">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                Completato
+            `;
+            progressItem.querySelector('.progress-fill').style.width = '100%';
+        }
     }
     
     /**
-     * Show download options
+     * Show download options after conversion
      */
     showDownloadOptions(zipUrl, zipFilename, zipSize, xmlFiles) {
-        // TODO: Implement download UI
         const downloadSection = document.getElementById('downloadSection');
         
         downloadSection.innerHTML = `
@@ -221,6 +300,9 @@ export class UIManager {
                 </svg>
                 <h3 class="font-semibold mb-2">File XMLTV Generati!</h3>
                 <p class="text-secondary mb-2">${xmlFiles.length} file XML • ${(zipSize / 1024).toFixed(1)} KB totali</p>
+                <div class="text-xs text-secondary mb-4">
+                    ${xmlFiles.map(f => f.filename).join(' • ')}
+                </div>
                 <a href="${zipUrl}" download="${zipFilename}" class="btn btn-success">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
@@ -229,6 +311,9 @@ export class UIManager {
                     </svg>
                     Scarica ZIP (${xmlFiles.length} file)
                 </a>
+                <button class="btn btn-secondary mt-2" onclick="window.app.showIndividualDownloads()">
+                    Scarica file singoli
+                </button>
             </div>
         `;
         
@@ -236,10 +321,30 @@ export class UIManager {
     }
     
     /**
-     * Load recent sessions
+     * Show individual file downloads
+     */
+    showIndividualDownloads(xmlFiles) {
+        const downloadSection = document.getElementById('downloadSection');
+        let html = '<div class="fade-in"><h3 class="font-semibold mb-4">Download file singoli</h3><div class="grid grid-2" style="gap: 0.5rem; max-width: 600px; margin: 0 auto;">';
+        
+        for (const file of xmlFiles) {
+            const blob = new Blob([file.content], { type: 'application/xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            html += `
+                <a href="${url}" download="${file.filename}" class="btn btn-secondary btn-sm">
+                    📄 ${file.filename}
+                </a>
+            `;
+        }
+        
+        html += '</div><button class="btn btn-ghost mt-4" onclick="window.app.showDownload()">← Torna al download ZIP</button></div>';
+        downloadSection.innerHTML = html;
+    }
+    
+    /**
+     * Load and display recent sessions
      */
     loadRecentSessions() {
-        // TODO: Implement recent sessions display
         const sessions = JSON.parse(localStorage.getItem('epg-sessions') || '[]');
         const container = document.getElementById('recent-sessions');
         
@@ -248,13 +353,36 @@ export class UIManager {
             return;
         }
         
-        // TODO: Generate session items
+        container.innerHTML = sessions.map((session, index) => {
+            const date = new Date(session.date);
+            const timeAgo = this.app.utils ? this.app.utils.getTimeAgo(date) : this.getTimeAgo(date);
+            
+            return `
+                <div class="mb-2 text-xs">
+                    <div class="font-semibold">${session.channelName}</div>
+                    <div class="opacity-50">${timeAgo}</div>
+                </div>
+            `;
+        }).join('');
     }
     
     /**
-     * Initialize tooltips
+     * Simple time ago function (fallback)
+     */
+    getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        
+        if (seconds < 60) return 'Adesso';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)} minuti fa`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)} ore fa`;
+        return `${Math.floor(seconds / 86400)} giorni fa`;
+    }
+    
+    /**
+     * Initialize tooltips (CSS-based, no JS needed)
      */
     initializeTooltips() {
-        // Tooltips are handled via CSS :hover
+        // Tooltips are handled entirely via CSS :hover
+        // This method is kept for compatibility
     }
 }
