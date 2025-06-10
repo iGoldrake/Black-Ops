@@ -917,7 +917,7 @@
                 <div class="logo">
                     <div class="logo-icon">📺</div>
                     <span>EPG Converter</span>
-                    <span class="badge badge-primary">v3.0.3</span>
+                    <span class="badge badge-primary">v3.0.4</span>
                 </div>
                 
                 <div class="header-actions">
@@ -1255,7 +1255,7 @@
         
         <!-- Footer -->
         <footer class="footer">
-            <p>EPG Converter v3.0.3 - Professional Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 09/06/2025</p>
+            <p>EPG Converter v3.0.4 - Professional Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 09/06/2025</p>
         </footer>
     </div>
     
@@ -1266,7 +1266,7 @@
     // Modern EPG Converter Application
     class ModernEPGConverter {
         constructor() {
-            this.SOFTWARE_VERSION = "3.0.3";
+            this.SOFTWARE_VERSION = "3.0.4";
             this.LAST_UPDATE = "09/06/2025";
             
             // State
@@ -2221,6 +2221,12 @@
                 .replace(/'/g, '&#39;');
         }
         
+        capitalizeTitle(title) {
+            if (!title) return '';
+            // Converte in minuscolo e capitalizza solo la prima lettera
+            return title.charAt(0).toUpperCase() + title.slice(1).toLowerCase();
+        }
+        
         formatXMLTVDate(date, timezoneOffset) {
             const utcDate = new Date(date.getTime() - (timezoneOffset * 60 * 60 * 1000));
             const year = utcDate.getUTCFullYear();
@@ -2563,7 +2569,9 @@
                 xml += `    <episode-num system="assetID">${this.escapeXml(program.programId)}</episode-num>\n`;
             }
             
-            xml += `    <title lang="it">${this.escapeXml(program.title)}</title>\n`;
+            // Capitalizza il titolo solo per TV Moda
+            const displayTitle = channel === 'tvmoda' ? this.capitalizeTitle(program.title) : program.title;
+            xml += `    <title lang="it">${this.escapeXml(displayTitle)}</title>\n`;
             
             const description = this.getDescription(program);
             if (description) {
