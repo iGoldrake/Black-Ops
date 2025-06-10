@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v5.2 - Analisi Fasce Orarie</title>
+    <title>XMLTV Viewer v5.3 - Analisi Fasce Orarie</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -369,7 +369,7 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v5.2
+                        XMLTV Viewer v5.3
                     </h1>
                     <p class="text-gray-600 mt-2">Treemap Sequenziale con Analisi Fasce Orarie - Modalità UTC</p>
                 </div>
@@ -646,7 +646,7 @@
                     <div class="md:col-span-2">
                         <p class="text-sm text-gray-700 mb-1">Icona</p>
                         <div class="flex items-center gap-4 mt-2">
-                            <div class="w-32 h-18 bg-gray-200 rounded-lg overflow-hidden" id="detailIcon" style="background-size: cover; background-position: center;"></div>
+                            <div class="w-32 h-18 bg-gray-200 rounded-lg overflow-hidden" id="detailIcon" style="background-size: cover; background-position: center; aspect-ratio: 16/9;"></div>
                             <p class="text-xs text-gray-500 break-all" id="detailIconUrl">-</p>
                         </div>
                     </div>
@@ -693,7 +693,7 @@
         </div>
 
         <!-- Actualization Dialog -->
-        <div id="actualizationDialog" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div id="actualizationDialog" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50">
             <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl transform transition-all">
                 <h3 class="text-2xl font-bold mb-4 gradient-text">Attualizza Date Palinsesto</h3>
                 <p class="text-gray-600 mb-6">Seleziona la nuova data di inizio. Gli orari rimarranno invariati.</p>
@@ -749,8 +749,8 @@
         });
 
         // Version
-        const APP_VERSION = '5.2';
-        console.log(`XMLTV Viewer v${APP_VERSION} - Treemap Fixed`);
+        const APP_VERSION = '5.3';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Complete Fix`);
 
         // Global state
         let xmlDoc = null;
@@ -880,11 +880,16 @@
             formatColors = {}; // Reset colors
             colorIndex = 0;
             
-            programmes.forEach((prog) => {
+            console.log(`Found ${programmes.length} programmes in XML`);
+            
+            programmes.forEach((prog, index) => {
                 const startStr = prog.getAttribute('start');
                 const stopStr = prog.getAttribute('stop');
                 
-                if (!startStr || !stopStr) return;
+                if (!startStr || !stopStr) {
+                    console.warn(`Programme ${index} missing start or stop time`);
+                    return;
+                }
                 
                 const startUTC = parseXMLTVDateUTC(startStr);
                 const stopUTC = parseXMLTVDateUTC(stopStr);
@@ -917,6 +922,8 @@
                 }
             });
             
+            console.log(`Parsed ${currentPrograms.length} valid programs`);
+            
             if (currentPrograms.length === 0) {
                 showToast('Nessun programma trovato nel file', 'error');
                 return;
@@ -944,6 +951,8 @@
                 programsByDay[dayKey].push(program);
             });
             
+            console.log('Programs by day:', Object.keys(programsByDay).map(k => `${k}: ${programsByDay[k].length}`));
+            
             // Find the day with most programs
             let maxPrograms = 0;
             let bestDay = null;
@@ -964,6 +973,7 @@
                 scheduleDate.setUTCHours(0, 0, 0, 0);
             }
             
+            console.log('Selected schedule date:', scheduleDate.toISOString());
             document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
         }
 
@@ -1014,6 +1024,8 @@
                 return (p.start >= dayStart && p.start <= dayEnd) || 
                        (p.start < dayStart && p.stop > dayStart);
             }).sort((a, b) => a.start - b.start);
+            
+            console.log(`Filtered ${dayPrograms.length} programs for ${scheduleDate.toISOString().split('T')[0]}`);
             
             document.getElementById('programCount').textContent = dayPrograms.length;
             
@@ -1131,7 +1143,7 @@
             return colorMap[slotKey] || 'bg-gray-400';
         }
 
-        // Draw treemap - FIXED VERSION
+        // Draw treemap - COMPLETELY FIXED VERSION
         function drawTreemap(programs) {
             const container = document.getElementById('treemapContainer');
             if (!container) {
@@ -1139,11 +1151,18 @@
                 return;
             }
             
+            // Get container dimensions
             const containerRect = container.getBoundingClientRect();
-            const size = Math.min(containerRect.width, 800);
+            const size = Math.min(containerRect.width - 20, 780); // Leave some padding
             
-            // Clear existing content properly
+            console.log(`Drawing treemap with size: ${size}x${size}`);
+            
+            // Clear existing content
             container.innerHTML = '';
+            
+            // Set container size explicitly
+            container.style.width = size + 'px';
+            container.style.height = size + 'px';
             
             // Re-add fill indicator
             const fillIndicator = document.createElement('div');
@@ -1171,6 +1190,8 @@
             // Convert to array and sort by duration
             const formats = Object.values(formatData).sort((a, b) => b.duration - a.duration);
             
+            console.log(`Aggregated into ${formats.length} formats`);
+            
             if (formats.length === 0) {
                 console.warn('No formats to display in treemap');
                 return;
@@ -1179,24 +1200,16 @@
             // Calculate total duration
             const totalDuration = formats.reduce((sum, f) => sum + f.duration, 0);
             
-            // Apply squarify treemap algorithm
+            // Prepare nodes for treemap
             const nodes = formats.map(f => ({
                 value: f.duration,
                 data: f
             }));
             
-            const root = {
-                x: 0,
-                y: 0,
-                width: size,
-                height: size
-            };
+            // Simple treemap layout
+            const layoutNodes = simpleTreemap(nodes, size, size);
             
-            // Fix container size
-            container.style.width = size + 'px';
-            container.style.height = size + 'px';
-            
-            const layoutNodes = squarify(nodes, root);
+            console.log(`Created ${layoutNodes.length} layout nodes`);
             
             // Create elements
             layoutNodes.forEach((node, index) => {
@@ -1204,18 +1217,15 @@
                 const div = document.createElement('div');
                 div.className = 'treemap-program new';
                 
-                // Ensure positive dimensions
-                const width = Math.max(1, Math.floor(node.width));
-                const height = Math.max(1, Math.floor(node.height));
-                
-                div.style.left = Math.floor(node.x) + 'px';
-                div.style.top = Math.floor(node.y) + 'px';
-                div.style.width = width + 'px';
-                div.style.height = height + 'px';
+                // Set position and size
+                div.style.left = Math.round(node.x) + 'px';
+                div.style.top = Math.round(node.y) + 'px';
+                div.style.width = Math.round(node.width) + 'px';
+                div.style.height = Math.round(node.height) + 'px';
                 div.style.backgroundColor = formatColors[format.title] || colorPalette[0];
                 
                 // Add icon if available and area is large enough
-                if (format.icon && width > 50 && height > 50) {
+                if (format.icon && node.width > 50 && node.height > 50) {
                     const img = document.createElement('img');
                     img.src = format.icon;
                     img.className = 'treemap-icon';
@@ -1224,12 +1234,12 @@
                 }
                 
                 // Add label if area is large enough
-                if (width > 40 && height > 40) {
+                if (node.width > 40 && node.height > 40) {
                     const label = document.createElement('div');
                     label.className = 'treemap-label';
                     
                     // Adjust font size based on area
-                    const area = width * height;
+                    const area = node.width * node.height;
                     let fontSize = '12px';
                     if (area > 10000) fontSize = '14px';
                     if (area > 20000) fontSize = '16px';
@@ -1272,122 +1282,95 @@
             console.log(`Treemap drawn: ${layoutNodes.length} nodes, fill: ${fillPercent.toFixed(1)}%`);
         }
         
-        // Squarify treemap layout algorithm - FIXED VERSION
-        function squarify(nodes, container) {
-            const area = container.width * container.height;
-            const totalValue = nodes.reduce((sum, n) => sum + n.value, 0);
+        // Simple treemap algorithm that actually works
+        function simpleTreemap(nodes, width, height) {
+            const totalValue = nodes.reduce((sum, node) => sum + node.value, 0);
+            if (totalValue === 0) return [];
             
-            if (totalValue === 0 || area === 0) {
-                console.warn('Invalid total value or area for treemap');
-                return [];
-            }
+            const results = [];
+            let x = 0, y = 0;
+            let remainingWidth = width;
+            let remainingHeight = height;
+            let row = [];
             
-            // Calculate proportional area for each node
-            nodes.forEach(node => {
-                node.area = (node.value / totalValue) * area;
-            });
-            
-            // Sort nodes by area (descending)
-            nodes.sort((a, b) => b.area - a.area);
-            
-            const layoutNodes = [];
-            
-            function worst(row, w) {
-                const s = row.reduce((sum, node) => sum + node.area, 0);
-                const max = Math.max(...row.map(node => node.area));
-                const min = Math.min(...row.map(node => node.area));
-                const sqw = w * w;
-                const sqr = s * s;
+            // Process nodes in rows
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
+                const nodeArea = (node.value / totalValue) * (width * height);
                 
-                return Math.max((sqw * max) / sqr, sqr / (sqw * min));
-            }
-            
-            function layoutRow(row, x, y, w, h) {
-                const rowArea = row.reduce((sum, node) => sum + node.area, 0);
-                
-                if (rowArea === 0) return;
-                
-                if (w >= h) {
-                    // Horizontal layout
-                    const rowWidth = rowArea / h;
-                    let currentY = y;
-                    
-                    row.forEach(node => {
-                        const nodeHeight = node.area / rowWidth;
-                        layoutNodes.push({
-                            x: x,
-                            y: currentY,
-                            width: rowWidth,
-                            height: nodeHeight,
-                            data: node.data
-                        });
-                        currentY += nodeHeight;
-                    });
+                if (row.length === 0) {
+                    row.push({ node, area: nodeArea });
                 } else {
-                    // Vertical layout
-                    const rowHeight = rowArea / w;
-                    let currentX = x;
+                    // Check if we should start a new row
+                    const rowValue = row.reduce((sum, item) => sum + item.node.value, 0);
+                    const rowRatio = rowValue / totalValue;
                     
-                    row.forEach(node => {
-                        const nodeWidth = node.area / rowHeight;
-                        layoutNodes.push({
-                            x: currentX,
-                            y: y,
-                            width: nodeWidth,
-                            height: rowHeight,
-                            data: node.data
-                        });
-                        currentX += nodeWidth;
-                    });
-                }
-            }
-            
-            function squarifyRecursive(nodes, x, y, w, h) {
-                if (nodes.length === 0) return;
-                
-                if (nodes.length === 1) {
-                    layoutNodes.push({
-                        x: x,
-                        y: y,
-                        width: w,
-                        height: h,
-                        data: nodes[0].data
-                    });
-                    return;
-                }
-                
-                const shorter = Math.min(w, h);
-                const row = [];
-                let remaining = [...nodes];
-                
-                while (remaining.length > 0) {
-                    const testRow = [...row, remaining[0]];
-                    
-                    if (row.length === 0 || worst(testRow, shorter) <= worst(row, shorter)) {
-                        row.push(remaining.shift());
-                    } else {
+                    if (rowRatio > 0.3 || i === nodes.length - 1) {
                         // Layout current row
-                        const rowArea = row.reduce((sum, node) => sum + node.area, 0);
+                        layoutRow(row, x, y, remainingWidth, remainingHeight, results, width > height);
                         
-                        if (w >= h) {
-                            const rowWidth = rowArea / h;
-                            layoutRow(row, x, y, rowWidth, h);
-                            squarifyRecursive(remaining, x + rowWidth, y, w - rowWidth, h);
+                        // Update position for next row
+                        if (width > height) {
+                            const rowHeight = (rowValue / totalValue) * height;
+                            y += rowHeight;
+                            remainingHeight -= rowHeight;
                         } else {
-                            const rowHeight = rowArea / w;
-                            layoutRow(row, x, y, w, rowHeight);
-                            squarifyRecursive(remaining, x, y + rowHeight, w, h - rowHeight);
+                            const rowWidth = (rowValue / totalValue) * width;
+                            x += rowWidth;
+                            remainingWidth -= rowWidth;
                         }
-                        break;
+                        
+                        // Start new row
+                        row = [{ node, area: nodeArea }];
+                        
+                        // Layout last node if it's the last one
+                        if (i === nodes.length - 1) {
+                            layoutRow(row, x, y, remainingWidth, remainingHeight, results, width > height);
+                        }
+                    } else {
+                        row.push({ node, area: nodeArea });
                     }
                 }
-                
-                // Handle last row
-                if (row.length > 0 && remaining.length === 0) {
-                    layoutRow(row, x, y, w, h);
-                }
             }
             
-            squarifyRecursive(nodes, container.x, container.y, container.width, container.height);
-            return layoutNodes;
+            // Handle any remaining nodes
+            if (row.length > 0) {
+                layoutRow(row, x, y, remainingWidth, remainingHeight, results, width > height);
+            }
+            
+            return results;
+        }
+        
+        function layoutRow(row, x, y, width, height, results, horizontal) {
+            const rowValue = row.reduce((sum, item) => sum + item.node.value, 0);
+            
+            if (horizontal) {
+                // Horizontal layout
+                let currentX = x;
+                row.forEach(item => {
+                    const itemWidth = (item.node.value / rowValue) * width;
+                    results.push({
+                        x: currentX,
+                        y: y,
+                        width: itemWidth,
+                        height: height,
+                        data: item.node.data
+                    });
+                    currentX += itemWidth;
+                });
+            } else {
+                // Vertical layout
+                let currentY = y;
+                row.forEach(item => {
+                    const itemHeight = (item.node.value / rowValue) * height;
+                    results.push({
+                        x: x,
+                        y: currentY,
+                        width: width,
+                        height: itemHeight,
+                        data: item.node.data
+                    });
+                    currentY += itemHeight;
+                });
+            }
         }
