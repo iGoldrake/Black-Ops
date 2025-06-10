@@ -33,21 +33,21 @@ export class XMLTVGenerator {
      * Format date for XMLTV (converts to UTC)
      */
     formatXMLTVDate(date, timezoneOffset) {
-        // Per convertire da ora locale a UTC, dobbiamo SOTTRARRE l'offset
-        // Se siamo a UTC+2 (Roma estate), le 00:00 locali sono le 22:00 UTC del giorno prima
-        // Se siamo a UTC+1 (Roma inverno), le 00:00 locali sono le 23:00 UTC del giorno prima
+        // IMPORTANTE: La data che riceviamo è già in GMT+0200 (come mostra il log)
+        // Quindi dobbiamo usare getTime() che ci dà già il tempo UTC corretto
         
-        // Log per debug del parametro (rimuovere dopo il test)
+        // Log per debug
         if (!this._debugLogged) {
             this.app.log(`🕐 Timezone offset ricevuto in formatXMLTVDate: ${timezoneOffset}`);
+            this.app.log(`🕐 Data ricevuta: ${date.toString()}`);
+            this.app.log(`🕐 getTime(): ${date.getTime()}`);
             this._debugLogged = true;
         }
         
-        // Creiamo una nuova data sottraendo l'offset in millisecondi
-        const utcTime = date.getTime() - (timezoneOffset * 60 * 60 * 1000);
-        const utcDate = new Date(utcTime);
+        // Usiamo direttamente la data UTC dal timestamp
+        const utcDate = new Date(date.getTime());
         
-        // Formattiamo usando i metodi UTC per assicurarci di ottenere i valori corretti
+        // Formattiamo usando i metodi UTC
         const year = utcDate.getUTCFullYear();
         const month = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
         const day = String(utcDate.getUTCDate()).padStart(2, '0');
@@ -55,12 +55,12 @@ export class XMLTVGenerator {
         const minutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
         const seconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
         
-        // Debug: verifichiamo la conversione (rimuovere dopo il test)
+        // Debug: verifichiamo la conversione
         if (!this._logCount) this._logCount = 0;
         if (this._logCount < 3) {
-            const localStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-            const utcStr = `${day}/${month}/${year} ${hours}:${minutes}`;
-            this.app.log(`📅 Conversione: ${localStr} (UTC+${timezoneOffset}) → ${utcStr} UTC`);
+            const localStr = date.toString();
+            const utcStr = `${day}/${month}/${year} ${hours}:${minutes} UTC`;
+            this.app.log(`📅 Conversione: ${localStr} → ${utcStr}`);
             this._logCount++;
         }
         
