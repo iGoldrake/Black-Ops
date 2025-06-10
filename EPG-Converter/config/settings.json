@@ -1,0 +1,41 @@
+{
+  "channels": {
+    "classcnbc": {
+      "id": "ClassCNBC",
+      "name": "Class CNBC",
+      "baseIconUrl": "https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/"
+    },
+    "tvmoda": {
+      "id": "ClassTVModa",
+      "name": "Class TV Moda",
+      "baseIconUrl": "https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassTVModa_IT_samsung/Images/"
+    }
+  },
+  "categoryMapping": {
+    "Informazione": "News",
+    "Economia": "Business",
+    "Intrattenimento": "Entertainment",
+    "Sport": "Sports",
+    "Musica": "Music",
+    "Documentario": "Documentary",
+    "Cultura": "Arts/Culture",
+    "Cucina": "Cooking",
+    "Travel": "Travel",
+    "Talk": "Talk Show",
+    "Reality": "Reality",
+    "Film": "Movie",
+    "Fashion": "Fashion",
+    "Lifestyle": "Lifestyle"
+  },
+  "ratingMapping": {
+    "U": "0",
+    "T": "6",
+    "VM14": "14",
+    "VM18": "18",
+    "6": "6",
+    "12": "12",
+    "14": "14",
+    "16": "16",
+    "18": "18"
+  }
+}
