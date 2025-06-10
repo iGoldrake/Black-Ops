@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPG Converter 3.0 - Professional Edition</title>
+    <title>EPG Converter 3.0.7 - Professional Edition</title>
     
     <!-- Modern Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -917,7 +917,7 @@
                 <div class="logo">
                     <div class="logo-icon">📺</div>
                     <span>EPG Converter</span>
-                    <span class="badge badge-primary">v3.0.6</span>
+                    <span class="badge badge-primary">v3.0.7</span>
                 </div>
                 
                 <div class="header-actions">
@@ -1255,7 +1255,7 @@
         
         <!-- Footer -->
         <footer class="footer">
-            <p>EPG Converter v3.0.6 - Professional Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 10/06/2025</p>
+            <p>EPG Converter v3.0.7 - Professional Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 10/06/2025</p>
         </footer>
     </div>
     
@@ -1266,7 +1266,7 @@
     // Modern EPG Converter Application
     class ModernEPGConverter {
         constructor() {
-            this.SOFTWARE_VERSION = "3.0.6";
+            this.SOFTWARE_VERSION = "3.0.7";
             this.LAST_UPDATE = "10/06/2025";
             
             // State
@@ -1317,7 +1317,8 @@
             this.setupKeyboardShortcuts();
             this.loadRecentSessions();
             this.initTabSystem();
-            this.addLog('🚀 EPG Converter 3.0.6 avviato');
+            this.addLog('🚀 EPG Converter 3.0.7 avviato');
+            this.addLog('✅ UTC Fix applicato - Conversione orari corretta');
             this.addLog('Seleziona il canale per iniziare la conversione');
         }
         
@@ -2202,7 +2203,7 @@
         }
     }
     
-    // XMLTV Generator Class
+    // XMLTV Generator Class with UTC Fix
     class XMLTVGenerator {
         constructor(app) {
             this.app = app;
@@ -2225,21 +2226,19 @@
         }
         
         formatXMLTVDate(date, timezoneOffset) {
-            // FIX CRITICO: Conversione corretta da ora locale italiana a UTC
-            // Sottrai l'offset timezone per ottenere UTC
-            const utcTime = date.getTime() - (timezoneOffset * 60 * 60 * 1000);
-            const utcDate = new Date(utcTime);
+            // FIX UTC v3.0.7: Usa direttamente i metodi UTC dell'oggetto Date
+            // Non serve sottrarre l'offset perché date contiene già l'ora locale corretta
             
-            const year = utcDate.getUTCFullYear();
-            const month = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(utcDate.getUTCDate()).padStart(2, '0');
-            const hours = String(utcDate.getUTCHours()).padStart(2, '0');
-            const minutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
-            const seconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            const hours = String(date.getUTCHours()).padStart(2, '0');
+            const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(date.getUTCSeconds()).padStart(2, '0');
             
             // Debug logging
             if (this.app.options.debugMode) {
-                this.app.addLog(`DEBUG: ${date.toLocaleString('it-IT')} (UTC+${timezoneOffset}) → ${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`);
+                this.app.addLog(`DEBUG UTC: ${date.toLocaleString('it-IT')} → ${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`);
             }
             
             return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
