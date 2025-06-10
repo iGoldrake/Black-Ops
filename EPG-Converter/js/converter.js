@@ -102,7 +102,7 @@ export class XMLTVGenerator {
         const processedPrograms = this.processProgramsForSingleDay(
             programs, 
             dateInfo.date, 
-            this.app.config.options.fillGaps, 
+            params.fillGaps, 
             'tvmoda'
         );
         
@@ -135,7 +135,7 @@ export class XMLTVGenerator {
         const processedPrograms = this.processProgramsForSingleDay(
             programs, 
             targetDate, 
-            this.app.config.options.fillGaps, 
+            params.fillGaps, 
             'classcnbc'
         );
         
