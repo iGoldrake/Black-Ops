@@ -64,7 +64,8 @@ export class XMLTVGenerator {
             this._logCount++;
         }
         
-        return `${year}${month}${day}T${hours}:${minutes}:${seconds}+0000`;
+        // Formato XMLTV: YYYYMMDDTHHMMSS+0000 (senza i due punti)
+        return `${year}${month}${day}T${hours}${minutes}${seconds}+0000`;
     }
     
     /**
