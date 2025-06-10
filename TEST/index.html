@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPG Converter 3.2.0 - Real Dates Edition</title>
+    <title>EPG Converter 3.2.1 - Direct Date Reading Edition</title>
     
     <!-- Modern Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -437,6 +437,12 @@
         
         .date-item-date {
             color: var(--text-primary);
+        }
+        
+        .date-item-sheet {
+            font-size: 0.625rem;
+            color: var(--text-tertiary);
+            margin-top: 0.25rem;
         }
         
         /* Buttons */
@@ -1015,8 +1021,8 @@
                 <div class="logo">
                     <div class="logo-icon">📺</div>
                     <span>EPG Converter</span>
-                    <span class="badge badge-warning">v3.2.0</span>
-                    <span class="badge badge-primary">Real Dates Edition</span>
+                    <span class="badge badge-warning">v3.2.1</span>
+                    <span class="badge badge-primary">Direct Date Reading</span>
                 </div>
                 
                 <div class="header-actions">
@@ -1103,7 +1109,7 @@
                             <div class="channel-icon">👗</div>
                             <h3 class="channel-name">Class TV Moda</h3>
                             <p class="channel-info">Fashion & Style</p>
-                            <p class="text-xs mt-2 opacity-50">Un foglio per giorno</p>
+                            <p class="text-xs mt-2 opacity-50">Date lette dai fogli</p>
                         </div>
                     </div>
                 </div>
@@ -1386,7 +1392,7 @@
         
         <!-- Footer -->
         <footer class="footer">
-            <p>EPG Converter v3.2.0 - Real Dates Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 11/06/2025</p>
+            <p>EPG Converter v3.2.1 - Direct Date Reading Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 27/11/2024</p>
         </footer>
     </div>
     
@@ -1396,11 +1402,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <script>
-    // Modern EPG Converter Application v3.2.0 - Real Dates Edition
+    // Modern EPG Converter Application v3.2.1 - Direct Date Reading Edition
     class ModernEPGConverter {
         constructor() {
-            this.SOFTWARE_VERSION = "3.2.0";
-            this.LAST_UPDATE = "11/06/2025";
+            this.SOFTWARE_VERSION = "3.2.1";
+            this.LAST_UPDATE = "27/11/2024";
             
             // State
             this.currentStep = 1;
@@ -1411,7 +1417,8 @@
             this.xmltvFiles = [];  // Array to store multiple XML files
             this.workbook = null;
             this.detectedFormats = new Set();
-            this.detectedDates = []; // NEW: Array to store detected dates
+            this.detectedDates = []; // Array to store detected dates with sheet info
+            this.tvModaSheetData = {}; // NEW: Store sheet data with dates
             this.logContent = [];
             
             // Options
@@ -1420,7 +1427,7 @@
                 validateData: false,
                 debugMode: false,
                 multiFileOutput: false,
-                useRealDates: true // NEW: Option to use real dates from palinsesto
+                useRealDates: true // Always true in this version
             };
             
             // Configuration
@@ -1454,9 +1461,9 @@
             this.setupKeyboardShortcuts();
             this.loadRecentSessions();
             this.initTabSystem();
-            this.addLog('🚀 EPG Converter 3.2.0 - Real Dates Edition avviato');
+            this.addLog('🚀 EPG Converter 3.2.1 - Direct Date Reading Edition avviato');
             this.addLog('✅ UTC Fix applicato - Conversione orari corretta');
-            this.addLog('🆕 Nuova funzionalità: uso date reali del palinsesto');
+            this.addLog('🆕 TV Moda: lettura diretta date dai fogli Excel');
             this.addLog('Seleziona il canale per iniziare la conversione');
         }
         
@@ -1654,6 +1661,7 @@
                     
                     this.detectedFormats.clear();
                     this.detectedDates = []; // Reset detected dates
+                    this.tvModaSheetData = {}; // Reset sheet data
                     
                     if (this.currentChannel === 'tvmoda') {
                         this.handleTVModaFile(file);
@@ -1673,7 +1681,7 @@
                                 <div class="text-xs mt-1">
                                     ${this.workbook.SheetNames.length} fogli • 
                                     ${this.detectedFormats.size} format unici • 
-                                    ${this.detectedDates.length} giorni rilevati •
+                                    ${this.detectedDates.length} date rilevate •
                                     ${(file.size / 1024).toFixed(1)} KB
                                 </div>
                             </div>
@@ -1705,36 +1713,32 @@
         }
         
         handleTVModaFile(file) {
-            const expectedSheets = ['SABATO', 'DOMENICA', 'LUNEDI', 'MARTEDI', 'MERCOLEDI', 'GIOVEDI', 'VENERDI'];
-            const hasWeekdaySheets = expectedSheets.some(sheet => this.workbook.SheetNames.includes(sheet));
+            this.addLog(`\n📁 Analisi file TV Moda: ${file.name}`);
+            this.addLog(`   Fogli trovati: ${this.workbook.SheetNames.join(', ')}`);
             
-            if (!hasWeekdaySheets) {
-                this.showStatus('⚠️ File non compatibile con TV Moda', 'error');
-                return;
-            }
+            // NEW: Direct date detection from sheet content
+            this.detectTVModaDatesFromContent();
             
-            // Detect dates from TV Moda file
-            this.detectTVModaDates();
-            
-            // Scan formats
-            for (const sheetName of this.workbook.SheetNames) {
-                if (expectedSheets.includes(sheetName)) {
-                    const worksheet = this.workbook.Sheets[sheetName];
-                    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-                    
-                    for (let i = 3; i < data.length; i++) {
-                        const row = data[i];
-                        if (row && row[1] && typeof row[1] === 'string') {
-                            this.detectedFormats.add(row[1].trim());
-                        }
+            // Scan formats from sheets with valid dates
+            for (const dateInfo of this.detectedDates) {
+                const worksheet = this.workbook.Sheets[dateInfo.sheetName];
+                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                
+                for (let i = 3; i < data.length; i++) {
+                    const row = data[i];
+                    if (row && row[1] && typeof row[1] === 'string') {
+                        this.detectedFormats.add(row[1].trim());
                     }
                 }
             }
             
-            this.addLog(`📁 File TV Moda caricato: ${file.name}`);
-            this.addLog(`   Fogli: ${this.workbook.SheetNames.join(', ')}`);
             this.addLog(`   Format unici: ${this.detectedFormats.size}`);
-            this.addLog(`   Date rilevate: ${this.detectedDates.length > 0 ? this.detectedDates.map(d => d.toLocaleDateString('it-IT')).join(', ') : 'Nessuna (userò date future)'}`);
+            this.addLog(`   Date rilevate: ${this.detectedDates.length}`);
+            
+            if (this.detectedDates.length === 0) {
+                this.showStatus('⚠️ Nessuna data valida trovata nei fogli TV Moda', 'error');
+                this.addLog('❌ ERRORE: Impossibile trovare date valide nei fogli');
+            }
         }
         
         handleClassCNBCFile(file) {
@@ -1756,66 +1760,69 @@
             this.addLog(`📁 File Class CNBC caricato: ${file.name}`);
             this.addLog(`   Righe: ${this.fileData.length}`);
             this.addLog(`   Format unici: ${this.detectedFormats.size}`);
-            this.addLog(`   Date rilevate: ${this.detectedDates.length > 0 ? this.detectedDates.map(d => d.toLocaleDateString('it-IT')).join(', ') : 'Nessuna (userò date attuali)'}`);
+            this.addLog(`   Date rilevate: ${this.detectedDates.length > 0 ? this.detectedDates.map(d => d.date.toLocaleDateString('it-IT')).join(', ') : 'Nessuna (userò date attuali)'}`);
         }
         
-        detectTVModaDates() {
-            const weekdayMap = {
-                'DOMENICA': 0, 'LUNEDI': 1, 'MARTEDI': 2, 'MERCOLEDI': 3,
-                'GIOVEDI': 4, 'VENERDI': 5, 'SABATO': 6
-            };
+        // NEW METHOD: Direct date detection from TV Moda sheet content
+        detectTVModaDatesFromContent() {
+            this.addLog('\n🔍 Ricerca date nei fogli TV Moda...');
             
-            let referenceDate = null;
-            
-            // Try to find a date in the first rows of any sheet
             for (const sheetName of this.workbook.SheetNames) {
-                if (!weekdayMap.hasOwnProperty(sheetName)) continue;
-                
                 const worksheet = this.workbook.Sheets[sheetName];
                 const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
                 
-                // Look for dates in the first 5 rows
-                for (let i = 0; i < Math.min(5, data.length); i++) {
+                this.addLog(`\nAnalisi foglio "${sheetName}":`);
+                
+                // Search for date in first 10 rows
+                let foundDate = null;
+                for (let i = 0; i < Math.min(10, data.length); i++) {
                     const row = data[i];
                     if (!row) continue;
                     
+                    // Check each cell in the row
                     for (let j = 0; j < row.length; j++) {
                         const cell = row[j];
+                        if (!cell) continue;
+                        
                         const parsedDate = this.parseCellAsDate(cell);
                         if (parsedDate) {
-                            referenceDate = parsedDate;
-                            this.addLog(`📅 Data di riferimento trovata in ${sheetName}: ${referenceDate.toLocaleDateString('it-IT')}`);
+                            foundDate = parsedDate;
+                            this.addLog(`  ✅ Data trovata in riga ${i+1}, colonna ${j+1}: ${parsedDate.toLocaleDateString('it-IT')}`);
                             break;
                         }
                     }
-                    if (referenceDate) break;
+                    if (foundDate) break;
                 }
-                if (referenceDate) break;
+                
+                if (foundDate) {
+                    // Store the sheet data with its date
+                    this.detectedDates.push({
+                        sheetName: sheetName,
+                        date: foundDate,
+                        dateString: this.formatDateForFilename(foundDate)
+                    });
+                    
+                    // Store full sheet data for later processing
+                    this.tvModaSheetData[sheetName] = {
+                        date: foundDate,
+                        data: data
+                    };
+                } else {
+                    this.addLog(`  ⚠️ Nessuna data trovata - foglio ignorato`);
+                }
             }
             
-            if (referenceDate) {
-                // Calculate dates for all weekdays based on the reference
-                const refWeekday = referenceDate.getDay();
-                
-                for (const [sheetName, weekday] of Object.entries(weekdayMap)) {
-                    if (!this.workbook.SheetNames.includes(sheetName)) continue;
-                    
-                    const dayDiff = weekday - refWeekday;
-                    const sheetDate = new Date(referenceDate);
-                    sheetDate.setDate(referenceDate.getDate() + dayDiff);
-                    
-                    this.detectedDates.push(sheetDate);
-                }
-                
-                // Sort dates
-                this.detectedDates.sort((a, b) => a.getTime() - b.getTime());
-            } else {
-                this.addLog('⚠️ Nessuna data trovata nel file TV Moda - userò date future basate su oggi');
+            // Sort detected dates
+            this.detectedDates.sort((a, b) => a.date.getTime() - b.date.getTime());
+            
+            this.addLog(`\n📊 Riepilogo date TV Moda:`);
+            for (const dateInfo of this.detectedDates) {
+                this.addLog(`  ${dateInfo.sheetName} → ${dateInfo.date.toLocaleDateString('it-IT')} → ${dateInfo.dateString}.xml`);
             }
         }
         
         detectClassCNBCDates() {
-            const dates = new Set();
+            const dates = [];
             
             // Scan for date change rows
             for (let i = 0; i < this.fileData.length; i++) {
@@ -1827,14 +1834,27 @@
                 if (row.length === 1 || (row.length > 1 && !row[1])) {
                     const parsedDate = this.parseCellAsDate(row[0]);
                     if (parsedDate) {
-                        dates.add(parsedDate.toDateString());
+                        dates.push({
+                            sheetName: 'Sheet1',
+                            date: parsedDate,
+                            dateString: this.formatDateForFilename(parsedDate)
+                        });
                     }
                 }
             }
             
-            // Convert to array and sort
-            this.detectedDates = Array.from(dates).map(dateStr => new Date(dateStr));
-            this.detectedDates.sort((a, b) => a.getTime() - b.getTime());
+            // Remove duplicates and sort
+            const uniqueDates = [];
+            const seen = new Set();
+            for (const dateInfo of dates) {
+                const key = dateInfo.date.toDateString();
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueDates.push(dateInfo);
+                }
+            }
+            
+            this.detectedDates = uniqueDates.sort((a, b) => a.date.getTime() - b.date.getTime());
             
             if (this.detectedDates.length === 0) {
                 this.addLog('⚠️ Nessuna data trovata nel file Class CNBC - userò date basate su oggi');
@@ -1851,6 +1871,9 @@
             
             // If it's a string, try to parse it
             if (typeof cell === 'string') {
+                // Clean the string
+                const cleanStr = cell.trim();
+                
                 // Try Italian date formats
                 const italianFormats = [
                     /(\d{1,2})\/(\d{1,2})\/(\d{4})/,  // DD/MM/YYYY
@@ -1859,7 +1882,7 @@
                 ];
                 
                 for (const format of italianFormats) {
-                    const match = cell.match(format);
+                    const match = cleanStr.match(format);
                     if (match) {
                         const day = parseInt(match[1]);
                         const month = parseInt(match[2]) - 1; // JavaScript months are 0-based
@@ -1872,7 +1895,7 @@
                 }
                 
                 // Try parsing as standard date
-                const date = new Date(cell);
+                const date = new Date(cleanStr);
                 if (!isNaN(date.getTime())) {
                     return date;
                 }
@@ -1905,21 +1928,22 @@
             
             gridDiv.innerHTML = '';
             
-            for (const date of this.detectedDates) {
+            for (const dateInfo of this.detectedDates) {
                 const dateItem = document.createElement('div');
                 dateItem.className = 'date-item';
                 
                 // Check if date is in the past
-                if (date < today) {
+                if (dateInfo.date < today) {
                     dateItem.classList.add('past');
                 }
                 
-                const dayName = date.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase();
-                const dateStr = date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const dayName = dateInfo.date.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase();
+                const dateStr = dateInfo.date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
                 dateItem.innerHTML = `
                     <div class="date-item-day">${dayName}</div>
                     <div class="date-item-date">${dateStr}</div>
+                    <div class="date-item-sheet">Foglio: ${dateInfo.sheetName}</div>
                 `;
                 
                 gridDiv.appendChild(dateItem);
@@ -1945,8 +1969,7 @@
             const dateRange = document.getElementById('dateRange').value;
             const fillGaps = this.options.fillGaps;
             const iconUrl = document.getElementById('iconUrl').value.trim();
-            const multiFileOutput = this.options.multiFileOutput || dateRange === 'multi7';
-            const useRealDates = this.options.useRealDates;
+            const multiFileOutput = this.options.multiFileOutput || dateRange === 'multi7' || this.currentChannel === 'tvmoda';
             
             this.addLog('\n🔧 CONFIGURAZIONE:');
             this.addLog(`- Tipo canale: ${this.currentChannel}`);
@@ -1957,26 +1980,23 @@
             this.addLog(`- Periodo: ${dateRange}`);
             this.addLog(`- Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
             this.addLog(`- Multi-file output: ${multiFileOutput ? 'ATTIVO' : 'DISATTIVO'}`);
-            this.addLog(`- Usa date reali: ${useRealDates ? 'ATTIVO' : 'DISATTIVO'}`);
             
             try {
                 const converter = new XMLTVGenerator(this);
                 
-                if (multiFileOutput) {
-                    // Multi-file generation
+                if (this.currentChannel === 'tvmoda') {
+                    // TV Moda always generates multiple files based on detected dates
                     this.xmltvFiles = [];
                     const multiProgress = document.getElementById('multi-progress');
                     multiProgress.classList.remove('hidden');
                     multiProgress.innerHTML = '';
                     
-                    const targetDates = useRealDates && this.detectedDates.length > 0 
-                        ? this.detectedDates 
-                        : this.getTargetDatesForMultiFile(dateRange);
+                    const targetDates = this.getTargetDatesForConversion(dateRange);
                     
-                    this.addLog(`\n📅 Generazione ${targetDates.length} file XML...`);
+                    this.addLog(`\n📅 Generazione ${targetDates.length} file XML per TV Moda...`);
                     
                     for (let i = 0; i < targetDates.length; i++) {
-                        const targetDate = targetDates[i];
+                        const dateInfo = targetDates[i];
                         const progressItemId = `progress-${i}`;
                         
                         // Create progress item
@@ -1985,7 +2005,76 @@
                         progressItem.id = progressItemId;
                         progressItem.innerHTML = `
                             <div class="file-progress-header">
-                                <span class="file-progress-name">${targetDate.toLocaleDateString('it-IT')} - ${this.formatDateForFilename(targetDate)}.xml</span>
+                                <span class="file-progress-name">${dateInfo.date.toLocaleDateString('it-IT')} - ${dateInfo.dateString}.xml (${dateInfo.sheetName})</span>
+                                <span class="file-progress-status">
+                                    <span class="spinner"></span>
+                                    In elaborazione...
+                                </span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        `;
+                        multiProgress.appendChild(progressItem);
+                        
+                        // Generate XML for this specific sheet/date
+                        const xmlContent = await this.generateXMLForTVModaSheet(
+                            converter,
+                            dateInfo,
+                            channelId,
+                            channelName,
+                            timezoneOffset,
+                            iconUrl,
+                            fillGaps
+                        );
+                        
+                        if (xmlContent && xmlContent.length > 100) {
+                            this.xmltvFiles.push({
+                                date: dateInfo.date,
+                                filename: `${dateInfo.dateString}.xml`,
+                                content: xmlContent
+                            });
+                            
+                            // Update progress item
+                            progressItem.classList.add('complete');
+                            progressItem.querySelector('.file-progress-status').innerHTML = `
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="color: var(--success)">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                Completato
+                            `;
+                            progressItem.querySelector('.progress-fill').style.width = '100%';
+                        }
+                        
+                        // Update overall progress
+                        const overallProgress = Math.round((i + 1) / targetDates.length * 100);
+                        this.updateProgress(overallProgress);
+                    }
+                    
+                    this.addLog(`✅ Generati ${this.xmltvFiles.length} file XML`);
+                    
+                } else if (multiFileOutput) {
+                    // Class CNBC multi-file generation
+                    this.xmltvFiles = [];
+                    const multiProgress = document.getElementById('multi-progress');
+                    multiProgress.classList.remove('hidden');
+                    multiProgress.innerHTML = '';
+                    
+                    const targetDates = this.getTargetDatesForConversion(dateRange);
+                    
+                    this.addLog(`\n📅 Generazione ${targetDates.length} file XML...`);
+                    
+                    for (let i = 0; i < targetDates.length; i++) {
+                        const dateInfo = targetDates[i];
+                        const progressItemId = `progress-${i}`;
+                        
+                        // Create progress item
+                        const progressItem = document.createElement('div');
+                        progressItem.className = 'file-progress-item';
+                        progressItem.id = progressItemId;
+                        progressItem.innerHTML = `
+                            <div class="file-progress-header">
+                                <span class="file-progress-name">${dateInfo.date.toLocaleDateString('it-IT')} - ${dateInfo.dateString}.xml</span>
                                 <span class="file-progress-status">
                                     <span class="spinner"></span>
                                     In elaborazione...
@@ -2000,7 +2089,7 @@
                         // Generate XML for this date
                         const xmlContent = await this.generateXMLForDate(
                             converter,
-                            targetDate,
+                            dateInfo.date,
                             channelId,
                             channelName,
                             timezoneOffset,
@@ -2010,8 +2099,8 @@
                         
                         if (xmlContent && xmlContent.length > 100) {
                             this.xmltvFiles.push({
-                                date: targetDate,
-                                filename: `${this.formatDateForFilename(targetDate)}.xml`,
+                                date: dateInfo.date,
+                                filename: `${dateInfo.dateString}.xml`,
                                 content: xmlContent
                             });
                             
@@ -2034,39 +2123,26 @@
                     this.addLog(`✅ Generati ${this.xmltvFiles.length} file XML`);
                     
                 } else {
-                    // Single file generation (existing logic)
-                    if (this.currentChannel === 'tvmoda') {
-                        this.xmltvContent = converter.generateXMLTVForTVModa(
-                            this.workbook,
-                            channelId,
-                            channelName,
-                            timezoneOffset,
-                            iconUrl,
-                            dateRange,
-                            fillGaps,
-                            useRealDates
-                        );
-                    } else {
-                        const baseDate = useRealDates && this.detectedDates.length > 0
-                            ? this.detectedDates[0]
-                            : new Date();
-                        
-                        const baseDateStr = baseDate.getFullYear() + '-' +
-                            String(baseDate.getMonth() + 1).padStart(2, '0') + '-' +
-                            String(baseDate.getDate()).padStart(2, '0');
-                        
-                        this.xmltvContent = converter.generateXMLTVForClassCNBC(
-                            this.fileData,
-                            channelId,
-                            channelName,
-                            baseDateStr,
-                            timezoneOffset,
-                            iconUrl,
-                            dateRange,
-                            fillGaps,
-                            useRealDates
-                        );
-                    }
+                    // Single file generation for Class CNBC
+                    const baseDate = this.detectedDates.length > 0
+                        ? this.detectedDates[0].date
+                        : new Date();
+                    
+                    const baseDateStr = baseDate.getFullYear() + '-' +
+                        String(baseDate.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(baseDate.getDate()).padStart(2, '0');
+                    
+                    this.xmltvContent = converter.generateXMLTVForClassCNBC(
+                        this.fileData,
+                        channelId,
+                        channelName,
+                        baseDateStr,
+                        timezoneOffset,
+                        iconUrl,
+                        dateRange,
+                        fillGaps,
+                        true
+                    );
                     
                     // Simulate progress
                     let progress = 0;
@@ -2095,20 +2171,108 @@
             }
         }
         
+        // NEW: Get target dates for conversion based on detected dates and range
+        getTargetDatesForConversion(dateRange) {
+            if (this.currentChannel === 'tvmoda') {
+                // For TV Moda, always use detected dates
+                return this.detectedDates;
+            }
+            
+            // For Class CNBC, filter based on date range
+            if (this.detectedDates.length === 0) {
+                // No dates detected, use calculated dates
+                const today = new Date();
+                const dates = [];
+                
+                if (dateRange === 'today') {
+                    dates.push({
+                        date: today,
+                        dateString: this.formatDateForFilename(today),
+                        sheetName: 'Generated'
+                    });
+                } else if (dateRange === 'tomorrow') {
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(today.getDate() + 1);
+                    dates.push({
+                        date: tomorrow,
+                        dateString: this.formatDateForFilename(tomorrow),
+                        sheetName: 'Generated'
+                    });
+                } else if (dateRange === 'week' || dateRange === 'multi7') {
+                    const startOffset = dateRange === 'multi7' ? 1 : 0;
+                    for (let i = startOffset; i < startOffset + 7; i++) {
+                        const date = new Date(today);
+                        date.setDate(today.getDate() + i);
+                        dates.push({
+                            date: date,
+                            dateString: this.formatDateForFilename(date),
+                            sheetName: 'Generated'
+                        });
+                    }
+                }
+                
+                return dates;
+            }
+            
+            // Filter detected dates based on range
+            if (dateRange === 'all') {
+                return this.detectedDates;
+            } else if (dateRange === 'today' || dateRange === 'tomorrow' || dateRange === 'week' || dateRange === 'multi7') {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                return this.detectedDates.filter(dateInfo => {
+                    if (dateRange === 'today') {
+                        return dateInfo.date.toDateString() === today.toDateString();
+                    } else if (dateRange === 'tomorrow') {
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(today.getDate() + 1);
+                        return dateInfo.date.toDateString() === tomorrow.toDateString();
+                    } else if (dateRange === 'week') {
+                        const weekEnd = new Date(today);
+                        weekEnd.setDate(today.getDate() + 7);
+                        return dateInfo.date >= today && dateInfo.date < weekEnd;
+                    } else if (dateRange === 'multi7') {
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(today.getDate() + 1);
+                        const weekEnd = new Date(tomorrow);
+                        weekEnd.setDate(tomorrow.getDate() + 7);
+                        return dateInfo.date >= tomorrow && dateInfo.date < weekEnd;
+                    }
+                    return false;
+                });
+            }
+            
+            return this.detectedDates;
+        }
+        
+        // NEW: Generate XML for specific TV Moda sheet
+        async generateXMLForTVModaSheet(converter, dateInfo, channelId, channelName, timezoneOffset, iconUrl, fillGaps) {
+            this.addLog(`\nGenerazione XML per ${dateInfo.sheetName} - ${dateInfo.date.toLocaleDateString('it-IT')}...`);
+            
+            const sheetData = this.tvModaSheetData[dateInfo.sheetName];
+            if (!sheetData) {
+                this.addLog(`❌ Dati non trovati per foglio ${dateInfo.sheetName}`);
+                return null;
+            }
+            
+            return converter.generateXMLTVForTVModaSheet(
+                sheetData,
+                dateInfo,
+                channelId,
+                channelName,
+                timezoneOffset,
+                iconUrl,
+                fillGaps
+            );
+        }
+        
         async generateXMLForDate(converter, targetDate, channelId, channelName, timezoneOffset, iconUrl, fillGaps) {
             this.addLog(`\nGenerazione XML per ${targetDate.toLocaleDateString('it-IT')}...`);
             
             if (this.currentChannel === 'tvmoda') {
-                // For TV Moda, generate for specific date
-                return converter.generateXMLTVForTVModaSingleDay(
-                    this.workbook,
-                    channelId,
-                    channelName,
-                    timezoneOffset,
-                    iconUrl,
-                    targetDate,
-                    fillGaps
-                );
+                // This shouldn't happen as TV Moda uses sheet-based generation
+                return null;
             } else {
                 // For Class CNBC, generate for specific date
                 const baseDate = targetDate.getFullYear() + '-' +
@@ -2125,29 +2289,6 @@
                     fillGaps
                 );
             }
-        }
-        
-        getTargetDatesForMultiFile(dateRange) {
-            const dates = [];
-            const today = new Date();
-            
-            if (dateRange === 'multi7') {
-                // 7 days starting from tomorrow
-                for (let i = 1; i <= 7; i++) {
-                    const date = new Date(today);
-                    date.setDate(today.getDate() + i);
-                    dates.push(date);
-                }
-            } else if (dateRange === 'week') {
-                // Next 7 days
-                for (let i = 0; i < 7; i++) {
-                    const date = new Date(today);
-                    date.setDate(today.getDate() + i);
-                    dates.push(date);
-                }
-            }
-            
-            return dates;
         }
         
         formatDateForFilename(date) {
@@ -2213,14 +2354,13 @@
                 }
                 
             } else if (this.xmltvContent && this.xmltvContent.length > 100) {
-                // Single file download (existing logic)
+                // Single file download
                 try {
                     const blob = new Blob([this.xmltvContent], { type: 'application/xml;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
                     
-                    // Use real date or today for filename
-                    const fileDate = this.options.useRealDates && this.detectedDates.length > 0
-                        ? this.detectedDates[0]
+                    const fileDate = this.detectedDates.length > 0
+                        ? this.detectedDates[0].date
                         : new Date();
                     
                     const filename = `${this.formatDateForFilename(fileDate)}.xml`;
@@ -2744,7 +2884,7 @@
         }
     }
     
-    // XMLTV Generator Class with UTC Fix, Multi-file support, and Real Dates
+    // XMLTV Generator Class with Direct Date Reading for TV Moda
     class XMLTVGenerator {
         constructor(app) {
             this.app = app;
@@ -2799,19 +2939,19 @@
             return this.app.config.channels[channel].baseIconUrl + 'default.jpg';
         }
         
-        // New method for single day generation - TV Moda
-        generateXMLTVForTVModaSingleDay(workbook, channelId, channelName, timezoneOffset, iconUrl, targetDate, fillGaps) {
-            this.app.addLog(`Generazione XMLTV per TV Moda - ${targetDate.toLocaleDateString('it-IT')}...`);
+        // NEW: Generate XMLTV for specific TV Moda sheet
+        generateXMLTVForTVModaSheet(sheetData, dateInfo, channelId, channelName, timezoneOffset, iconUrl, fillGaps) {
+            this.app.addLog(`Generazione XMLTV per ${dateInfo.sheetName} - ${dateInfo.date.toLocaleDateString('it-IT')}...`);
             this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
             
             let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-            xml += `<tv date="${targetDate.toISOString().split('T')[0]}">\n`;
+            xml += `<tv date="${dateInfo.date.toISOString().split('T')[0]}">\n`;
             xml += `  <channel id="${channelId}">\n`;
             xml += `    <display-name lang="it">${channelName}</display-name>\n`;
             xml += `  </channel>\n\n`;
             
-            const programs = this.parseTVModaProgramsForDate(workbook, targetDate);
-            const processedPrograms = this.processProgramsForSingleDay(programs, targetDate, fillGaps, 'tvmoda');
+            const programs = this.parseTVModaDayPrograms(sheetData.data, dateInfo.date);
+            const processedPrograms = this.processProgramsForSingleDay(programs, dateInfo.date, fillGaps, 'tvmoda');
             
             for (const program of processedPrograms) {
                 xml += this.generateProgrammeXML(program, channelId, timezoneOffset, 'tvmoda');
@@ -2819,12 +2959,12 @@
             
             xml += '</tv>';
             
-            this.app.addLog(`Generati ${processedPrograms.length} programmi per ${targetDate.toLocaleDateString('it-IT')}`);
+            this.app.addLog(`Generati ${processedPrograms.length} programmi per ${dateInfo.date.toLocaleDateString('it-IT')}`);
             
             return xml;
         }
         
-        // New method for single day generation - Class CNBC
+        // Generate single day for Class CNBC
         generateXMLTVForClassCNBCSingleDay(data, channelId, channelName, baseDate, timezoneOffset, iconUrl, fillGaps) {
             const targetDate = new Date(baseDate);
             this.app.addLog(`Generazione XMLTV per Class CNBC - ${targetDate.toLocaleDateString('it-IT')}...`);
@@ -2850,24 +2990,37 @@
             return xml;
         }
         
-        parseTVModaProgramsForDate(workbook, targetDate) {
-            const weekdayMap = {
-                'DOMENICA': 0, 'LUNEDI': 1, 'MARTEDI': 2, 'MERCOLEDI': 3,
-                'GIOVEDI': 4, 'VENERDI': 5, 'SABATO': 6
-            };
+        parseTVModaDayPrograms(data, currentDate) {
+            const programs = [];
             
-            const targetWeekday = targetDate.getDay();
-            const sheetName = Object.keys(weekdayMap).find(key => weekdayMap[key] === targetWeekday);
-            
-            if (!sheetName || !workbook.Sheets[sheetName]) {
-                this.app.addLog(`⚠️ Foglio non trovato per ${sheetName}`);
-                return [];
+            for (let i = 3; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length < 4) continue;
+                
+                const startTime = row[0];
+                const title = row[1];
+                const duration = row[2];
+                const description = row[3];
+                
+                if (!title || !startTime) continue;
+                
+                const programTime = this.parseTime(startTime, currentDate);
+                if (!programTime) continue;
+                
+                const durationMinutes = this.parseDuration(duration);
+                
+                programs.push({
+                    startTime: programTime,
+                    endTime: new Date(programTime.getTime() + durationMinutes * 60 * 1000),
+                    title: title,
+                    description: description || '',
+                    duration: durationMinutes * 60,
+                    category: 'Fashion',
+                    format: title
+                });
             }
             
-            const worksheet = workbook.Sheets[sheetName];
-            const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-            
-            return this.parseTVModaDayPrograms(data, targetDate);
+            return programs;
         }
         
         parseClassCNBCProgramsForDate(data, targetDate) {
@@ -2919,33 +3072,7 @@
             return dayPrograms;
         }
         
-        // Original methods updated with real dates support
-        generateXMLTVForTVModa(workbook, channelId, channelName, timezoneOffset, iconUrl, dateRange, fillGaps, useRealDates) {
-            this.app.addLog('Generazione XMLTV per TV Moda...');
-            this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
-            this.app.addLog(`Usa date reali: ${useRealDates ? 'SÌ' : 'NO'}`);
-            
-            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-            xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
-            xml += `  <channel id="${channelId}">\n`;
-            xml += `    <display-name lang="it">${channelName}</display-name>\n`;
-            xml += `  </channel>\n\n`;
-            
-            const programs = this.parseTVModaPrograms(workbook, dateRange, useRealDates);
-            const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'tvmoda');
-            
-            for (const program of processedPrograms) {
-                xml += this.generateProgrammeXML(program, channelId, timezoneOffset, 'tvmoda');
-            }
-            
-            xml += '</tv>';
-            
-            this.app.addLog(`\nGenerati ${processedPrograms.length} programmi XML`);
-            this.app.addLog(`Lunghezza XML: ${xml.length} caratteri`);
-            
-            return xml;
-        }
-        
+        // Original method for full XMLTV generation (Class CNBC)
         generateXMLTVForClassCNBC(data, channelId, channelName, baseDate, timezoneOffset, iconUrl, dateRange, fillGaps, useRealDates) {
             this.app.addLog('Generazione XMLTV per Class CNBC...');
             this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
@@ -2970,76 +3097,6 @@
             this.app.addLog(`Lunghezza XML: ${xml.length} caratteri`);
             
             return xml;
-        }
-        
-        parseTVModaPrograms(workbook, dateRange, useRealDates) {
-            const weekdayMap = {
-                'DOMENICA': 0, 'LUNEDI': 1, 'MARTEDI': 2, 'MERCOLEDI': 3,
-                'GIOVEDI': 4, 'VENERDI': 5, 'SABATO': 6
-            };
-            
-            const targetDates = this.getTargetDates(dateRange, workbook, weekdayMap, useRealDates);
-            const allPrograms = [];
-            const processedProgramKeys = new Set();
-            
-            for (const targetDate of targetDates) {
-                const targetWeekday = targetDate.getDay();
-                const sheetName = Object.keys(weekdayMap).find(key => weekdayMap[key] === targetWeekday);
-                
-                if (!sheetName || !workbook.Sheets[sheetName]) continue;
-                
-                this.app.addLog(`\nProcesso ${sheetName} per ${targetDate.toLocaleDateString('it-IT')}...`);
-                
-                const worksheet = workbook.Sheets[sheetName];
-                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-                
-                const dayPrograms = this.parseTVModaDayPrograms(data, targetDate);
-                
-                for (const program of dayPrograms) {
-                    const key = `${program.startTime.getTime()}_${program.title}`;
-                    if (!processedProgramKeys.has(key)) {
-                        processedProgramKeys.add(key);
-                        allPrograms.push(program);
-                    }
-                }
-                
-                this.app.addLog(`  Trovati ${dayPrograms.length} programmi in ${sheetName}`);
-            }
-            
-            return allPrograms;
-        }
-        
-        parseTVModaDayPrograms(data, currentDate) {
-            const programs = [];
-            
-            for (let i = 3; i < data.length; i++) {
-                const row = data[i];
-                if (!row || row.length < 4) continue;
-                
-                const startTime = row[0];
-                const title = row[1];
-                const duration = row[2];
-                const description = row[3];
-                
-                if (!title || !startTime) continue;
-                
-                const programTime = this.parseTime(startTime, currentDate);
-                if (!programTime) continue;
-                
-                const durationMinutes = this.parseDuration(duration);
-                
-                programs.push({
-                    startTime: programTime,
-                    endTime: new Date(programTime.getTime() + durationMinutes * 60 * 1000),
-                    title: title,
-                    description: description || '',
-                    duration: durationMinutes * 60,
-                    category: 'Fashion',
-                    format: title
-                });
-            }
-            
-            return programs;
         }
         
         parseClassCNBCPrograms(data, baseDate, dateRange, useRealDates) {
@@ -3393,81 +3450,13 @@
             }
         }
         
-        getTargetDates(dateRange, workbook, weekdayMap, useRealDates) {
-            // If using real dates and they are detected, use them
-            if (useRealDates && this.app.detectedDates.length > 0) {
-                if (dateRange === 'all') {
-                    return this.app.detectedDates;
-                } else if (dateRange === 'today' || dateRange === 'tomorrow' || dateRange === 'week' || dateRange === 'multi7') {
-                    // For specific ranges, filter detected dates
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    return this.app.detectedDates.filter(date => {
-                        if (dateRange === 'today') {
-                            return date.toDateString() === today.toDateString();
-                        } else if (dateRange === 'tomorrow') {
-                            const tomorrow = new Date(today);
-                            tomorrow.setDate(today.getDate() + 1);
-                            return date.toDateString() === tomorrow.toDateString();
-                        } else if (dateRange === 'week') {
-                            const weekEnd = new Date(today);
-                            weekEnd.setDate(today.getDate() + 7);
-                            return date >= today && date < weekEnd;
-                        } else if (dateRange === 'multi7') {
-                            const tomorrow = new Date(today);
-                            tomorrow.setDate(today.getDate() + 1);
-                            const weekEnd = new Date(tomorrow);
-                            weekEnd.setDate(tomorrow.getDate() + 7);
-                            return date >= tomorrow && date < weekEnd;
-                        }
-                        return false;
-                    });
-                }
-            }
-            
-            // Fallback to calculated dates based on today
-            const today = new Date();
-            const targetDates = [];
-            
-            if (dateRange === 'today') {
-                targetDates.push(today);
-            } else if (dateRange === 'tomorrow') {
-                const tomorrow = new Date(today);
-                tomorrow.setDate(today.getDate() + 1);
-                targetDates.push(tomorrow);
-            } else if (dateRange === 'week' || dateRange === 'multi7') {
-                const startDay = dateRange === 'multi7' ? 1 : 0;
-                for (let i = startDay; i < startDay + 7; i++) {
-                    const date = new Date(today);
-                    date.setDate(today.getDate() + i);
-                    targetDates.push(date);
-                }
-            } else {
-                // For 'all' with no detected dates, generate a week's worth
-                for (let weekOffset = 0; weekOffset < 1; weekOffset++) {
-                    for (const sheetName of Object.keys(weekdayMap)) {
-                        if (workbook && workbook.Sheets[sheetName]) {
-                            const targetWeekday = weekdayMap[sheetName];
-                            const date = new Date(today);
-                            const daysUntilTarget = (targetWeekday - today.getDay() + 7) % 7;
-                            date.setDate(today.getDate() + daysUntilTarget + (weekOffset * 7));
-                            targetDates.push(date);
-                        }
-                    }
-                }
-            }
-            
-            return targetDates;
-        }
-        
         getExtendedDatesForRange(dateRange, useRealDates) {
             const dates = new Set();
             
             if (useRealDates && this.app.detectedDates.length > 0) {
                 // Use real detected dates
-                for (const date of this.app.detectedDates) {
-                    dates.add(this.formatDateString(date));
+                for (const dateInfo of this.app.detectedDates) {
+                    dates.add(this.formatDateString(dateInfo.date));
                 }
             } else {
                 // Use calculated dates
@@ -3494,7 +3483,7 @@
             // If using real dates, return detected dates
             if (this.app.options.useRealDates && this.app.detectedDates.length > 0) {
                 if (dateRange === 'all') {
-                    return this.app.detectedDates;
+                    return this.app.detectedDates.map(d => d.date);
                 }
             }
             
@@ -3521,7 +3510,7 @@
                     dates.push(date);
                 }
             } else if (dateRange === 'all' && this.app.options.useRealDates && this.app.detectedDates.length > 0) {
-                return this.app.detectedDates;
+                return this.app.detectedDates.map(d => d.date);
             } else {
                 // Default to next 7 days
                 for (let i = 0; i < 7; i++) {
