@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v5.0 - Analisi Fasce Orarie</title>
+    <title>XMLTV Viewer v5.1 - Analisi Fasce Orarie</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -311,37 +311,7 @@
             flex-shrink: 0;
         }
 
-        /* Layout selector */
-        .layout-selector {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .layout-btn {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            background: white;
-            border: 2px solid #d1d5db;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #374151;
-        }
-
-        .layout-btn:hover {
-            border-color: #3b82f6;
-            background: #eff6ff;
-            color: #1e40af;
-        }
-
-        .layout-btn.active {
-            background: #3b82f6;
-            color: white;
-            border-color: #2563eb;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-        }
+        /* Layout selector removed - only binary layout used */
 
         /* Fill percentage indicator */
         .fill-indicator {
@@ -401,7 +371,7 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v5.0
+                        XMLTV Viewer v5.1
                     </h1>
                     <p class="text-gray-600 mt-2">Treemap Sequenziale con Analisi Fasce Orarie - Modalità UTC</p>
                 </div>
@@ -630,17 +600,9 @@
 
             <!-- Treemap Timeline -->
             <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
-                <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
-                    <span class="flex items-center gap-2">
-                        <i data-lucide="grid-3x3" class="w-6 h-6 text-blue-600"></i>
-                        Treemap Aggregato per Format
-                    </span>
-                    <div class="layout-selector">
-                        <span class="text-sm font-normal text-gray-700 mr-3">Layout:</span>
-                        <button class="layout-btn active" onclick="setLayout('squarify')" data-layout="squarify">Squarify</button>
-                        <button class="layout-btn" onclick="setLayout('binary')" data-layout="binary">Binary</button>
-                        <button class="layout-btn" onclick="setLayout('slice')" data-layout="slice">Slice & Dice</button>
-                    </div>
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i data-lucide="grid-3x3" class="w-6 h-6 text-blue-600"></i>
+                    Treemap Aggregato per Format
                 </h3>
                 
                 <div class="treemap-container" id="treemapContainer">
@@ -789,7 +751,7 @@
         });
 
         // Version
-        const APP_VERSION = '5.0';
+        const APP_VERSION = '5.1';
         console.log(`XMLTV Viewer v${APP_VERSION} - Ottimizzato`);
 
         // Global state
@@ -801,7 +763,6 @@
         let formatColors = {};
         let colorIndex = 0;
         let totalDaySeconds = 86400; // 24 hours in seconds
-        let currentLayout = 'squarify';
 
         // Modern color palette
         const colorPalette = [
@@ -1202,7 +1163,7 @@
             // Calculate total duration
             const totalDuration = formats.reduce((sum, f) => sum + f.duration, 0);
             
-            // Apply treemap algorithm
+            // Apply binary treemap algorithm
             const nodes = formats.map(f => ({
                 value: f.duration,
                 data: f
@@ -1215,14 +1176,7 @@
                 height: size
             };
             
-            let layoutNodes;
-            if (currentLayout === 'squarify') {
-                layoutNodes = squarify(nodes, root);
-            } else if (currentLayout === 'binary') {
-                layoutNodes = binary(nodes, root);
-            } else {
-                layoutNodes = sliceDice(nodes, root);
-            }
+            const layoutNodes = binary(nodes, root);
             
             // Create elements
             layoutNodes.forEach((node, index) => {
@@ -1280,53 +1234,7 @@
             }
         }
         
-        // Treemap layout algorithms
-        function squarify(nodes, container) {
-            const area = container.width * container.height;
-            const totalValue = nodes.reduce((sum, n) => sum + n.value, 0);
-            
-            nodes.forEach(node => {
-                node.area = (node.value / totalValue) * area;
-            });
-            
-            const layoutNodes = [];
-            let x = container.x;
-            let y = container.y;
-            let width = container.width;
-            let height = container.height;
-            
-            nodes.forEach((node, i) => {
-                const aspect = width / height;
-                const nodeArea = node.area;
-                
-                let nodeWidth, nodeHeight;
-                if (aspect > 1) {
-                    nodeWidth = Math.sqrt(nodeArea * aspect);
-                    nodeHeight = nodeArea / nodeWidth;
-                } else {
-                    nodeHeight = Math.sqrt(nodeArea / aspect);
-                    nodeWidth = nodeArea / nodeHeight;
-                }
-                
-                if (x + nodeWidth > container.x + container.width) {
-                    x = container.x;
-                    y += nodeHeight;
-                }
-                
-                layoutNodes.push({
-                    x: x,
-                    y: y,
-                    width: Math.min(nodeWidth, container.x + container.width - x),
-                    height: Math.min(nodeHeight, container.y + container.height - y),
-                    data: node.data
-                });
-                
-                x += nodeWidth;
-            });
-            
-            return layoutNodes;
-        }
-        
+        // Binary treemap layout algorithm
         function binary(nodes, container) {
             const layoutNodes = [];
             
@@ -1364,59 +1272,6 @@
             
             layout(nodes, container.x, container.y, container.width, container.height, true);
             return layoutNodes;
-        }
-        
-        function sliceDice(nodes, container) {
-            const layoutNodes = [];
-            const totalValue = nodes.reduce((sum, n) => sum + n.value, 0);
-            
-            let currentX = container.x;
-            let currentY = container.y;
-            const vertical = container.width < container.height;
-            
-            nodes.forEach(node => {
-                const ratio = node.value / totalValue;
-                
-                if (vertical) {
-                    const nodeHeight = container.height * ratio;
-                    layoutNodes.push({
-                        x: currentX,
-                        y: currentY,
-                        width: container.width,
-                        height: nodeHeight,
-                        data: node.data
-                    });
-                    currentY += nodeHeight;
-                } else {
-                    const nodeWidth = container.width * ratio;
-                    layoutNodes.push({
-                        x: currentX,
-                        y: currentY,
-                        width: nodeWidth,
-                        height: container.height,
-                        data: node.data
-                    });
-                    currentX += nodeWidth;
-                }
-            });
-            
-            return layoutNodes;
-        }
-        
-        // Set layout
-        function setLayout(layout) {
-            currentLayout = layout;
-            document.querySelectorAll('.layout-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.getAttribute('data-layout') === layout) {
-                    btn.classList.add('active');
-                }
-            });
-            
-            // Redraw with new layout
-            if (currentPrograms.length > 0) {
-                loadPrograms();
-            }
         }
         
         // Show format details
@@ -1748,7 +1603,7 @@
         function showInfo() {
             alert(`XMLTV Viewer v${APP_VERSION}\n\n` +
                   'Visualizzatore e editor avanzato per file XMLTV con:\n' +
-                  '- Treemap aggregato per format\n' +
+                  '- Treemap aggregato per format (layout Binary)\n' +
                   '- Analisi fasce orarie (6 fasce)\n' +
                   '- Editor programmi inline\n' +
                   '- Export/import XMLTV\n\n' +
