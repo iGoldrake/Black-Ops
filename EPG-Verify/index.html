@@ -312,7 +312,7 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v5.5
+                        XMLTV Viewer v5.6
                     </h1>
                     <p class="text-gray-600 mt-2">Treemap Aggregato con Analisi Fasce Orarie - Modalità UTC</p>
                 </div>
@@ -679,8 +679,8 @@
         });
 
         // Version
-        const APP_VERSION = '5.5';
-        console.log(`XMLTV Viewer v${APP_VERSION} - Complete Working Version`);
+        const APP_VERSION = '5.6';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Fixed Treemap Layout`);
 
         // Debug functions
         const debugLog = (message, type = 'info') => {
@@ -1012,7 +1012,7 @@
             analyzeTimeSlots(dayPrograms);
         }
 
-        // Draw treemap - Working version from debug
+        // Draw treemap - Fixed algorithm with proper layout
         function drawTreemap(programs) {
             debugLog('Creazione treemap...');
             
@@ -1037,7 +1037,7 @@
             
             debugLog(`Aggregati ${Object.keys(formats).length} format unici`);
             
-            // Convert to array and sort
+            // Convert to array and sort by duration descending
             const formatArray = Object.values(formats).sort((a, b) => b.duration - a.duration);
             
             // Calculate total duration
@@ -1059,35 +1059,86 @@
                 fillIndicator.classList.remove('complete', 'warning');
             }
             
-            // Simple treemap layout
+            // Improved treemap layout algorithm
             const containerWidth = 796; // 800 - 4 for border
             const containerHeight = 796;
-            let x = 0, y = 0;
-            let rowHeight = 0;
+            const totalArea = containerWidth * containerHeight;
+            
+            // Calculate layout using strip packing algorithm
+            const layoutItems = [];
+            let currentX = 0;
+            let currentY = 0;
+            let currentRowHeight = 0;
+            let currentRowWidth = containerWidth;
+            let remainingHeight = containerHeight;
+            
+            // Group formats into rows for better visualization
+            let currentRow = [];
+            let currentRowValue = 0;
+            const targetRowValue = totalDuration * 0.25; // Aim for ~4 rows
             
             formatArray.forEach((format, index) => {
-                const area = (format.duration / totalDuration) * (containerWidth * containerHeight);
-                const width = Math.sqrt(area * 1.5); // Make rectangles wider
-                const height = area / width;
+                const formatValue = format.duration;
                 
-                // Check if need new row
-                if (x + width > containerWidth) {
-                    x = 0;
-                    y += rowHeight;
-                    rowHeight = 0;
+                // Add to current row
+                currentRow.push(format);
+                currentRowValue += formatValue;
+                
+                // Check if we should start a new row
+                const isLastItem = index === formatArray.length - 1;
+                const shouldCreateNewRow = currentRowValue >= targetRowValue || isLastItem;
+                
+                if (shouldCreateNewRow) {
+                    // Calculate row height based on value proportion
+                    const rowHeight = Math.floor((currentRowValue / totalDuration) * containerHeight);
+                    const actualRowHeight = Math.min(rowHeight, remainingHeight);
+                    
+                    // Layout items in current row
+                    let rowX = 0;
+                    currentRow.forEach((item, itemIndex) => {
+                        const itemWidth = Math.floor((item.duration / currentRowValue) * containerWidth);
+                        const actualWidth = itemIndex === currentRow.length - 1 
+                            ? containerWidth - rowX  // Last item fills remaining space
+                            : itemWidth;
+                        
+                        layoutItems.push({
+                            format: item,
+                            x: rowX,
+                            y: currentY,
+                            width: actualWidth,
+                            height: actualRowHeight
+                        });
+                        
+                        rowX += actualWidth;
+                    });
+                    
+                    // Move to next row
+                    currentY += actualRowHeight;
+                    remainingHeight -= actualRowHeight;
+                    currentRow = [];
+                    currentRowValue = 0;
                 }
+            });
+            
+            // Create DOM elements for each layout item
+            layoutItems.forEach((item, index) => {
+                const { format, x, y, width, height } = item;
                 
-                // Create element
+                // Ensure minimum size for visibility
+                const minSize = 40;
+                const actualWidth = Math.max(width - 4, minSize); // -4 for borders
+                const actualHeight = Math.max(height - 4, minSize);
+                
                 const div = document.createElement('div');
                 div.className = 'treemap-item new';
                 div.style.left = x + 'px';
                 div.style.top = y + 'px';
-                div.style.width = width + 'px';
-                div.style.height = height + 'px';
+                div.style.width = actualWidth + 'px';
+                div.style.height = actualHeight + 'px';
                 div.style.backgroundColor = formatColors[format.title];
                 
-                // Add icon if available
-                if (format.icon && width > 80 && height > 80) {
+                // Add icon if available and space permits
+                if (format.icon && actualWidth > 80 && actualHeight > 80) {
                     const img = document.createElement('img');
                     img.src = format.icon;
                     img.className = 'treemap-icon';
@@ -1095,13 +1146,30 @@
                     div.appendChild(img);
                 }
                 
-                // Add label
+                // Add label with responsive font size
                 const label = document.createElement('div');
                 label.className = 'treemap-label';
-                label.innerHTML = `
-                    <div>${format.title}</div>
-                    <div style="font-size: 0.8em;">${formatDuration(format.duration)}</div>
-                `;
+                
+                // Adjust font size based on area
+                const area = actualWidth * actualHeight;
+                let fontSize = '12px';
+                if (area < 5000) fontSize = '11px';
+                if (area < 3000) fontSize = '10px';
+                if (area > 10000) fontSize = '14px';
+                if (area > 20000) fontSize = '16px';
+                
+                label.style.fontSize = fontSize;
+                
+                // Show duration only if space permits
+                if (actualHeight > 60) {
+                    label.innerHTML = `
+                        <div>${format.title}</div>
+                        <div style="font-size: 0.8em; opacity: 0.9;">${formatDuration(format.duration)}</div>
+                    `;
+                } else {
+                    label.innerHTML = `<div>${format.title}</div>`;
+                }
+                
                 div.appendChild(label);
                 
                 // Add events
@@ -1111,13 +1179,10 @@
                 
                 container.appendChild(div);
                 
-                x += width;
-                rowHeight = Math.max(rowHeight, height);
-                
-                debugLog(`Creato elemento: ${format.title} (${width.toFixed(0)}x${height.toFixed(0)})`);
+                debugLog(`Layout: ${format.title} at (${x},${y}) size ${actualWidth}x${actualHeight}`);
             });
             
-            debugLog('Treemap completato', 'success');
+            debugLog(`Treemap completato con ${layoutItems.length} elementi`, 'success');
         }
 
         // Show format details
