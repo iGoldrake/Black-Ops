@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPG Converter 3.1.0 - Professional Edition</title>
+    <title>EPG Converter 3.2.0 - Real Dates Edition</title>
     
     <!-- Modern Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -383,6 +383,60 @@
             font-size: 0.875rem;
             color: var(--text-secondary);
             margin-bottom: 1.5rem;
+        }
+        
+        /* Date Preview */
+        .date-preview {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        
+        .date-preview-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .date-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .date-item {
+            padding: 0.75rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-align: center;
+            font-size: 0.875rem;
+            transition: var(--transition);
+        }
+        
+        .date-item.past {
+            opacity: 0.6;
+            background-color: var(--bg-tertiary);
+        }
+        
+        .date-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .date-item-day {
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .date-item-date {
+            color: var(--text-primary);
         }
         
         /* Buttons */
@@ -798,6 +852,11 @@
             color: var(--primary);
         }
         
+        .badge-warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+        
         /* Loading Spinner */
         .spinner {
             width: 20px;
@@ -956,7 +1015,8 @@
                 <div class="logo">
                     <div class="logo-icon">📺</div>
                     <span>EPG Converter</span>
-                    <span class="badge badge-primary">v3.1.0</span>
+                    <span class="badge badge-warning">v3.2.0</span>
+                    <span class="badge badge-primary">Real Dates Edition</span>
                 </div>
                 
                 <div class="header-actions">
@@ -1071,6 +1131,14 @@
                     
                     <div id="file-info" class="hidden mt-4"></div>
                     
+                    <!-- Date Preview Section -->
+                    <div id="date-preview" class="date-preview hidden">
+                        <h3 class="date-preview-title">📅 Date rilevate nel palinsesto</h3>
+                        <div id="date-grid" class="date-grid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    
                     <!-- Navigation button -->
                     <div class="mt-4 text-right hidden" id="step2-nav">
                         <button class="btn btn-primary" onclick="app.navigateToStep(3)">
@@ -1123,9 +1191,9 @@
                             <div class="form-group">
                                 <label class="form-label" for="dateRange">Periodo da convertire</label>
                                 <select id="dateRange" class="form-control">
-                                    <option value="all">Tutti i giorni disponibili</option>
+                                    <option value="all" selected>Tutte le date del file</option>
                                     <option value="today">Solo oggi</option>
-                                    <option value="tomorrow" selected>Solo domani</option>
+                                    <option value="tomorrow">Solo domani</option>
                                     <option value="week">Prossimi 7 giorni</option>
                                     <option value="multi7">7 giorni da domani (Multi-file)</option>
                                 </select>
@@ -1150,6 +1218,16 @@
                                 <label class="form-label" style="margin: 0;">Genera file multipli (uno per giorno)</label>
                             </div>
                             <p class="form-hint mt-1">Crea un file XML separato per ogni giorno invece di un unico file</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="toggle-wrapper">
+                                <div class="toggle active" onclick="app.toggleOption('useRealDates')" id="useRealDates">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                                <label class="form-label" style="margin: 0;">Usa date reali del palinsesto</label>
+                            </div>
+                            <p class="form-hint mt-1">Utilizza le date effettive del file Excel invece di proiettare su date future</p>
                         </div>
                     </div>
                     
@@ -1308,7 +1386,7 @@
         
         <!-- Footer -->
         <footer class="footer">
-            <p>EPG Converter v3.1.0 - Multi-file Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 10/06/2025</p>
+            <p>EPG Converter v3.2.0 - Real Dates Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 11/06/2025</p>
         </footer>
     </div>
     
@@ -1318,11 +1396,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <script>
-    // Modern EPG Converter Application v3.1.0
+    // Modern EPG Converter Application v3.2.0 - Real Dates Edition
     class ModernEPGConverter {
         constructor() {
-            this.SOFTWARE_VERSION = "3.1.0";
-            this.LAST_UPDATE = "10/06/2025";
+            this.SOFTWARE_VERSION = "3.2.0";
+            this.LAST_UPDATE = "11/06/2025";
             
             // State
             this.currentStep = 1;
@@ -1333,6 +1411,7 @@
             this.xmltvFiles = [];  // Array to store multiple XML files
             this.workbook = null;
             this.detectedFormats = new Set();
+            this.detectedDates = []; // NEW: Array to store detected dates
             this.logContent = [];
             
             // Options
@@ -1340,7 +1419,8 @@
                 fillGaps: true,
                 validateData: false,
                 debugMode: false,
-                multiFileOutput: false
+                multiFileOutput: false,
+                useRealDates: true // NEW: Option to use real dates from palinsesto
             };
             
             // Configuration
@@ -1374,9 +1454,9 @@
             this.setupKeyboardShortcuts();
             this.loadRecentSessions();
             this.initTabSystem();
-            this.addLog('🚀 EPG Converter 3.1.0 - Multi-file Edition avviato');
+            this.addLog('🚀 EPG Converter 3.2.0 - Real Dates Edition avviato');
             this.addLog('✅ UTC Fix applicato - Conversione orari corretta');
-            this.addLog('🆕 Nuova funzionalità: generazione multi-file');
+            this.addLog('🆕 Nuova funzionalità: uso date reali del palinsesto');
             this.addLog('Seleziona il canale per iniziare la conversione');
         }
         
@@ -1573,6 +1653,7 @@
                     });
                     
                     this.detectedFormats.clear();
+                    this.detectedDates = []; // Reset detected dates
                     
                     if (this.currentChannel === 'tvmoda') {
                         this.handleTVModaFile(file);
@@ -1592,12 +1673,16 @@
                                 <div class="text-xs mt-1">
                                     ${this.workbook.SheetNames.length} fogli • 
                                     ${this.detectedFormats.size} format unici • 
+                                    ${this.detectedDates.length} giorni rilevati •
                                     ${(file.size / 1024).toFixed(1)} KB
                                 </div>
                             </div>
                         </div>
                     `;
                     fileInfo.classList.remove('hidden');
+                    
+                    // Show date preview
+                    this.showDatePreview();
                     
                     // Show navigation button
                     document.getElementById('step2-nav').classList.remove('hidden');
@@ -1628,6 +1713,9 @@
                 return;
             }
             
+            // Detect dates from TV Moda file
+            this.detectTVModaDates();
+            
             // Scan formats
             for (const sheetName of this.workbook.SheetNames) {
                 if (expectedSheets.includes(sheetName)) {
@@ -1646,12 +1734,16 @@
             this.addLog(`📁 File TV Moda caricato: ${file.name}`);
             this.addLog(`   Fogli: ${this.workbook.SheetNames.join(', ')}`);
             this.addLog(`   Format unici: ${this.detectedFormats.size}`);
+            this.addLog(`   Date rilevate: ${this.detectedDates.length > 0 ? this.detectedDates.map(d => d.toLocaleDateString('it-IT')).join(', ') : 'Nessuna (userò date future)'}`);
         }
         
         handleClassCNBCFile(file) {
             const sheetName = this.workbook.SheetNames[0];
             const worksheet = this.workbook.Sheets[sheetName];
             this.fileData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+            
+            // Detect dates from Class CNBC file
+            this.detectClassCNBCDates();
             
             // Scan formats
             for (let i = 1; i < this.fileData.length; i++) {
@@ -1664,6 +1756,176 @@
             this.addLog(`📁 File Class CNBC caricato: ${file.name}`);
             this.addLog(`   Righe: ${this.fileData.length}`);
             this.addLog(`   Format unici: ${this.detectedFormats.size}`);
+            this.addLog(`   Date rilevate: ${this.detectedDates.length > 0 ? this.detectedDates.map(d => d.toLocaleDateString('it-IT')).join(', ') : 'Nessuna (userò date attuali)'}`);
+        }
+        
+        detectTVModaDates() {
+            const weekdayMap = {
+                'DOMENICA': 0, 'LUNEDI': 1, 'MARTEDI': 2, 'MERCOLEDI': 3,
+                'GIOVEDI': 4, 'VENERDI': 5, 'SABATO': 6
+            };
+            
+            let referenceDate = null;
+            
+            // Try to find a date in the first rows of any sheet
+            for (const sheetName of this.workbook.SheetNames) {
+                if (!weekdayMap.hasOwnProperty(sheetName)) continue;
+                
+                const worksheet = this.workbook.Sheets[sheetName];
+                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                
+                // Look for dates in the first 5 rows
+                for (let i = 0; i < Math.min(5, data.length); i++) {
+                    const row = data[i];
+                    if (!row) continue;
+                    
+                    for (let j = 0; j < row.length; j++) {
+                        const cell = row[j];
+                        const parsedDate = this.parseCellAsDate(cell);
+                        if (parsedDate) {
+                            referenceDate = parsedDate;
+                            this.addLog(`📅 Data di riferimento trovata in ${sheetName}: ${referenceDate.toLocaleDateString('it-IT')}`);
+                            break;
+                        }
+                    }
+                    if (referenceDate) break;
+                }
+                if (referenceDate) break;
+            }
+            
+            if (referenceDate) {
+                // Calculate dates for all weekdays based on the reference
+                const refWeekday = referenceDate.getDay();
+                
+                for (const [sheetName, weekday] of Object.entries(weekdayMap)) {
+                    if (!this.workbook.SheetNames.includes(sheetName)) continue;
+                    
+                    const dayDiff = weekday - refWeekday;
+                    const sheetDate = new Date(referenceDate);
+                    sheetDate.setDate(referenceDate.getDate() + dayDiff);
+                    
+                    this.detectedDates.push(sheetDate);
+                }
+                
+                // Sort dates
+                this.detectedDates.sort((a, b) => a.getTime() - b.getTime());
+            } else {
+                this.addLog('⚠️ Nessuna data trovata nel file TV Moda - userò date future basate su oggi');
+            }
+        }
+        
+        detectClassCNBCDates() {
+            const dates = new Set();
+            
+            // Scan for date change rows
+            for (let i = 0; i < this.fileData.length; i++) {
+                const row = this.fileData[i];
+                
+                if (!row || row.length === 0) continue;
+                
+                // Check if this is a date row (single cell with date)
+                if (row.length === 1 || (row.length > 1 && !row[1])) {
+                    const parsedDate = this.parseCellAsDate(row[0]);
+                    if (parsedDate) {
+                        dates.add(parsedDate.toDateString());
+                    }
+                }
+            }
+            
+            // Convert to array and sort
+            this.detectedDates = Array.from(dates).map(dateStr => new Date(dateStr));
+            this.detectedDates.sort((a, b) => a.getTime() - b.getTime());
+            
+            if (this.detectedDates.length === 0) {
+                this.addLog('⚠️ Nessuna data trovata nel file Class CNBC - userò date basate su oggi');
+            }
+        }
+        
+        parseCellAsDate(cell) {
+            if (!cell) return null;
+            
+            // If it's already a Date object
+            if (cell instanceof Date) {
+                return isNaN(cell.getTime()) ? null : cell;
+            }
+            
+            // If it's a string, try to parse it
+            if (typeof cell === 'string') {
+                // Try Italian date formats
+                const italianFormats = [
+                    /(\d{1,2})\/(\d{1,2})\/(\d{4})/,  // DD/MM/YYYY
+                    /(\d{1,2})-(\d{1,2})-(\d{4})/,    // DD-MM-YYYY
+                    /(\d{1,2})\.(\d{1,2})\.(\d{4})/   // DD.MM.YYYY
+                ];
+                
+                for (const format of italianFormats) {
+                    const match = cell.match(format);
+                    if (match) {
+                        const day = parseInt(match[1]);
+                        const month = parseInt(match[2]) - 1; // JavaScript months are 0-based
+                        const year = parseInt(match[3]);
+                        const date = new Date(year, month, day);
+                        if (!isNaN(date.getTime())) {
+                            return date;
+                        }
+                    }
+                }
+                
+                // Try parsing as standard date
+                const date = new Date(cell);
+                if (!isNaN(date.getTime())) {
+                    return date;
+                }
+            }
+            
+            // If it's a number (Excel date serial)
+            if (typeof cell === 'number' && cell > 0) {
+                // Excel dates start from 1900-01-01
+                const excelEpoch = new Date(1899, 11, 30);
+                const date = new Date(excelEpoch.getTime() + cell * 24 * 60 * 60 * 1000);
+                if (!isNaN(date.getTime())) {
+                    return date;
+                }
+            }
+            
+            return null;
+        }
+        
+        showDatePreview() {
+            const previewDiv = document.getElementById('date-preview');
+            const gridDiv = document.getElementById('date-grid');
+            
+            if (this.detectedDates.length === 0) {
+                previewDiv.classList.add('hidden');
+                return;
+            }
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            gridDiv.innerHTML = '';
+            
+            for (const date of this.detectedDates) {
+                const dateItem = document.createElement('div');
+                dateItem.className = 'date-item';
+                
+                // Check if date is in the past
+                if (date < today) {
+                    dateItem.classList.add('past');
+                }
+                
+                const dayName = date.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase();
+                const dateStr = date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                dateItem.innerHTML = `
+                    <div class="date-item-day">${dayName}</div>
+                    <div class="date-item-date">${dateStr}</div>
+                `;
+                
+                gridDiv.appendChild(dateItem);
+            }
+            
+            previewDiv.classList.remove('hidden');
         }
         
         async convertFile() {
@@ -1684,6 +1946,7 @@
             const fillGaps = this.options.fillGaps;
             const iconUrl = document.getElementById('iconUrl').value.trim();
             const multiFileOutput = this.options.multiFileOutput || dateRange === 'multi7';
+            const useRealDates = this.options.useRealDates;
             
             this.addLog('\n🔧 CONFIGURAZIONE:');
             this.addLog(`- Tipo canale: ${this.currentChannel}`);
@@ -1694,6 +1957,7 @@
             this.addLog(`- Periodo: ${dateRange}`);
             this.addLog(`- Gap filling: ${fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
             this.addLog(`- Multi-file output: ${multiFileOutput ? 'ATTIVO' : 'DISATTIVO'}`);
+            this.addLog(`- Usa date reali: ${useRealDates ? 'ATTIVO' : 'DISATTIVO'}`);
             
             try {
                 const converter = new XMLTVGenerator(this);
@@ -1705,7 +1969,10 @@
                     multiProgress.classList.remove('hidden');
                     multiProgress.innerHTML = '';
                     
-                    const targetDates = this.getTargetDatesForMultiFile(dateRange);
+                    const targetDates = useRealDates && this.detectedDates.length > 0 
+                        ? this.detectedDates 
+                        : this.getTargetDatesForMultiFile(dateRange);
+                    
                     this.addLog(`\n📅 Generazione ${targetDates.length} file XML...`);
                     
                     for (let i = 0; i < targetDates.length; i++) {
@@ -1776,23 +2043,28 @@
                             timezoneOffset,
                             iconUrl,
                             dateRange,
-                            fillGaps
+                            fillGaps,
+                            useRealDates
                         );
                     } else {
-                        const today = new Date();
-                        const baseDate = today.getFullYear() + '-' +
-                            String(today.getMonth() + 1).padStart(2, '0') + '-' +
-                            String(today.getDate()).padStart(2, '0');
+                        const baseDate = useRealDates && this.detectedDates.length > 0
+                            ? this.detectedDates[0]
+                            : new Date();
+                        
+                        const baseDateStr = baseDate.getFullYear() + '-' +
+                            String(baseDate.getMonth() + 1).padStart(2, '0') + '-' +
+                            String(baseDate.getDate()).padStart(2, '0');
                         
                         this.xmltvContent = converter.generateXMLTVForClassCNBC(
                             this.fileData,
                             channelId,
                             channelName,
-                            baseDate,
+                            baseDateStr,
                             timezoneOffset,
                             iconUrl,
                             dateRange,
-                            fillGaps
+                            fillGaps,
+                            useRealDates
                         );
                     }
                     
@@ -1945,11 +2217,13 @@
                 try {
                     const blob = new Blob([this.xmltvContent], { type: 'application/xml;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
-                    const today = new Date();
-                    const year = today.getFullYear();
-                    const month = String(today.getMonth() + 1).padStart(2, '0');
-                    const day = String(today.getDate()).padStart(2, '0');
-                    const filename = `${year}-${month}-${day}.xml`;
+                    
+                    // Use real date or today for filename
+                    const fileDate = this.options.useRealDates && this.detectedDates.length > 0
+                        ? this.detectedDates[0]
+                        : new Date();
+                    
+                    const filename = `${this.formatDateForFilename(fileDate)}.xml`;
                     
                     downloadSection.innerHTML = `
                         <div class="fade-in">
@@ -2470,7 +2744,7 @@
         }
     }
     
-    // XMLTV Generator Class with UTC Fix and Multi-file support
+    // XMLTV Generator Class with UTC Fix, Multi-file support, and Real Dates
     class XMLTVGenerator {
         constructor(app) {
             this.app = app;
@@ -2645,10 +2919,11 @@
             return dayPrograms;
         }
         
-        // Original methods remain the same...
-        generateXMLTVForTVModa(workbook, channelId, channelName, timezoneOffset, iconUrl, dateRange, fillGaps) {
+        // Original methods updated with real dates support
+        generateXMLTVForTVModa(workbook, channelId, channelName, timezoneOffset, iconUrl, dateRange, fillGaps, useRealDates) {
             this.app.addLog('Generazione XMLTV per TV Moda...');
             this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
+            this.app.addLog(`Usa date reali: ${useRealDates ? 'SÌ' : 'NO'}`);
             
             let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
             xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
@@ -2656,7 +2931,7 @@
             xml += `    <display-name lang="it">${channelName}</display-name>\n`;
             xml += `  </channel>\n\n`;
             
-            const programs = this.parseTVModaPrograms(workbook, dateRange);
+            const programs = this.parseTVModaPrograms(workbook, dateRange, useRealDates);
             const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'tvmoda');
             
             for (const program of processedPrograms) {
@@ -2671,9 +2946,10 @@
             return xml;
         }
         
-        generateXMLTVForClassCNBC(data, channelId, channelName, baseDate, timezoneOffset, iconUrl, dateRange, fillGaps) {
+        generateXMLTVForClassCNBC(data, channelId, channelName, baseDate, timezoneOffset, iconUrl, dateRange, fillGaps, useRealDates) {
             this.app.addLog('Generazione XMLTV per Class CNBC...');
             this.app.addLog(`Conversione orari da UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset} a UTC`);
+            this.app.addLog(`Usa date reali: ${useRealDates ? 'SÌ' : 'NO'}`);
             
             let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
             xml += `<tv date="${new Date().toISOString().split('T')[0]}">\n`;
@@ -2681,7 +2957,7 @@
             xml += `    <display-name lang="it">${channelName}</display-name>\n`;
             xml += `  </channel>\n\n`;
             
-            const programs = this.parseClassCNBCPrograms(data, baseDate, dateRange);
+            const programs = this.parseClassCNBCPrograms(data, baseDate, dateRange, useRealDates);
             const processedPrograms = this.processProgramsForOutput(programs, dateRange, fillGaps, 'classcnbc');
             
             for (const program of processedPrograms) {
@@ -2696,13 +2972,13 @@
             return xml;
         }
         
-        parseTVModaPrograms(workbook, dateRange) {
+        parseTVModaPrograms(workbook, dateRange, useRealDates) {
             const weekdayMap = {
                 'DOMENICA': 0, 'LUNEDI': 1, 'MARTEDI': 2, 'MERCOLEDI': 3,
                 'GIOVEDI': 4, 'VENERDI': 5, 'SABATO': 6
             };
             
-            const targetDates = this.getTargetDates(dateRange, workbook, weekdayMap);
+            const targetDates = this.getTargetDates(dateRange, workbook, weekdayMap, useRealDates);
             const allPrograms = [];
             const processedProgramKeys = new Set();
             
@@ -2766,10 +3042,10 @@
             return programs;
         }
         
-        parseClassCNBCPrograms(data, baseDate, dateRange) {
+        parseClassCNBCPrograms(data, baseDate, dateRange, useRealDates) {
             const allPrograms = [];
             let currentDate = new Date(baseDate);
-            const extendedDates = this.getExtendedDatesForRange(dateRange);
+            const extendedDates = this.getExtendedDatesForRange(dateRange, useRealDates);
             
             for (let i = 0; i < data.length; i++) {
                 const row = data[i];
@@ -3117,7 +3393,40 @@
             }
         }
         
-        getTargetDates(dateRange, workbook, weekdayMap) {
+        getTargetDates(dateRange, workbook, weekdayMap, useRealDates) {
+            // If using real dates and they are detected, use them
+            if (useRealDates && this.app.detectedDates.length > 0) {
+                if (dateRange === 'all') {
+                    return this.app.detectedDates;
+                } else if (dateRange === 'today' || dateRange === 'tomorrow' || dateRange === 'week' || dateRange === 'multi7') {
+                    // For specific ranges, filter detected dates
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    return this.app.detectedDates.filter(date => {
+                        if (dateRange === 'today') {
+                            return date.toDateString() === today.toDateString();
+                        } else if (dateRange === 'tomorrow') {
+                            const tomorrow = new Date(today);
+                            tomorrow.setDate(today.getDate() + 1);
+                            return date.toDateString() === tomorrow.toDateString();
+                        } else if (dateRange === 'week') {
+                            const weekEnd = new Date(today);
+                            weekEnd.setDate(today.getDate() + 7);
+                            return date >= today && date < weekEnd;
+                        } else if (dateRange === 'multi7') {
+                            const tomorrow = new Date(today);
+                            tomorrow.setDate(today.getDate() + 1);
+                            const weekEnd = new Date(tomorrow);
+                            weekEnd.setDate(tomorrow.getDate() + 7);
+                            return date >= tomorrow && date < weekEnd;
+                        }
+                        return false;
+                    });
+                }
+            }
+            
+            // Fallback to calculated dates based on today
             const today = new Date();
             const targetDates = [];
             
@@ -3135,7 +3444,8 @@
                     targetDates.push(date);
                 }
             } else {
-                for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
+                // For 'all' with no detected dates, generate a week's worth
+                for (let weekOffset = 0; weekOffset < 1; weekOffset++) {
                     for (const sheetName of Object.keys(weekdayMap)) {
                         if (workbook && workbook.Sheets[sheetName]) {
                             const targetWeekday = weekdayMap[sheetName];
@@ -3151,20 +3461,29 @@
             return targetDates;
         }
         
-        getExtendedDatesForRange(dateRange) {
-            const today = new Date();
+        getExtendedDatesForRange(dateRange, useRealDates) {
             const dates = new Set();
             
-            if (dateRange === 'today' || dateRange === 'tomorrow' || dateRange === 'week' || dateRange === 'multi7') {
-                const targetDates = this.getOutputTargetDates(dateRange);
-                for (const date of targetDates) {
-                    const dayBefore = new Date(date);
-                    dayBefore.setDate(date.getDate() - 1);
-                    dates.add(this.formatDateString(dayBefore));
+            if (useRealDates && this.app.detectedDates.length > 0) {
+                // Use real detected dates
+                for (const date of this.app.detectedDates) {
                     dates.add(this.formatDateString(date));
-                    const dayAfter = new Date(date);
-                    dayAfter.setDate(date.getDate() + 1);
-                    dates.add(this.formatDateString(dayAfter));
+                }
+            } else {
+                // Use calculated dates
+                const today = new Date();
+                
+                if (dateRange === 'today' || dateRange === 'tomorrow' || dateRange === 'week' || dateRange === 'multi7') {
+                    const targetDates = this.getOutputTargetDates(dateRange);
+                    for (const date of targetDates) {
+                        const dayBefore = new Date(date);
+                        dayBefore.setDate(date.getDate() - 1);
+                        dates.add(this.formatDateString(dayBefore));
+                        dates.add(this.formatDateString(date));
+                        const dayAfter = new Date(date);
+                        dayAfter.setDate(date.getDate() + 1);
+                        dates.add(this.formatDateString(dayAfter));
+                    }
                 }
             }
             
@@ -3172,6 +3491,14 @@
         }
         
         getOutputTargetDates(dateRange) {
+            // If using real dates, return detected dates
+            if (this.app.options.useRealDates && this.app.detectedDates.length > 0) {
+                if (dateRange === 'all') {
+                    return this.app.detectedDates;
+                }
+            }
+            
+            // Otherwise use calculated dates
             const today = new Date();
             const dates = [];
             
@@ -3193,7 +3520,10 @@
                     date.setDate(today.getDate() + i);
                     dates.push(date);
                 }
+            } else if (dateRange === 'all' && this.app.options.useRealDates && this.app.detectedDates.length > 0) {
+                return this.app.detectedDates;
             } else {
+                // Default to next 7 days
                 for (let i = 0; i < 7; i++) {
                     const date = new Date(today);
                     date.setDate(today.getDate() + i);
