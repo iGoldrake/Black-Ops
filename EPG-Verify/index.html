@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v5.7 - Analisi Fasce Orarie</title>
+    <title>XMLTV Viewer v4.1 - Treemap Sequential Timeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -12,8 +12,8 @@
             position: relative;
             width: 100%;
             max-width: 800px;
-            height: 800px;
             margin: 0 auto;
+            aspect-ratio: 1;
             background: #ffffff;
             border-radius: 16px;
             overflow: hidden;
@@ -22,7 +22,7 @@
                 0 20px 60px rgba(0, 0, 0, 0.1);
         }
 
-        .treemap-item {
+        .treemap-program {
             position: absolute;
             border: 3px solid white;
             cursor: pointer;
@@ -33,13 +33,9 @@
             justify-content: center;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            font-weight: 600;
-            text-align: center;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
-        .treemap-item:hover {
+        .treemap-program:hover {
             transform: scale(1.05);
             z-index: 100;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -52,17 +48,39 @@
             position: absolute;
             top: 0;
             left: 0;
-            opacity: 0.3;
         }
 
         .treemap-label {
             position: relative;
             z-index: 2;
+            color: white;
+            font-weight: 600;
+            text-align: center;
             padding: 8px;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
             border-radius: 6px;
-            backdrop-filter: blur(4px);
+            font-size: clamp(11px, 1.5vw, 15px);
             max-width: 90%;
+            white-space: normal;
+            word-wrap: break-word;
+            backdrop-filter: blur(4px);
+            line-height: 1.3;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .treemap-gap {
+            position: absolute;
+            background-image: repeating-linear-gradient(
+                45deg,
+                #dc2626,
+                #dc2626 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            opacity: 0.4;
+            border: 3px solid #dc2626;
+            border-radius: 8px;
+            box-shadow: inset 0 0 20px rgba(220, 38, 38, 0.3);
         }
 
         /* Program preview tooltip */
@@ -88,6 +106,16 @@
             transform: translateY(0) scale(1);
         }
 
+        .preview-icon {
+            width: 80px;
+            height: 45px;
+            border-radius: 8px;
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
         /* Statistics Cards */
         .stat-card {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
@@ -109,87 +137,52 @@
             transition: stroke-dasharray 0.5s ease;
         }
 
-        /* Fill percentage indicator */
-        .fill-indicator {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(15, 23, 42, 0.9);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            backdrop-filter: blur(8px);
-            z-index: 10;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
-        .fill-indicator.complete {
-            background: rgba(34, 197, 94, 0.9);
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
-        .fill-indicator.warning {
-            background: rgba(245, 158, 11, 0.9);
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
-        .fill-indicator.error {
-            background: rgba(239, 68, 68, 0.9);
+        .treemap-program.new {
+            animation: fadeIn 0.6s ease-out;
         }
 
-        /* Time slot badge */
-        .time-slot-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            transition: all 0.2s;
+        /* Dark mode support */
+        .dark .treemap-container {
+            background: #1e293b;
+            box-shadow: 
+                inset 0 0 40px rgba(0, 0, 0, 0.3),
+                0 20px 60px rgba(0, 0, 0, 0.5);
         }
 
-        .prime-time-badge {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: white;
+        .dark .stat-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
-        /* Format legend */
-        .format-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 8px;
-            background: rgba(0, 0, 0, 0.03);
-            border-radius: 8px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .format-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            background: white;
-            border-radius: 20px;
-            font-size: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(0, 0, 0, 0.06);
-            transition: all 0.2s;
-            color: #1e293b;
-        }
-
-        .format-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        /* Toast */
+        /* Toast improvements */
         .toast {
             animation: slideInRight 0.3s ease-out;
             backdrop-filter: blur(10px);
@@ -220,38 +213,24 @@
             }
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
         }
 
-        .treemap-item.new {
-            animation: fadeIn 0.6s ease-out;
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 5px;
         }
 
-        /* Dark mode */
-        .dark body {
-            background-color: #0f172a;
-            color: #e2e8f0;
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-radius: 5px;
         }
 
-        .dark .treemap-container {
-            background: #1e293b;
-            box-shadow: 
-                inset 0 0 40px rgba(0, 0, 0, 0.5),
-                0 20px 60px rgba(0, 0, 0, 0.7);
-        }
-
-        .dark .stat-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-            border-color: rgba(255, 255, 255, 0.1);
-            color: #e2e8f0;
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         }
 
         /* Gradient text */
@@ -262,49 +241,124 @@
             background-clip: text;
         }
 
-        /* Time slot styles */
-        .time-slot-card {
-            background: rgba(255, 255, 255, 0.5);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            transition: all 0.3s;
-        }
-
-        .time-slot-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-color: rgba(59, 130, 246, 0.2);
-        }
-
-        /* Debug panel (optional) */
-        .debug-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
+        /* Format legend */
+        .format-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
             max-height: 200px;
-            background: rgba(0, 0, 0, 0.8);
-            color: #00ff00;
-            padding: 10px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 11px;
             overflow-y: auto;
-            z-index: 9999;
-            display: none;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        .debug-panel.active {
-            display: block;
+        .format-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: white;
+            border-radius: 20px;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
+            color: #1e293b;
+        }
+
+        .format-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .format-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Loading state */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Treemap layout algorithms */
+        .layout-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .layout-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            background: white;
+            border: 2px solid #d1d5db;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #374151;
+        }
+
+        .layout-btn:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        .layout-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #2563eb;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Fill percentage indicator */
+        .fill-indicator {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .fill-indicator.complete {
+            background: rgba(34, 197, 94, 0.9);
+        }
+
+        .fill-indicator.warning {
+            background: rgba(245, 158, 11, 0.9);
+        }
+
+        .fill-indicator.error {
+            background: rgba(239, 68, 68, 0.9);
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen">
-    <!-- Debug Panel (nascosto di default, attivabile con D) -->
-    <div id="debugPanel" class="debug-panel">
-        <div style="color: #00ff00; margin-bottom: 5px;">DEBUG CONSOLE</div>
-        <div id="debugContent"></div>
-    </div>
-
     <div class="container mx-auto p-4 max-w-7xl">
         <!-- Header -->
         <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
@@ -312,9 +366,9 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v5.7
+                        XMLTV Viewer v4.1
                     </h1>
-                    <p class="text-gray-600 mt-2">Treemap Aggregato con Analisi Fasce Orarie - Fix Copertura 100%</p>
+                    <p class="text-gray-600 mt-2">Treemap Sequenziale - Modalità UTC</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Dark Mode">
@@ -322,9 +376,6 @@
                     </button>
                     <button onclick="showInfo()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Informazioni">
                         <i data-lucide="info" class="w-5 h-5"></i>
-                    </button>
-                    <button onclick="toggleDebug()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Debug (D)">
-                        <i data-lucide="bug" class="w-5 h-5"></i>
                     </button>
                 </div>
             </div>
@@ -340,11 +391,6 @@
                 <button onclick="document.getElementById('fileInput').click()" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105">
                     Seleziona File
                 </button>
-                <div class="mt-4">
-                    <button onclick="loadTestFile()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm">
-                        Carica Dati di Test
-                    </button>
-                </div>
             </div>
         </div>
 
@@ -420,150 +466,34 @@
                 </div>
             </div>
 
-            <!-- Time Slot Analysis -->
+            <!-- Treemap Timeline -->
             <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
                 <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
                     <span class="flex items-center gap-2">
-                        <i data-lucide="clock-3" class="w-6 h-6 text-blue-600"></i>
-                        Analisi Fasce Orarie
+                        <i data-lucide="grid-3x3" class="w-6 h-6 text-blue-600"></i>
+                        Treemap Aggregato per Format
                     </span>
-                    <div class="flex gap-2">
-                        <span class="time-slot-badge prime-time-badge">
-                            <i data-lucide="star" class="w-3 h-3"></i>
-                            Prime Time
-                        </span>
+                    <div class="layout-selector">
+                        <span class="text-sm font-normal text-gray-700 mr-3">Layout:</span>
+                        <button class="layout-btn active" onclick="setLayout('squarify')" data-layout="squarify">Squarify</button>
+                        <button class="layout-btn" onclick="setLayout('binary')" data-layout="binary">Binary</button>
+                        <button class="layout-btn" onclick="setLayout('slice')" data-layout="slice">Slice & Dice</button>
                     </div>
-                </h3>
-                
-                <!-- Time Slots Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Morning Slot -->
-                    <div class="time-slot-card rounded-xl p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
-                                <i data-lucide="sunrise" class="w-4 h-4 text-blue-500"></i>
-                                Mattina
-                            </h4>
-                            <span class="text-sm text-gray-600">06:00 - 12:00</span>
-                        </div>
-                        <div id="morningStats" class="space-y-2">
-                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
-                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
-                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div id="morningCoverage" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Afternoon Slot -->
-                    <div class="time-slot-card rounded-xl p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
-                                <i data-lucide="sun" class="w-4 h-4 text-green-500"></i>
-                                Pomeriggio
-                            </h4>
-                            <span class="text-sm text-gray-600">12:00 - 18:00</span>
-                        </div>
-                        <div id="afternoonStats" class="space-y-2">
-                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
-                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
-                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div id="afternoonCoverage" class="h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Evening Slot -->
-                    <div class="time-slot-card rounded-xl p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
-                                <i data-lucide="sunset" class="w-4 h-4 text-purple-500"></i>
-                                Sera
-                            </h4>
-                            <span class="text-sm text-gray-600">18:00 - 20:30</span>
-                        </div>
-                        <div id="eveningStats" class="space-y-2">
-                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
-                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
-                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div id="eveningCoverage" class="h-full bg-purple-500 transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Prime Time Slot -->
-                    <div class="time-slot-card rounded-xl p-4 border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
-                                <i data-lucide="star" class="w-4 h-4 text-amber-600"></i>
-                                Prime Time
-                            </h4>
-                            <span class="text-sm text-gray-600 font-semibold">20:30 - 22:30</span>
-                        </div>
-                        <div id="primeTimeStats" class="space-y-2">
-                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
-                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
-                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div id="primeTimeCoverage" class="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Late Evening Slot -->
-                    <div class="time-slot-card rounded-xl p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
-                                <i data-lucide="moon" class="w-4 h-4 text-indigo-500"></i>
-                                Seconda Serata
-                            </h4>
-                            <span class="text-sm text-gray-600">22:30 - 01:00</span>
-                        </div>
-                        <div id="lateEveningStats" class="space-y-2">
-                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
-                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
-                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div id="lateEveningCoverage" class="h-full bg-indigo-500 transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Night Slot -->
-                    <div class="time-slot-card rounded-xl p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
-                                <i data-lucide="moon-star" class="w-4 h-4 text-gray-600"></i>
-                                Notte
-                            </h4>
-                            <span class="text-sm text-gray-600">01:00 - 06:00</span>
-                        </div>
-                        <div id="nightStats" class="space-y-2">
-                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
-                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
-                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div id="nightCoverage" class="h-full bg-gray-600 transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Treemap Timeline -->
-            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
-                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-                    <i data-lucide="grid-3x3" class="w-6 h-6 text-blue-600"></i>
-                    Treemap Aggregato per Format
                 </h3>
                 
                 <div class="treemap-container" id="treemapContainer">
                     <div class="fill-indicator" id="fillIndicator">
                         <span id="fillPercent">0%</span> riempito
                     </div>
+                    <!-- Treemap elements will be added here -->
                 </div>
                 
                 <!-- Format Legend -->
                 <div class="mt-6">
                     <h4 class="font-semibold text-gray-800 mb-2">Riepilogo Format</h4>
-                    <div class="format-legend" id="formatLegend"></div>
+                    <div class="format-legend" id="formatLegend">
+                        <!-- Format items will be added here -->
+                    </div>
                 </div>
             </div>
 
@@ -571,7 +501,7 @@
             <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50" id="programDetails" style="display:none;">
                 <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
                     <i data-lucide="tv-2" class="w-6 h-6 text-blue-600"></i>
-                    Dettagli Format
+                    Dettagli Programma
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -579,16 +509,27 @@
                         <p class="font-semibold text-lg text-gray-900" id="detailTitle">-</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-700 mb-1">Durata Totale</p>
-                        <p class="font-semibold text-lg text-gray-900" id="detailDuration">-</p>
+                        <p class="text-sm text-gray-700 mb-1">Orario UTC</p>
+                        <p class="font-semibold text-lg text-gray-900" id="detailTime">-</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-700 mb-1">Numero Episodi</p>
-                        <p class="font-semibold text-lg text-gray-900" id="detailCount">-</p>
+                        <p class="text-sm text-gray-700 mb-1">Durata</p>
+                        <p class="font-semibold text-lg text-gray-900" id="detailDuration">-</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-700 mb-1">Categoria</p>
                         <p class="font-semibold text-lg text-gray-900" id="detailCategory">-</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-sm text-gray-700 mb-1">Descrizione</p>
+                        <p class="font-semibold text-gray-900" id="detailDescription">-</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-sm text-gray-700 mb-1">Icona</p>
+                        <div class="flex items-center gap-4 mt-2">
+                            <div class="w-32 h-18 bg-gray-200 rounded-lg overflow-hidden" id="detailIcon" style="background-size: cover; background-position: center;"></div>
+                            <p class="text-xs text-gray-500 break-all" id="detailIconUrl">-</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -617,7 +558,9 @@
                                 <th class="px-4 py-3 text-left font-semibold text-gray-800">Azioni</th>
                             </tr>
                         </thead>
-                        <tbody id="programTable" class="divide-y divide-gray-200"></tbody>
+                        <tbody id="programTable" class="divide-y divide-gray-200">
+                            <!-- Populated dynamically -->
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -628,12 +571,14 @@
                     <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-600"></i>
                     Report Problemi
                 </h3>
-                <div id="problemsReport" class="space-y-2"></div>
+                <div id="problemsReport" class="space-y-2">
+                    <!-- Populated dynamically -->
+                </div>
             </div>
         </div>
 
         <!-- Actualization Dialog -->
-        <div id="actualizationDialog" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div id="actualizationDialog" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
             <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl transform transition-all">
                 <h3 class="text-2xl font-bold mb-4 gradient-text">Attualizza Date Palinsesto</h3>
                 <p class="text-gray-600 mb-6">Seleziona la nuova data di inizio. Gli orari rimarranno invariati.</p>
@@ -654,21 +599,31 @@
 
         <!-- Program Preview -->
         <div id="programPreview" class="program-preview">
+            <div class="preview-icon" id="previewIcon"></div>
             <h4 class="font-bold text-xl mb-3" id="previewTitle"></h4>
             <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                    <span class="text-gray-400">Durata totale:</span>
+                    <span class="text-gray-400">Orario UTC:</span>
+                    <span class="font-semibold" id="previewTime"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Durata:</span>
                     <span class="font-semibold" id="previewDuration"></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-400">Episodi:</span>
-                    <span class="font-semibold" id="previewCount"></span>
+                    <span class="text-gray-400">Categoria:</span>
+                    <span class="font-semibold" id="previewCategory"></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-400">Percentuale:</span>
-                    <span class="font-semibold" id="previewPercent"></span>
+                    <span class="text-gray-400">Posizione:</span>
+                    <span class="font-semibold" id="previewPosition"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Area:</span>
+                    <span class="font-semibold" id="previewArea"></span>
                 </div>
             </div>
+            <p class="text-xs text-gray-400 mt-4 italic" id="previewDesc"></p>
         </div>
     </div>
 
@@ -679,36 +634,8 @@
         });
 
         // Version
-        const APP_VERSION = '5.7';
-        console.log(`XMLTV Viewer v${APP_VERSION} - Fixed Coverage Calculation`);
-
-        // Debug functions
-        const debugLog = (message, type = 'info') => {
-            const debugContent = document.getElementById('debugContent');
-            if (debugContent) {
-                const line = document.createElement('div');
-                line.style.marginBottom = '2px';
-                line.style.color = type === 'error' ? '#ff6666' : type === 'success' ? '#66ff66' : '#66ccff';
-                const timestamp = new Date().toLocaleTimeString();
-                line.textContent = `[${timestamp}] ${message}`;
-                debugContent.appendChild(line);
-                debugContent.scrollTop = debugContent.scrollHeight;
-            }
-            console.log(`[${type.toUpperCase()}] ${message}`);
-        };
-
-        // Toggle debug panel
-        function toggleDebug() {
-            const panel = document.getElementById('debugPanel');
-            panel.classList.toggle('active');
-        }
-
-        // Keyboard shortcut for debug
-        document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'd' && e.ctrlKey) {
-                toggleDebug();
-            }
-        });
+        const APP_VERSION = '4.1';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Treemap Sequential Timeline`);
 
         // Global state
         let xmlDoc = null;
@@ -718,26 +645,17 @@
         let scheduleDate = null;
         let formatColors = {};
         let colorIndex = 0;
-        const totalDaySeconds = 86400; // 24 hours in seconds
+        let currentPreviewTimeout = null;
+        let totalDaySeconds = 86400; // 24 hours in seconds
+        let currentLayout = 'squarify'; // Layout algorithm
 
         // Modern color palette
         const colorPalette = [
             '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', 
             '#10b981', '#06b6d4', '#6366f1', '#f43f5e',
             '#84cc16', '#a855f7', '#0ea5e9', '#f97316',
-            '#14b8a6', '#d946ef', '#0891b2', '#dc2626',
-            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'
+            '#14b8a6', '#d946ef', '#0891b2', '#dc2626'
         ];
-
-        // Time slot definitions (in UTC hours)
-        const timeSlots = {
-            morning: { start: 6, end: 12, name: 'Mattina', icon: 'sunrise' },
-            afternoon: { start: 12, end: 18, name: 'Pomeriggio', icon: 'sun' },
-            evening: { start: 18, end: 20.5, name: 'Sera', icon: 'sunset' },
-            primeTime: { start: 20.5, end: 22.5, name: 'Prime Time', icon: 'star' },
-            lateEvening: { start: 22.5, end: 25, name: 'Seconda Serata', icon: 'moon' },
-            night: { start: 1, end: 6, name: 'Notte', icon: 'moon-star' }
-        };
 
         // File handling
         const dropZone = document.getElementById('dropZone');
@@ -791,118 +709,88 @@
         }
 
         function loadFile(file) {
-            debugLog(`Caricamento file: ${file.name} (${file.size} bytes)`);
-            
             const reader = new FileReader();
             
             reader.onload = function(e) {
-                debugLog('File letto con successo');
                 try {
-                    parseXML(e.target.result);
+                    const parser = new DOMParser();
+                    xmlDoc = parser.parseFromString(e.target.result, 'text/xml');
+                    
+                    // Check for parsing errors
+                    const parserError = xmlDoc.getElementsByTagName('parsererror');
+                    if (parserError.length > 0) {
+                        throw new Error('Errore nel parsing XML');
+                    }
+                    
+                    // Parse channel info
+                    const channel = xmlDoc.querySelector('channel');
+                    if (!channel) {
+                        throw new Error('Nessun canale trovato nel file XML');
+                    }
+                    
+                    currentChannelId = channel.getAttribute('id');
+                    const displayName = channel.querySelector('display-name');
+                    currentChannelName = displayName ? displayName.textContent : currentChannelId;
+                    
+                    document.getElementById('channelName').textContent = currentChannelName;
+                    document.getElementById('channelId').textContent = `ID: ${currentChannelId}`;
+                    
+                    // Parse programs
+                    parsePrograms();
+                    
+                    // Show main content
+                    document.getElementById('mainContent').classList.remove('hidden');
+                    
+                    showToast('File caricato con successo', 'success');
                 } catch (error) {
-                    debugLog(`Errore parsing: ${error.message}`, 'error');
-                    showToast('Errore nel parsing del file: ' + error.message, 'error');
+                    console.error('Error loading file:', error);
+                    showToast('Errore nel caricamento del file: ' + error.message, 'error');
                 }
-            };
-            
-            reader.onerror = function(e) {
-                debugLog(`Errore lettura file: ${e.target.error}`, 'error');
-                showToast('Errore nella lettura del file', 'error');
             };
             
             reader.readAsText(file);
         }
 
-        function parseXML(xmlString) {
-            debugLog('Inizio parsing XML...');
-            
-            const parser = new DOMParser();
-            xmlDoc = parser.parseFromString(xmlString, 'text/xml');
-            
-            // Check for parse errors
-            const parseError = xmlDoc.querySelector('parsererror');
-            if (parseError) {
-                debugLog('Errore nel parsing XML: ' + parseError.textContent, 'error');
-                showToast('Errore nel parsing XML', 'error');
-                return;
-            }
-            
-            debugLog('XML parsato correttamente', 'success');
-            
-            // Get channel info
-            const channelElement = xmlDoc.querySelector('channel');
-            if (!channelElement) {
-                debugLog('Nessun elemento channel trovato', 'error');
-                showToast('Nessun canale trovato nel file', 'error');
-                return;
-            }
-            
-            currentChannelId = channelElement.getAttribute('id') || 'Unknown';
-            const displayNameElement = channelElement.querySelector('display-name');
-            currentChannelName = displayNameElement ? displayNameElement.textContent : currentChannelId;
-            
-            debugLog(`Canale trovato: ${currentChannelName} (ID: ${currentChannelId})`, 'success');
-            
-            // Update UI
-            document.getElementById('channelName').textContent = currentChannelName;
-            document.getElementById('channelId').textContent = `ID: ${currentChannelId}`;
-            
-            // Parse programs
-            parsePrograms();
-            
-            // Show main content
-            document.getElementById('mainContent').classList.remove('hidden');
-            
-            showToast('File caricato con successo', 'success');
-        }
-
         function parsePrograms() {
-            const programElements = xmlDoc.querySelectorAll('programme');
+            const programmes = xmlDoc.querySelectorAll('programme');
             currentPrograms = [];
-            formatColors = {}; // Reset colors
-            colorIndex = 0;
             
-            debugLog(`Trovati ${programElements.length} elementi programme`);
-            
-            programElements.forEach((prog, index) => {
-                try {
-                    const startStr = prog.getAttribute('start');
-                    const stopStr = prog.getAttribute('stop');
-                    
-                    if (!startStr || !stopStr) {
-                        debugLog(`Programma ${index} senza start/stop`, 'error');
-                        return;
-                    }
-                    
-                    const startDate = parseXMLTVDate(startStr);
-                    const stopDate = parseXMLTVDate(stopStr);
-                    const title = prog.querySelector('title')?.textContent || 'Senza titolo';
-                    
-                    const program = {
-                        start: startDate,
-                        stop: stopDate,
-                        title: title,
-                        duration: (stopDate - startDate) / 1000, // seconds
-                        desc: prog.querySelector('desc')?.textContent || '',
-                        category: prog.querySelector('category')?.textContent || '',
-                        rating: prog.querySelector('rating value')?.textContent || '0',
-                        icon: prog.querySelector('icon')?.getAttribute('src') || ''
-                    };
-                    
-                    currentPrograms.push(program);
-                    
-                    // Assign color to format
-                    if (!formatColors[title]) {
-                        formatColors[title] = colorPalette[colorIndex % colorPalette.length];
-                        colorIndex++;
-                    }
-                    
-                } catch (e) {
-                    debugLog(`Errore parsing programma ${index}: ${e.message}`, 'error');
+            programmes.forEach((prog) => {
+                const startStr = prog.getAttribute('start');
+                const stopStr = prog.getAttribute('stop');
+                
+                if (!startStr || !stopStr) return;
+                
+                const startUTC = parseXMLTVDateUTC(startStr);
+                const stopUTC = parseXMLTVDateUTC(stopStr);
+                
+                const title = prog.querySelector('title')?.textContent || '';
+                const desc = prog.querySelector('desc')?.textContent || '';
+                const category = prog.querySelector('category')?.textContent || '';
+                const ratingValue = prog.querySelector('rating value');
+                const rating = ratingValue ? ratingValue.textContent : '0';
+                const icon = prog.querySelector('icon')?.getAttribute('src') || '';
+                
+                const program = {
+                    start: startUTC,
+                    stop: stopUTC,
+                    title,
+                    desc,
+                    category,
+                    rating,
+                    icon,
+                    duration: (stopUTC - startUTC) / 1000, // seconds
+                    element: prog
+                };
+                
+                currentPrograms.push(program);
+                
+                // Assign color to format
+                if (!formatColors[title]) {
+                    formatColors[title] = colorPalette[colorIndex % colorPalette.length];
+                    colorIndex++;
                 }
             });
-            
-            debugLog(`Parsati ${currentPrograms.length} programmi validi`, 'success');
             
             if (currentPrograms.length === 0) {
                 showToast('Nessun programma trovato nel file', 'error');
@@ -919,25 +807,6 @@
             loadPrograms();
         }
 
-        function parseXMLTVDate(dateStr) {
-            // Handle both formats: YYYYMMDDHHmmss +0000 and YYYY-MM-DDTHH:mm:ss+0000
-            if (dateStr.includes('T')) {
-                // ISO format
-                const cleanDate = dateStr.replace(/[+-]\d{4}$/, 'Z');
-                return new Date(cleanDate);
-            } else {
-                // Classic XMLTV format
-                const year = parseInt(dateStr.substr(0, 4));
-                const month = parseInt(dateStr.substr(4, 2)) - 1;
-                const day = parseInt(dateStr.substr(6, 2));
-                const hour = parseInt(dateStr.substr(8, 2));
-                const minute = parseInt(dateStr.substr(10, 2));
-                const second = parseInt(dateStr.substr(12, 2));
-                
-                return new Date(Date.UTC(year, month, day, hour, minute, second));
-            }
-        }
-
         function detectMainProgrammingDay() {
             // Count programs per day
             const programsByDay = {};
@@ -949,8 +818,6 @@
                 }
                 programsByDay[dayKey].push(program);
             });
-            
-            debugLog('Programmi per giorno: ' + Object.keys(programsByDay).map(k => `${k}: ${programsByDay[k].length}`).join(', '));
             
             // Find the day with most programs
             let maxPrograms = 0;
@@ -972,24 +839,59 @@
                 scheduleDate.setUTCHours(0, 0, 0, 0);
             }
             
-            debugLog('Data palinsesto selezionata: ' + scheduleDate.toISOString(), 'success');
             document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
         }
 
+        function parseXMLTVDateUTC(dateStr) {
+            // Check if it's ISO 8601 format (contains 'T')
+            if (dateStr.includes('T')) {
+                // ISO 8601 format: 2025-06-09T21:00:00+0000
+                // Remove timezone info and parse as UTC
+                const cleanDate = dateStr.replace(/[+-]\d{4}$/, '');
+                const [datePart, timePart] = cleanDate.split('T');
+                const [year, month, day] = datePart.split('-').map(Number);
+                const [hour, minute, second] = timePart.split(':').map(Number);
+                
+                return new Date(Date.UTC(year, month - 1, day, hour, minute, second || 0));
+            } else {
+                // Classic XMLTV format: YYYYMMDDHHmmss +0000
+                const year = parseInt(dateStr.substr(0, 4));
+                const month = parseInt(dateStr.substr(4, 2)) - 1;
+                const day = parseInt(dateStr.substr(6, 2));
+                const hour = parseInt(dateStr.substr(8, 2));
+                const minute = parseInt(dateStr.substr(10, 2));
+                const second = parseInt(dateStr.substr(12, 2));
+                
+                return new Date(Date.UTC(year, month, day, hour, minute, second));
+            }
+        }
+
+        function formatXMLTVDate(date) {
+            // Use ISO 8601 format for better compatibility
+            const pad = (n) => String(n).padStart(2, '0');
+            const year = date.getUTCFullYear();
+            const month = pad(date.getUTCMonth() + 1);
+            const day = pad(date.getUTCDate());
+            const hours = pad(date.getUTCHours());
+            const minutes = pad(date.getUTCMinutes());
+            const seconds = pad(date.getUTCSeconds());
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
+        }
+
         function loadPrograms() {
-            // Get programs for the schedule day
+            // Get programs for the schedule day (including evening programs from previous day)
             const dayStart = new Date(scheduleDate);
-            dayStart.setUTCHours(0, 0, 0, 0);
+            dayStart.setUTCHours(21, 0, 0, 0); // Start from 21:00 previous day
+            dayStart.setUTCDate(dayStart.getUTCDate() - 1);
             
             const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCHours(23, 59, 59, 999);
+            dayEnd.setUTCHours(21, 0, 0, 0); // End at 21:00 current day
             
             const dayPrograms = currentPrograms.filter(p => {
-                return (p.start >= dayStart && p.start <= dayEnd) || 
+                return (p.start >= dayStart && p.start < dayEnd) || 
                        (p.start < dayStart && p.stop > dayStart);
             }).sort((a, b) => a.start - b.start);
-            
-            debugLog(`Filtrati ${dayPrograms.length} programmi per ${scheduleDate.toISOString().split('T')[0]}`);
             
             document.getElementById('programCount').textContent = dayPrograms.length;
             
@@ -1007,332 +909,611 @@
             
             // Update format legend
             updateFormatLegend(dayPrograms);
-            
-            // Analyze time slots
-            analyzeTimeSlots(dayPrograms);
         }
 
-        // Draw treemap - Fixed algorithm with proper layout
         function drawTreemap(programs) {
-            debugLog('Creazione treemap...');
-            
             const container = document.getElementById('treemapContainer');
-            container.innerHTML = '<div class="fill-indicator" id="fillIndicator">0% riempito</div>';
             
-            // Aggregate by format
-            const formats = {};
-            programs.forEach(prog => {
-                if (!formats[prog.title]) {
-                    formats[prog.title] = {
-                        title: prog.title,
-                        duration: 0,
-                        count: 0,
-                        category: prog.category,
-                        icon: prog.icon
+            // Clear existing content (except fill indicator)
+            const fillIndicator = document.getElementById('fillIndicator');
+            container.innerHTML = '';
+            container.appendChild(fillIndicator);
+            
+            const containerWidth = 800;
+            const containerHeight = 800;
+            
+            // Group programs by format and calculate total duration per format
+            const formatGroups = {};
+            let totalUsedSeconds = 0;
+            
+            programs.forEach((program) => {
+                const format = program.title;
+                if (!formatGroups[format]) {
+                    formatGroups[format] = {
+                        title: format,
+                        programs: [],
+                        totalDuration: 0,
+                        icon: program.icon,
+                        category: program.category,
+                        color: formatColors[format]
                     };
                 }
-                formats[prog.title].duration += prog.duration;
-                formats[prog.title].count++;
-            });
-            
-            debugLog(`Aggregati ${Object.keys(formats).length} format unici`);
-            
-            // Convert to array and sort by duration descending
-            const formatArray = Object.values(formats).sort((a, b) => b.duration - a.duration);
-            
-            // Calculate total duration
-            const totalDuration = formatArray.reduce((sum, f) => sum + f.duration, 0);
-            const fillPercent = (totalDuration / totalDaySeconds * 100).toFixed(1);
-            
-            const fillIndicator = document.getElementById('fillIndicator');
-            fillIndicator.textContent = `${fillPercent}% riempito`;
-            
-            // Update fill indicator style
-            if (fillPercent >= 95) {
-                fillIndicator.classList.add('complete');
-                fillIndicator.classList.remove('warning', 'error');
-            } else if (fillPercent >= 80) {
-                fillIndicator.classList.add('warning');
-                fillIndicator.classList.remove('complete', 'error');
-            } else {
-                fillIndicator.classList.add('error');
-                fillIndicator.classList.remove('complete', 'warning');
-            }
-            
-            // Improved treemap layout algorithm
-            const containerWidth = 796; // 800 - 4 for border
-            const containerHeight = 796;
-            const totalArea = containerWidth * containerHeight;
-            
-            // Calculate layout using strip packing algorithm
-            const layoutItems = [];
-            let currentX = 0;
-            let currentY = 0;
-            let currentRowHeight = 0;
-            let currentRowWidth = containerWidth;
-            let remainingHeight = containerHeight;
-            
-            // Group formats into rows for better visualization
-            let currentRow = [];
-            let currentRowValue = 0;
-            const targetRowValue = totalDuration * 0.25; // Aim for ~4 rows
-            
-            formatArray.forEach((format, index) => {
-                const formatValue = format.duration;
                 
-                // Add to current row
-                currentRow.push(format);
-                currentRowValue += formatValue;
+                formatGroups[format].programs.push(program);
+                formatGroups[format].totalDuration += program.duration;
+                totalUsedSeconds += program.duration;
                 
-                // Check if we should start a new row
-                const isLastItem = index === formatArray.length - 1;
-                const shouldCreateNewRow = currentRowValue >= targetRowValue || isLastItem;
-                
-                if (shouldCreateNewRow) {
-                    // Calculate row height based on value proportion
-                    const rowHeight = Math.floor((currentRowValue / totalDuration) * containerHeight);
-                    const actualRowHeight = Math.min(rowHeight, remainingHeight);
-                    
-                    // Layout items in current row
-                    let rowX = 0;
-                    currentRow.forEach((item, itemIndex) => {
-                        const itemWidth = Math.floor((item.duration / currentRowValue) * containerWidth);
-                        const actualWidth = itemIndex === currentRow.length - 1 
-                            ? containerWidth - rowX  // Last item fills remaining space
-                            : itemWidth;
-                        
-                        layoutItems.push({
-                            format: item,
-                            x: rowX,
-                            y: currentY,
-                            width: actualWidth,
-                            height: actualRowHeight
-                        });
-                        
-                        rowX += actualWidth;
-                    });
-                    
-                    // Move to next row
-                    currentY += actualRowHeight;
-                    remainingHeight -= actualRowHeight;
-                    currentRow = [];
-                    currentRowValue = 0;
+                // Use the first icon found for this format
+                if (!formatGroups[format].icon && program.icon) {
+                    formatGroups[format].icon = program.icon;
                 }
             });
             
-            // Create DOM elements for each layout item
-            layoutItems.forEach((item, index) => {
-                const { format, x, y, width, height } = item;
-                
-                // Ensure minimum size for visibility
-                const minSize = 40;
-                const actualWidth = Math.max(width - 4, minSize); // -4 for borders
-                const actualHeight = Math.max(height - 4, minSize);
-                
+            // Convert to array and prepare for treemap
+            const formatNodes = Object.values(formatGroups).map(group => ({
+                ...group,
+                value: group.totalDuration,
+                programCount: group.programs.length
+            }));
+            
+            // Sort by duration (largest first)
+            formatNodes.sort((a, b) => b.value - a.value);
+            
+            // Update fill indicator
+            const fillPercent = (totalUsedSeconds / totalDaySeconds) * 100;
+            document.getElementById('fillPercent').textContent = `${fillPercent.toFixed(1)}%`;
+            
+            if (fillPercent >= 100) {
+                fillIndicator.className = 'fill-indicator complete';
+            } else if (fillPercent >= 80) {
+                fillIndicator.className = 'fill-indicator warning';
+            } else {
+                fillIndicator.className = 'fill-indicator error';
+            }
+            
+            // Calculate treemap layout
+            const root = {
+                x0: 0,
+                y0: 0,
+                x1: containerWidth,
+                y1: containerHeight,
+                value: totalDaySeconds,
+                children: formatNodes
+            };
+            
+            // Apply treemap algorithm
+            if (currentLayout === 'squarify') {
+                squarify(root.children, root, totalDaySeconds);
+            } else if (currentLayout === 'binary') {
+                binary(root.children, root, totalDaySeconds);
+            } else if (currentLayout === 'slice') {
+                sliceDice(root.children, root, totalDaySeconds);
+            }
+            
+            // Draw format blocks
+            formatNodes.forEach((formatNode) => {
                 const div = document.createElement('div');
-                div.className = 'treemap-item new';
-                div.style.left = x + 'px';
-                div.style.top = y + 'px';
-                div.style.width = actualWidth + 'px';
-                div.style.height = actualHeight + 'px';
-                div.style.backgroundColor = formatColors[format.title];
+                div.className = 'treemap-program new';
                 
-                // Add icon if available and space permits
-                if (format.icon && actualWidth > 80 && actualHeight > 80) {
+                const width = formatNode.x1 - formatNode.x0;
+                const height = formatNode.y1 - formatNode.y0;
+                
+                div.style.left = `${formatNode.x0}px`;
+                div.style.top = `${formatNode.y0}px`;
+                div.style.width = `${width}px`;
+                div.style.height = `${height}px`;
+                div.style.backgroundColor = formatNode.color;
+                
+                // Add icon if available and space allows
+                if (formatNode.icon && width > 60 && height > 60) {
                     const img = document.createElement('img');
-                    img.src = format.icon;
+                    img.src = formatNode.icon;
                     img.className = 'treemap-icon';
-                    img.onerror = function() { this.style.display = 'none'; };
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                    };
                     div.appendChild(img);
                 }
                 
-                // Add label with responsive font size
-                const label = document.createElement('div');
-                label.className = 'treemap-label';
-                
-                // Adjust font size based on area
-                const area = actualWidth * actualHeight;
-                let fontSize = '12px';
-                if (area < 5000) fontSize = '11px';
-                if (area < 3000) fontSize = '10px';
-                if (area > 10000) fontSize = '14px';
-                if (area > 20000) fontSize = '16px';
-                
-                label.style.fontSize = fontSize;
-                
-                // Show duration only if space permits
-                if (actualHeight > 60) {
+                // Add enhanced label
+                if (width > 50 && height > 40) {
+                    const label = document.createElement('div');
+                    label.className = 'treemap-label';
+                    label.style.fontSize = Math.min(16, width / 10) + 'px';
+                    
+                    // Multi-line label with format name and stats
+                    const durationHours = (formatNode.totalDuration / 3600).toFixed(1);
+                    const percentage = ((formatNode.totalDuration / totalDaySeconds) * 100).toFixed(1);
+                    
                     label.innerHTML = `
-                        <div>${format.title}</div>
-                        <div style="font-size: 0.8em; opacity: 0.9;">${formatDuration(format.duration)}</div>
+                        <div style="font-weight: 700;">${formatNode.title}</div>
+                        ${height > 60 ? `<div style="font-size: 0.8em; margin-top: 4px;">${formatNode.programCount} episodi</div>` : ''}
+                        ${height > 80 ? `<div style="font-size: 0.8em;">${durationHours}h (${percentage}%)</div>` : ''}
                     `;
-                } else {
-                    label.innerHTML = `<div>${format.title}</div>`;
+                    
+                    div.appendChild(label);
                 }
                 
-                div.appendChild(label);
-                
-                // Add events
-                div.addEventListener('click', () => showFormatDetails(format));
-                div.addEventListener('mouseenter', (e) => showProgramPreview(format, e));
-                div.addEventListener('mouseleave', hideProgramPreview);
+                // Event handlers - show aggregated format info
+                div.onclick = () => showFormatDetails(formatNode);
+                div.onmouseenter = (e) => showFormatPreview(e, formatNode, width * height);
+                div.onmouseleave = hideProgramPreview;
                 
                 container.appendChild(div);
-                
-                debugLog(`Layout: ${format.title} at (${x},${y}) size ${actualWidth}x${actualHeight}`);
             });
             
-            debugLog(`Treemap completato con ${layoutItems.length} elementi`, 'success');
+            // Draw gap area if any
+            if (totalUsedSeconds < totalDaySeconds) {
+                const gapValue = totalDaySeconds - totalUsedSeconds;
+                const gapArea = (gapValue / totalDaySeconds) * containerWidth * containerHeight;
+                
+                // Simple placement for gap - fill remaining space
+                const div = document.createElement('div');
+                div.className = 'treemap-gap';
+                
+                // Calculate gap dimensions based on remaining area
+                const gapWidth = Math.sqrt(gapArea);
+                const gapHeight = gapArea / gapWidth;
+                
+                div.style.right = '0';
+                div.style.bottom = '0';
+                div.style.width = `${gapWidth}px`;
+                div.style.height = `${gapHeight}px`;
+                
+                const gapHours = (gapValue / 3600).toFixed(1);
+                const gapPercent = ((gapValue / totalDaySeconds) * 100).toFixed(1);
+                
+                // Add gap label if space allows
+                if (gapWidth > 80 && gapHeight > 60) {
+                    const gapLabel = document.createElement('div');
+                    gapLabel.className = 'treemap-label';
+                    gapLabel.style.background = 'rgba(220, 38, 38, 0.8)';
+                    gapLabel.innerHTML = `
+                        <div style="font-weight: 700;">VUOTO</div>
+                        <div style="font-size: 0.8em; margin-top: 4px;">${gapHours}h (${gapPercent}%)</div>
+                    `;
+                    div.appendChild(gapLabel);
+                }
+                
+                container.appendChild(div);
+            }
         }
 
-        // Show format details
-        function showFormatDetails(format) {
+        // Treemap layout algorithms
+        function squarify(children, parent, totalValue) {
+            const area = (parent.x1 - parent.x0) * (parent.y1 - parent.y0);
+            
+            children.forEach((child) => {
+                const childArea = (child.value / totalValue) * area;
+                child.area = childArea;
+            });
+            
+            squarifyRecursive(children, parent.x0, parent.y0, parent.x1, parent.y1);
+        }
+
+        function squarifyRecursive(children, x0, y0, x1, y1) {
+            if (children.length === 0) return;
+            
+            const totalArea = (x1 - x0) * (y1 - y0);
+            const totalValue = children.reduce((sum, child) => sum + child.area, 0);
+            
+            if (children.length === 1) {
+                const child = children[0];
+                child.x0 = x0;
+                child.y0 = y0;
+                child.x1 = x1;
+                child.y1 = y1;
+                return;
+            }
+            
+            const width = x1 - x0;
+            const height = y1 - y0;
+            const vertical = width <= height;
+            
+            let accumulatedArea = 0;
+            let i = 0;
+            
+            while (i < children.length) {
+                const child = children[i];
+                accumulatedArea += child.area;
+                
+                const ratio = accumulatedArea / totalArea;
+                
+                if (vertical) {
+                    const splitY = y0 + ratio * height;
+                    
+                    if (i === children.length - 1 || wouldImproveRatio(children, i + 1, width, splitY - y0)) {
+                        // Place children 0 to i
+                        layoutRow(children.slice(0, i + 1), x0, y0, x1, splitY, true);
+                        
+                        // Recursively layout remaining children
+                        if (i < children.length - 1) {
+                            squarifyRecursive(children.slice(i + 1), x0, splitY, x1, y1);
+                        }
+                        break;
+                    }
+                } else {
+                    const splitX = x0 + ratio * width;
+                    
+                    if (i === children.length - 1 || wouldImproveRatio(children, i + 1, splitX - x0, height)) {
+                        // Place children 0 to i
+                        layoutRow(children.slice(0, i + 1), x0, y0, splitX, y1, false);
+                        
+                        // Recursively layout remaining children
+                        if (i < children.length - 1) {
+                            squarifyRecursive(children.slice(i + 1), splitX, y0, x1, y1);
+                        }
+                        break;
+                    }
+                }
+                
+                i++;
+            }
+        }
+
+        function wouldImproveRatio(children, nextIndex, width, height) {
+            if (nextIndex >= children.length) return false;
+            
+            const currentRatio = Math.max(width / height, height / width);
+            const nextArea = children[nextIndex].area;
+            const newHeight = height * (1 + nextArea / (width * height));
+            const newRatio = Math.max(width / newHeight, newHeight / width);
+            
+            return newRatio < currentRatio;
+        }
+
+        function layoutRow(children, x0, y0, x1, y1, vertical) {
+            const totalArea = children.reduce((sum, child) => sum + child.area, 0);
+            
+            if (vertical) {
+                const width = x1 - x0;
+                let currentX = x0;
+                
+                children.forEach(child => {
+                    const childWidth = (child.area / totalArea) * width;
+                    child.x0 = currentX;
+                    child.y0 = y0;
+                    child.x1 = currentX + childWidth;
+                    child.y1 = y1;
+                    currentX += childWidth;
+                });
+            } else {
+                const height = y1 - y0;
+                let currentY = y0;
+                
+                children.forEach(child => {
+                    const childHeight = (child.area / totalArea) * height;
+                    child.x0 = x0;
+                    child.y0 = currentY;
+                    child.x1 = x1;
+                    child.y1 = currentY + childHeight;
+                    currentY += childHeight;
+                });
+            }
+        }
+
+        function binary(children, parent, totalValue) {
+            binaryRecursive(children, parent.x0, parent.y0, parent.x1, parent.y1, totalValue);
+        }
+
+        function binaryRecursive(children, x0, y0, x1, y1, totalValue) {
+            if (children.length === 0) return;
+            
+            if (children.length === 1) {
+                const child = children[0];
+                child.x0 = x0;
+                child.y0 = y0;
+                child.x1 = x1;
+                child.y1 = y1;
+                return;
+            }
+            
+            const mid = Math.floor(children.length / 2);
+            const leftChildren = children.slice(0, mid);
+            const rightChildren = children.slice(mid);
+            
+            const leftValue = leftChildren.reduce((sum, child) => sum + child.value, 0);
+            const rightValue = rightChildren.reduce((sum, child) => sum + child.value, 0);
+            
+            const width = x1 - x0;
+            const height = y1 - y0;
+            
+            if (width > height) {
+                // Split vertically
+                const splitX = x0 + (leftValue / totalValue) * width;
+                binaryRecursive(leftChildren, x0, y0, splitX, y1, leftValue);
+                binaryRecursive(rightChildren, splitX, y0, x1, y1, rightValue);
+            } else {
+                // Split horizontally
+                const splitY = y0 + (leftValue / totalValue) * height;
+                binaryRecursive(leftChildren, x0, y0, x1, splitY, leftValue);
+                binaryRecursive(rightChildren, x0, splitY, x1, y1, rightValue);
+            }
+        }
+
+        function sliceDice(children, parent, totalValue) {
+            const width = parent.x1 - parent.x0;
+            const height = parent.y1 - parent.y0;
+            const area = width * height;
+            
+            let currentX = parent.x0;
+            let currentY = parent.y0;
+            let rowHeight = 0;
+            let rowChildren = [];
+            let rowValue = 0;
+            
+            children.forEach((child, index) => {
+                const childArea = (child.value / totalValue) * area;
+                const childWidth = Math.sqrt(childArea);
+                
+                if (currentX + childWidth > parent.x1 && rowChildren.length > 0) {
+                    // Layout current row
+                    layoutRowSlice(rowChildren, parent.x0, currentY, parent.x1, currentY + rowHeight);
+                    
+                    // Start new row
+                    currentY += rowHeight;
+                    currentX = parent.x0;
+                    rowHeight = 0;
+                    rowChildren = [];
+                    rowValue = 0;
+                }
+                
+                rowChildren.push(child);
+                rowValue += child.value;
+                rowHeight = Math.max(rowHeight, childArea / childWidth);
+                currentX += childWidth;
+            });
+            
+            // Layout last row
+            if (rowChildren.length > 0) {
+                layoutRowSlice(rowChildren, parent.x0, currentY, parent.x1, Math.min(parent.y1, currentY + rowHeight));
+            }
+        }
+
+        function layoutRowSlice(children, x0, y0, x1, y1) {
+            const totalValue = children.reduce((sum, child) => sum + child.value, 0);
+            const width = x1 - x0;
+            let currentX = x0;
+            
+            children.forEach(child => {
+                const childWidth = (child.value / totalValue) * width;
+                child.x0 = currentX;
+                child.y0 = y0;
+                child.x1 = Math.min(currentX + childWidth, x1);
+                child.y1 = y1;
+                currentX += childWidth;
+            });
+        }
+
+        function setLayout(layout) {
+            currentLayout = layout;
+            
+            // Update UI
+            document.querySelectorAll('.layout-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-layout="${layout}"]`).classList.add('active');
+            
+            // Redraw
+            if (currentPrograms.length > 0) {
+                loadPrograms();
+            }
+            
+            showToast(`Layout cambiato in ${layout}`, 'success');
+        }
+
+        function updateStatistics(programs) {
+            // Calculate total coverage
+            const totalDuration = programs.reduce((sum, p) => sum + p.duration, 0);
+            const coveragePercent = Math.min(100, (totalDuration / totalDaySeconds) * 100);
+            const coverageHours = Math.floor(totalDuration / 3600);
+            const coverageMinutes = Math.floor((totalDuration % 3600) / 60);
+            
+            document.getElementById('coveragePercent').textContent = `${coveragePercent.toFixed(1)}%`;
+            document.getElementById('coverageTime').textContent = `${coverageHours}h ${coverageMinutes}m`;
+            
+            // Update coverage ring
+            const ring = document.getElementById('coverageRing');
+            const circumference = 2 * Math.PI * 20;
+            const offset = circumference - (coveragePercent / 100) * circumference;
+            ring.style.strokeDashoffset = offset;
+            
+            // Count gaps
+            let gapCount = 0;
+            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
+            for (let i = 0; i < sortedPrograms.length - 1; i++) {
+                if (sortedPrograms[i + 1].start > sortedPrograms[i].stop) {
+                    gapCount++;
+                }
+            }
+            document.getElementById('gapCount').textContent = gapCount;
+            
+            // Count unique formats
+            const uniqueFormats = [...new Set(programs.map(p => p.title))];
+            document.getElementById('formatCount').textContent = uniqueFormats.length;
+            
+            // Calculate average duration
+            const avgDuration = totalDuration / programs.length;
+            const avgMinutes = Math.floor(avgDuration / 60);
+            document.getElementById('avgDuration').textContent = `${avgMinutes}m`;
+        }
+
+        function updateFormatLegend(programs) {
+            const legend = document.getElementById('formatLegend');
+            legend.innerHTML = '';
+            
+            // Usa i format groups se disponibili
+            if (Object.keys(formatGroups).length > 0) {
+                const sortedFormats = Object.values(formatGroups)
+                    .sort((a, b) => b.totalDuration - a.totalDuration);
+                
+                sortedFormats.forEach(format => {
+                    const item = document.createElement('div');
+                    item.className = 'format-item';
+                    const hours = (format.totalDuration / 3600).toFixed(1);
+                    const percentage = ((format.totalDuration / totalDaySeconds) * 100).toFixed(1);
+                    
+                    item.innerHTML = `
+                        <div class="format-color" style="background: ${format.color}"></div>
+                        <span>${format.title}</span>
+                        <span style="margin-left: auto; font-size: 11px; color: #666;">
+                            ${format.programCount} ep. • ${hours}h • ${percentage}%
+                        </span>
+                    `;
+                    legend.appendChild(item);
+                });
+            } else {
+                // Fallback alla vecchia versione
+                const formats = [...new Set(programs.map(p => p.title))];
+                formats.forEach(format => {
+                    const item = document.createElement('div');
+                    item.className = 'format-item';
+                    item.innerHTML = `
+                        <div class="format-color" style="background: ${formatColors[format]}"></div>
+                        <span>${format}</span>
+                    `;
+                    legend.appendChild(item);
+                });
+            }
+        }
+
+        function showFormatDetails(formatNode) {
             const detailsDiv = document.getElementById('programDetails');
             detailsDiv.style.display = 'block';
             
-            document.getElementById('detailTitle').textContent = format.title;
-            document.getElementById('detailDuration').textContent = formatDuration(format.duration);
-            document.getElementById('detailCount').textContent = format.count + ' episodi';
-            document.getElementById('detailCategory').textContent = format.category || '-';
+            // Mostra informazioni aggregate del format
+            document.getElementById('detailTitle').textContent = formatNode.title;
             
-            // Scroll to details
-            detailsDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Calcola orari di inizio e fine del format
+            const sortedPrograms = formatNode.programs.sort((a, b) => a.start - b.start);
+            const firstProgram = sortedPrograms[0];
+            const lastProgram = sortedPrograms[sortedPrograms.length - 1];
+            
+            document.getElementById('detailTime').textContent = `Prima: ${formatTimeUTC(firstProgram.start)} - Ultima: ${formatTimeUTC(lastProgram.stop)}`;
+            document.getElementById('detailDuration').textContent = `${(formatNode.totalDuration / 3600).toFixed(1)} ore totali (${formatNode.programCount} episodi)`;
+            document.getElementById('detailCategory').textContent = formatNode.category || '-';
+            
+            // Lista tutti gli episodi
+            const episodesList = sortedPrograms.map(p => 
+                `• ${formatTimeUTC(p.start)} - ${formatTimeUTC(p.stop)} (${formatDuration(p.duration)})`
+            ).join('\n');
+            
+            document.getElementById('detailDescription').textContent = `Episodi:\n${episodesList}`;
+            
+            const iconDiv = document.getElementById('detailIcon');
+            const iconUrl = document.getElementById('detailIconUrl');
+            
+            if (formatNode.icon) {
+                iconDiv.style.backgroundImage = `url(${formatNode.icon})`;
+                iconUrl.textContent = formatNode.icon;
+            } else {
+                iconDiv.style.backgroundImage = 'none';
+                iconDiv.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400">Nessuna icona</div>';
+                iconUrl.textContent = 'Nessuna icona specificata';
+            }
+            
+            detailsDiv.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Show program preview
-        function showProgramPreview(format, event) {
-            const preview = document.getElementById('programPreview');
-            const rect = event.target.getBoundingClientRect();
-            
-            // Update content
-            document.getElementById('previewTitle').textContent = format.title;
-            document.getElementById('previewDuration').textContent = formatDuration(format.duration);
-            document.getElementById('previewCount').textContent = format.count + ' episodi';
-            
-            const percentage = ((format.duration / totalDaySeconds) * 100).toFixed(1);
-            document.getElementById('previewPercent').textContent = `${percentage}% del giorno`;
-            
-            // Position preview
-            let left = rect.right + 10;
-            let top = rect.top;
-            
-            // Adjust if would go off screen
-            if (left + 350 > window.innerWidth) {
-                left = rect.left - 360;
+        function showFormatPreview(event, formatNode, area) {
+            if (currentPreviewTimeout) {
+                clearTimeout(currentPreviewTimeout);
             }
             
-            if (top + 300 > window.innerHeight) {
-                top = window.innerHeight - 310;
-            }
-            
-            preview.style.left = left + 'px';
-            preview.style.top = top + 'px';
-            
-            // Show with animation
-            preview.classList.add('show');
+            currentPreviewTimeout = setTimeout(() => {
+                const preview = document.getElementById('programPreview');
+                
+                document.getElementById('previewTitle').textContent = formatNode.title;
+                
+                // Mostra info aggregate
+                const durationHours = (formatNode.totalDuration / 3600).toFixed(1);
+                const percentage = ((formatNode.totalDuration / totalDaySeconds) * 100).toFixed(1);
+                
+                document.getElementById('previewTime').textContent = `${formatNode.programCount} episodi`;
+                document.getElementById('previewDuration').textContent = `${durationHours} ore totali`;
+                document.getElementById('previewCategory').textContent = formatNode.category || 'N/A';
+                
+                // Show format rank by duration
+                const allFormats = Object.values(formatColors).length;
+                const formatRank = Object.values(formatGroups)
+                    .sort((a, b) => b.totalDuration - a.totalDuration)
+                    .findIndex(f => f.title === formatNode.title) + 1;
+                
+                document.getElementById('previewPosition').textContent = `${formatRank}° su ${allFormats} format`;
+                
+                // Show area percentage
+                const totalArea = 800 * 800;
+                const areaPercent = (area / totalArea) * 100;
+                document.getElementById('previewArea').textContent = `${percentage}% del tempo`;
+                
+                // Show time slots
+                const timeSlots = formatNode.programs
+                    .sort((a, b) => a.start - b.start)
+                    .slice(0, 3)
+                    .map(p => formatTimeUTC(p.start))
+                    .join(', ');
+                
+                document.getElementById('previewDesc').textContent = `Orari: ${timeSlots}${formatNode.programs.length > 3 ? '...' : ''}`;
+                
+                const iconDiv = document.getElementById('previewIcon');
+                if (formatNode.icon) {
+                    iconDiv.style.backgroundImage = `url(${formatNode.icon})`;
+                    iconDiv.style.display = 'block';
+                } else {
+                    iconDiv.style.display = 'none';
+                }
+                
+                // Position preview
+                const rect = event.target.getBoundingClientRect();
+                let top = rect.bottom + 10;
+                let left = rect.left + rect.width / 2 - 175;
+                
+                if (left < 10) left = 10;
+                if (left + 350 > window.innerWidth) left = window.innerWidth - 360;
+                if (top + 300 > window.innerHeight) {
+                    top = rect.top - 300 - 10;
+                }
+                
+                preview.style.left = left + 'px';
+                preview.style.top = top + 'px';
+                preview.classList.add('show');
+            }, 300);
         }
+
+        // Add global variable to store format groups
+        let formatGroups = {};
 
         function hideProgramPreview() {
-            const preview = document.getElementById('programPreview');
-            preview.classList.remove('show');
+            if (currentPreviewTimeout) {
+                clearTimeout(currentPreviewTimeout);
+                currentPreviewTimeout = null;
+            }
+            document.getElementById('programPreview').classList.remove('show');
         }
 
-        // Analyze time slots
-        function analyzeTimeSlots(programs) {
-            Object.entries(timeSlots).forEach(([slotKey, slot]) => {
-                const slotPrograms = programs.filter(p => {
-                    const startHour = p.start.getUTCHours() + p.start.getUTCMinutes() / 60;
-                    const stopHour = p.stop.getUTCHours() + p.stop.getUTCMinutes() / 60;
-                    
-                    if (slot.end > 24) {
-                        return (startHour >= slot.start || startHour < slot.end - 24) ||
-                               (stopHour > slot.start || stopHour < slot.end - 24);
-                    } else if (slotKey === 'night') {
-                        return (startHour >= slot.start && startHour < slot.end) ||
-                               (stopHour > slot.start && stopHour <= slot.end);
-                    } else {
-                        return (startHour < slot.end && stopHour > slot.start);
-                    }
-                });
-                
-                // Calculate coverage
-                let totalSlotSeconds = (slot.end - slot.start) * 3600;
-                if (slot.end > 24) {
-                    totalSlotSeconds = ((slot.end - 24) + (24 - slot.start)) * 3600;
-                }
-                
-                let coveredSeconds = 0;
-                const formatCounts = {};
-                
-                slotPrograms.forEach(p => {
-                    const slotStart = new Date(scheduleDate);
-                    slotStart.setUTCHours(Math.floor(slot.start), (slot.start % 1) * 60, 0, 0);
-                    
-                    const slotEnd = new Date(scheduleDate);
-                    if (slot.end > 24) {
-                        slotEnd.setUTCDate(slotEnd.getUTCDate() + 1);
-                        slotEnd.setUTCHours(Math.floor(slot.end - 24), ((slot.end - 24) % 1) * 60, 0, 0);
-                    } else {
-                        slotEnd.setUTCHours(Math.floor(slot.end), (slot.end % 1) * 60, 0, 0);
-                    }
-                    
-                    if (slotKey === 'night') {
-                        slotStart.setUTCHours(1, 0, 0, 0);
-                        slotEnd.setUTCHours(6, 0, 0, 0);
-                    }
-                    
-                    const overlapStart = Math.max(p.start.getTime(), slotStart.getTime());
-                    const overlapEnd = Math.min(p.stop.getTime(), slotEnd.getTime());
-                    
-                    if (overlapEnd > overlapStart) {
-                        const overlapSeconds = (overlapEnd - overlapStart) / 1000;
-                        coveredSeconds += overlapSeconds;
-                        
-                        if (!formatCounts[p.title]) {
-                            formatCounts[p.title] = 0;
-                        }
-                        formatCounts[p.title] += overlapSeconds;
-                    }
-                });
-                
-                // Find dominant format
-                let dominantFormat = '-';
-                let maxSeconds = 0;
-                Object.entries(formatCounts).forEach(([format, seconds]) => {
-                    if (seconds > maxSeconds) {
-                        maxSeconds = seconds;
-                        dominantFormat = format;
-                    }
-                });
-                
-                // Update UI
-                const coverage = Math.min(100, (coveredSeconds / totalSlotSeconds) * 100);
-                const statsDiv = document.getElementById(`${slotKey}Stats`);
-                if (statsDiv) {
-                    statsDiv.innerHTML = `
-                        <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">${coverage.toFixed(1)}%</span></p>
-                        <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">${dominantFormat}</span></p>
-                        <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div id="${slotKey}Coverage" class="h-full ${getSlotColorClass(slotKey)} transition-all duration-500" style="width: ${coverage}%"></div>
-                        </div>
-                    `;
-                }
-            });
-        }
-        
-        function getSlotColorClass(slotKey) {
-            const colorMap = {
-                morning: 'bg-blue-500',
-                afternoon: 'bg-green-500',
-                evening: 'bg-purple-500',
-                primeTime: 'bg-gradient-to-r from-amber-500 to-orange-500',
-                lateEvening: 'bg-indigo-500',
-                night: 'bg-gray-600'
-            };
-            return colorMap[slotKey] || 'bg-gray-400';
+        function showProgramDetails(program) {
+            document.getElementById('programDetails').style.display = 'block';
+            document.getElementById('detailTitle').textContent = program.title;
+            document.getElementById('detailTime').textContent = `${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`;
+            document.getElementById('detailDuration').textContent = formatDuration(program.duration);
+            document.getElementById('detailCategory').textContent = program.category || '-';
+            document.getElementById('detailDescription').textContent = program.desc || '-';
+            
+            const iconDiv = document.getElementById('detailIcon');
+            const iconUrl = document.getElementById('detailIconUrl');
+            
+            if (program.icon) {
+                iconDiv.style.backgroundImage = `url(${program.icon})`;
+                iconUrl.textContent = program.icon;
+            } else {
+                iconDiv.style.backgroundImage = 'none';
+                iconDiv.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400">Nessuna icona</div>';
+                iconUrl.textContent = 'Nessuna icona specificata';
+            }
+            
+            document.getElementById('programDetails').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Update program table
         function updateProgramTable(programs) {
             const tbody = document.getElementById('programTable');
             tbody.innerHTML = '';
@@ -1341,17 +1522,25 @@
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-gray-50 transition-colors';
                 
+                const startTimeStr = `${program.start.getUTCHours().toString().padStart(2, '0')}:${program.start.getUTCMinutes().toString().padStart(2, '0')}`;
+                const stopTimeStr = `${program.stop.getUTCHours().toString().padStart(2, '0')}:${program.stop.getUTCMinutes().toString().padStart(2, '0')}`;
+                
                 row.innerHTML = `
-                    <td class="px-4 py-2">${formatTimeUTC(program.start)}</td>
-                    <td class="px-4 py-2">${formatTimeUTC(program.stop)}</td>
-                    <td class="px-4 py-2">${formatDuration(program.duration)}</td>
-                    <td class="px-4 py-2 font-medium">${program.title}</td>
-                    <td class="px-4 py-2">${program.category || '-'}</td>
-                    <td class="px-4 py-2">
-                        <button onclick="editProgram(${index})" class="text-blue-600 hover:text-blue-800 mr-2" title="Modifica">
-                            <i data-lucide="edit-2" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="deleteProgram(${index})" class="text-red-600 hover:text-red-800" title="Elimina">
+                    <td class="px-4 py-3">
+                        <input type="time" value="${startTimeStr}" 
+                               onchange="updateProgramTime(${index}, 'start', this.value)"
+                               class="px-2 py-1 border rounded-lg focus:border-blue-500 focus:outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="time" value="${stopTimeStr}" 
+                               onchange="updateProgramTime(${index}, 'stop', this.value)"
+                               class="px-2 py-1 border rounded-lg focus:border-blue-500 focus:outline-none">
+                    </td>
+                    <td class="px-4 py-3">${formatDuration(program.duration)}</td>
+                    <td class="px-4 py-3 cursor-pointer hover:bg-blue-50 rounded transition-colors" onclick="editCell(this, ${index}, 'title')">${program.title}</td>
+                    <td class="px-4 py-3 cursor-pointer hover:bg-blue-50 rounded transition-colors" onclick="editCell(this, ${index}, 'category')">${program.category || '-'}</td>
+                    <td class="px-4 py-3">
+                        <button onclick="deleteProgram(${index})" class="text-red-500 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-lg" title="Elimina">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </td>
@@ -1363,396 +1552,285 @@
             // Re-initialize icons
             lucide.createIcons();
         }
-        
-        // Update statistics - FIXED VERSION
-        function updateStatistics(programs) {
-            debugLog('=== CALCOLO COPERTURA v5.7 ===');
-            
-            // Definisci i limiti del giorno corrente
-            const dayStart = new Date(scheduleDate);
-            dayStart.setUTCHours(0, 0, 0, 0);
-            
-            const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCHours(23, 59, 59, 999);
-            
-            debugLog(`Giorno analizzato: ${dayStart.toISOString()} - ${dayEnd.toISOString()}`);
-            
-            // Calcola il tempo coperto considerando sovrapposizioni e limiti del giorno
-            let totalCoveredSeconds = 0;
-            const gaps = [];
-            
-            // Ordina i programmi per tempo di inizio
-            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
-            
-            // Usa un approccio a "merge intervals" per calcolare la copertura reale
-            let intervals = [];
-            
-            sortedPrograms.forEach(program => {
-                // Calcola l'intervallo effettivo nel giorno corrente
-                const effectiveStart = Math.max(program.start.getTime(), dayStart.getTime());
-                const effectiveEnd = Math.min(program.stop.getTime(), dayEnd.getTime());
-                
-                if (effectiveEnd > effectiveStart) {
-                    intervals.push({
-                        start: effectiveStart,
-                        end: effectiveEnd
-                    });
-                }
-            });
-            
-            debugLog(`Trovati ${intervals.length} intervalli validi nel giorno`);
-            
-            // Merge degli intervalli sovrapposti
-            if (intervals.length > 0) {
-                intervals.sort((a, b) => a.start - b.start);
-                
-                const merged = [intervals[0]];
-                
-                for (let i = 1; i < intervals.length; i++) {
-                    const current = intervals[i];
-                    const last = merged[merged.length - 1];
-                    
-                    if (current.start <= last.end) {
-                        // Sovrapposizione: estendi l'intervallo
-                        last.end = Math.max(last.end, current.end);
-                        debugLog(`Merged overlap: ${new Date(current.start).toISOString()} con precedente`);
-                    } else {
-                        // Gap trovato
-                        const gapMs = current.start - last.end;
-                        if (gapMs > 60000) { // Gap > 1 minuto
-                            gaps.push({
-                                start: new Date(last.end),
-                                end: new Date(current.start),
-                                duration: gapMs / 1000
-                            });
-                            debugLog(`Gap trovato: ${formatDuration(gapMs / 1000)} alle ${new Date(last.end).toISOString()}`);
-                        }
-                        merged.push(current);
-                    }
-                }
-                
-                // Calcola il tempo totale coperto
-                merged.forEach(interval => {
-                    const duration = (interval.end - interval.start) / 1000;
-                    totalCoveredSeconds += duration;
-                    debugLog(`Intervallo: ${formatDuration(duration)} da ${new Date(interval.start).toISOString()}`);
-                });
-                
-                // Controlla gap all'inizio del giorno
-                if (merged[0].start > dayStart.getTime()) {
-                    const startGap = (merged[0].start - dayStart.getTime()) / 1000;
-                    if (startGap > 60) {
-                        gaps.unshift({
-                            start: dayStart,
-                            end: new Date(merged[0].start),
-                            duration: startGap
-                        });
-                        debugLog(`Gap iniziale: ${formatDuration(startGap)}`);
-                    }
-                }
-                
-                // Controlla gap alla fine del giorno
-                const lastInterval = merged[merged.length - 1];
-                if (lastInterval.end < dayEnd.getTime()) {
-                    const endGap = (dayEnd.getTime() - lastInterval.end) / 1000;
-                    if (endGap > 60) {
-                        gaps.push({
-                            start: new Date(lastInterval.end),
-                            end: dayEnd,
-                            duration: endGap
-                        });
-                        debugLog(`Gap finale: ${formatDuration(endGap)}`);
-                    }
-                }
-            }
-            
-            debugLog(`Tempo totale coperto: ${formatDuration(totalCoveredSeconds)} su ${formatDuration(totalDaySeconds)}`);
-            
-            // Update coverage
-            const coveragePercent = (totalCoveredSeconds / totalDaySeconds) * 100;
-            document.getElementById('coveragePercent').textContent = coveragePercent.toFixed(1) + '%';
-            document.getElementById('coverageTime').textContent = formatDuration(totalCoveredSeconds);
-            
-            debugLog(`COPERTURA FINALE: ${coveragePercent.toFixed(1)}%`, 'success');
-            
-            // Update coverage ring
-            const ring = document.getElementById('coverageRing');
-            const circumference = 2 * Math.PI * 20;
-            const offset = circumference - (coveragePercent / 100) * circumference;
-            ring.style.strokeDashoffset = offset;
-            
-            // Update other stats
-            document.getElementById('gapCount').textContent = gaps.length;
-            document.getElementById('formatCount').textContent = Object.keys(formatColors).length;
-            
-            const avgDuration = programs.length > 0 
-                ? Math.round(programs.reduce((sum, p) => sum + p.duration, 0) / programs.length / 60)
-                : 0;
-            document.getElementById('avgDuration').textContent = avgDuration + 'm';
-            
-            debugLog(`=== FINE CALCOLO COPERTURA ===`);
-        }
-        
-        // Check for problems
+
         function checkProblems(programs) {
+            const report = document.getElementById('problemsReport');
+            report.innerHTML = '';
             const problems = [];
             
-            // Check for gaps
-            for (let i = 0; i < programs.length - 1; i++) {
-                const current = programs[i];
-                const next = programs[i + 1];
-                const gapSeconds = (next.start - current.stop) / 1000;
-                
-                if (gapSeconds > 300) { // Gap > 5 minutes
-                    problems.push({
-                        type: 'gap',
-                        severity: gapSeconds > 1800 ? 'error' : 'warning',
-                        message: `Gap di ${formatDuration(gapSeconds)} tra "${current.title}" e "${next.title}" (${formatTimeUTC(current.stop)})`
-                    });
-                }
-            }
-            
             // Check for overlaps
-            for (let i = 0; i < programs.length - 1; i++) {
-                const current = programs[i];
-                const next = programs[i + 1];
-                
-                if (current.stop > next.start) {
-                    const overlapSeconds = (current.stop - next.start) / 1000;
-                    problems.push({
-                        type: 'overlap',
-                        severity: 'error',
-                        message: `Sovrapposizione di ${formatDuration(overlapSeconds)} tra "${current.title}" e "${next.title}"`
-                    });
-                }
-            }
-            
-            // Check for very short programs
-            programs.forEach(p => {
-                if (p.duration < 300) { // Less than 5 minutes
-                    problems.push({
-                        type: 'short',
-                        severity: 'warning',
-                        message: `"${p.title}" dura solo ${formatDuration(p.duration)}`
-                    });
-                }
-            });
-            
-            // Display problems
-            const reportDiv = document.getElementById('problemsReport');
-            if (problems.length === 0) {
-                reportDiv.innerHTML = '<p class="text-green-600">✓ Nessun problema rilevato</p>';
-            } else {
-                reportDiv.innerHTML = problems.map(p => {
-                    const icon = p.severity === 'error' ? '❌' : '⚠️';
-                    const color = p.severity === 'error' ? 'text-red-600' : 'text-yellow-600';
-                    return `<p class="${color}">${icon} ${p.message}</p>`;
-                }).join('');
-            }
-        }
-        
-        // Update format legend
-        function updateFormatLegend(programs) {
-            const legendDiv = document.getElementById('formatLegend');
-            legendDiv.innerHTML = '';
-            
-            // Calculate format statistics
-            const formatStats = {};
-            programs.forEach(p => {
-                if (!formatStats[p.title]) {
-                    formatStats[p.title] = {
-                        count: 0,
-                        duration: 0
-                    };
-                }
-                formatStats[p.title].count++;
-                formatStats[p.title].duration += p.duration;
-            });
-            
-            // Sort by duration
-            const sortedFormats = Object.entries(formatStats)
-                .sort((a, b) => b[1].duration - a[1].duration);
-            
-            sortedFormats.forEach(([title, stats]) => {
-                const div = document.createElement('div');
-                div.className = 'format-item';
-                
-                const color = document.createElement('div');
-                color.className = 'format-color';
-                color.style.backgroundColor = formatColors[title];
-                
-                const label = document.createElement('span');
-                label.textContent = `${title} (${stats.count}x, ${formatDuration(stats.duration)})`;
-                
-                div.appendChild(color);
-                div.appendChild(label);
-                legendDiv.appendChild(div);
-            });
-        }
-        
-        // Utility functions
-        function formatTimeUTC(date) {
-            const hours = date.getUTCHours().toString().padStart(2, '0');
-            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-            return `${hours}:${minutes}`;
-        }
-        
-        function formatDateUTC(date) {
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                timeZone: 'UTC'
-            };
-            return date.toLocaleDateString('it-IT', options);
-        }
-        
-        function formatDuration(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            
-            if (hours > 0) {
-                return `${hours}h ${minutes}m`;
-            }
-            return `${minutes}m`;
-        }
-        
-        function formatXMLTVDate(date) {
-            const pad = (n) => String(n).padStart(2, '0');
-            const year = date.getUTCFullYear();
-            const month = pad(date.getUTCMonth() + 1);
-            const day = pad(date.getUTCDate());
-            const hours = pad(date.getUTCHours());
-            const minutes = pad(date.getUTCMinutes());
-            const seconds = pad(date.getUTCSeconds());
-            
-            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
-        }
-        
-        // Show toast notification
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type} px-6 py-4 rounded-lg flex items-center gap-3`;
-            
-            const icon = type === 'success' ? 'check-circle' : 
-                         type === 'error' ? 'alert-circle' : 'info';
-            
-            toast.innerHTML = `
-                <i data-lucide="${icon}" class="w-5 h-5"></i>
-                <span>${message}</span>
-            `;
-            
-            document.getElementById('toastContainer').appendChild(toast);
-            
-            // Re-initialize icons
-            lucide.createIcons();
-            
-            // Auto remove after 3 seconds
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        
-        // Dark mode toggle
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark');
-            showToast('Dark mode ' + (document.body.classList.contains('dark') ? 'attivato' : 'disattivato'));
-        }
-        
-        // Show info
-        function showInfo() {
-            alert(`XMLTV Viewer v${APP_VERSION}\n\n` +
-                  'Visualizzatore e editor avanzato per file XMLTV con:\n' +
-                  '- Calcolo copertura corretto al 100%\n' +
-                  '- Algoritmo "merge intervals" per gestire sovrapposizioni\n' +
-                  '- Rilevamento preciso dei gap\n' +
-                  '- Treemap aggregato per format\n' +
-                  '- Analisi fasce orarie (6 fasce)\n' +
-                  '- Export/import XMLTV\n' +
-                  '- Console debug (Ctrl+D)\n\n' +
-                  'v5.7: Fix calcolo copertura con merge degli intervalli sovrapposti');
-        }
-        
-        // Edit program
-        function editProgram(index) {
-            showToast('Funzione di modifica in sviluppo', 'info');
-        }
-        
-        // Delete program
-        function deleteProgram(index) {
-            if (confirm('Eliminare questo programma?')) {
-                // Find the program in the current day's programs
-                const dayStart = new Date(scheduleDate);
-                dayStart.setUTCHours(0, 0, 0, 0);
-                
-                const dayEnd = new Date(scheduleDate);
-                dayEnd.setUTCHours(23, 59, 59, 999);
-                
-                const dayPrograms = currentPrograms.filter(p => {
-                    return (p.start >= dayStart && p.start <= dayEnd) || 
-                           (p.start < dayStart && p.stop > dayStart);
-                }).sort((a, b) => a.start - b.start);
-                
-                if (index >= 0 && index < dayPrograms.length) {
-                    const programToDelete = dayPrograms[index];
-                    const globalIndex = currentPrograms.indexOf(programToDelete);
-                    
-                    if (globalIndex !== -1) {
-                        currentPrograms.splice(globalIndex, 1);
-                        loadPrograms();
-                        showToast('Programma eliminato', 'success');
+            for (let i = 0; i < programs.length; i++) {
+                for (let j = i + 1; j < programs.length; j++) {
+                    if (programs[i].stop > programs[j].start && programs[i].start < programs[j].stop) {
+                        const overlapMinutes = Math.floor((Math.min(programs[i].stop, programs[j].stop) - Math.max(programs[i].start, programs[j].start)) / 60000);
+                        problems.push({
+                            type: 'overlap',
+                            severity: 'error',
+                            message: `Sovrapposizione di ${overlapMinutes} minuti tra "${programs[i].title}" e "${programs[j].title}"`
+                        });
                     }
                 }
             }
+            
+            // Check for gaps
+            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
+            for (let i = 0; i < sortedPrograms.length - 1; i++) {
+                const gap = sortedPrograms[i + 1].start - sortedPrograms[i].stop;
+                if (gap > 60000) { // More than 1 minute
+                    const gapMinutes = Math.floor(gap / 60000);
+                    problems.push({
+                        type: 'gap',
+                        severity: gapMinutes > 30 ? 'error' : 'warning',
+                        message: `Buco di ${gapMinutes} minuti dopo "${sortedPrograms[i].title}"`
+                    });
+                }
+            }
+            
+            // Check total coverage
+            const totalDuration = programs.reduce((sum, p) => sum + p.duration, 0);
+            if (totalDuration < totalDaySeconds) {
+                const missingHours = ((totalDaySeconds - totalDuration) / 3600).toFixed(1);
+                problems.push({
+                    type: 'coverage',
+                    severity: 'info',
+                    message: `Mancano ${missingHours} ore per completare le 24h`
+                });
+            }
+            
+            // Display problems
+            if (problems.length === 0) {
+                report.innerHTML = '<p class="text-green-600 font-semibold">✅ Nessun problema rilevato</p>';
+            } else {
+                problems.forEach(problem => {
+                    const div = document.createElement('div');
+                    div.className = `p-3 rounded-lg text-sm ${
+                        problem.severity === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+                        problem.severity === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                        'bg-blue-50 text-blue-700 border border-blue-200'
+                    }`;
+                    div.textContent = problem.message;
+                    report.appendChild(div);
+                });
+            }
         }
-        
-        // Add program
+
+        function getCurrentDayPrograms() {
+            const dayStart = new Date(scheduleDate);
+            dayStart.setUTCHours(21, 0, 0, 0);
+            dayStart.setUTCDate(dayStart.getUTCDate() - 1);
+            
+            const dayEnd = new Date(scheduleDate);
+            dayEnd.setUTCHours(21, 0, 0, 0);
+            
+            return currentPrograms.filter(p => {
+                return (p.start >= dayStart && p.start < dayEnd) || 
+                       (p.start < dayStart && p.stop > dayStart);
+            }).sort((a, b) => a.start - b.start);
+        }
+
+        // Edit functions
+        function editCell(cell, programIndex, field) {
+            const dayPrograms = getCurrentDayPrograms();
+            const program = dayPrograms[programIndex];
+            if (!program) return;
+            
+            const currentValue = cell.textContent;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue === '-' ? '' : currentValue;
+            input.className = 'w-full px-2 py-1 border rounded-lg focus:border-blue-500 focus:outline-none';
+            
+            input.onblur = () => {
+                const newValue = input.value.trim();
+                cell.textContent = newValue || '-';
+                
+                program[field] = newValue;
+                
+                // Update XML
+                const elem = program.element.querySelector(field);
+                if (elem) {
+                    elem.textContent = newValue;
+                } else if (field === 'category' && newValue) {
+                    const catElem = xmlDoc.createElement('category');
+                    catElem.setAttribute('lang', 'it');
+                    catElem.textContent = newValue;
+                    program.element.appendChild(catElem);
+                }
+                
+                // Reload if title changed
+                if (field === 'title') {
+                    if (!formatColors[newValue]) {
+                        formatColors[newValue] = colorPalette[colorIndex % colorPalette.length];
+                        colorIndex++;
+                    }
+                    loadPrograms();
+                }
+            };
+            
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    cell.textContent = currentValue;
+                }
+            };
+            
+            cell.textContent = '';
+            cell.appendChild(input);
+            input.focus();
+            input.select();
+        }
+
+        function updateProgramTime(programIndex, timeType, newTime) {
+            const dayPrograms = getCurrentDayPrograms();
+            const program = dayPrograms[programIndex];
+            if (!program) return;
+            
+            const [hours, minutes] = newTime.split(':').map(Number);
+            const newDate = new Date(program[timeType === 'start' ? 'start' : 'stop']);
+            newDate.setUTCHours(hours, minutes, 0, 0);
+            
+            // Ensure stop time is after start time
+            if (timeType === 'stop' && newDate <= program.start) {
+                newDate.setUTCDate(newDate.getUTCDate() + 1);
+            }
+            
+            if (timeType === 'start') {
+                program.start = newDate;
+                program.element.setAttribute('start', formatXMLTVDate(newDate));
+            } else {
+                program.stop = newDate;
+                program.element.setAttribute('stop', formatXMLTVDate(newDate));
+            }
+            
+            program.duration = (program.stop - program.start) / 1000;
+            
+            loadPrograms();
+            showToast('Orario aggiornato', 'success');
+        }
+
+        function deleteProgram(programIndex) {
+            if (!confirm('Eliminare questo programma?')) return;
+            
+            const dayPrograms = getCurrentDayPrograms();
+            const program = dayPrograms[programIndex];
+            if (!program) return;
+            
+            // Remove from XML
+            program.element.remove();
+            
+            // Remove from global array
+            const globalIndex = currentPrograms.indexOf(program);
+            if (globalIndex > -1) {
+                currentPrograms.splice(globalIndex, 1);
+            }
+            
+            loadPrograms();
+            showToast('Programma eliminato', 'success');
+        }
+
         function addProgram() {
-            showToast('Funzione di aggiunta in sviluppo', 'info');
+            const dayPrograms = getCurrentDayPrograms();
+            const lastProgram = dayPrograms[dayPrograms.length - 1];
+            
+            let newStart;
+            if (lastProgram) {
+                newStart = new Date(lastProgram.stop);
+            } else {
+                newStart = new Date(scheduleDate);
+                newStart.setUTCHours(6, 0, 0, 0);
+            }
+            
+            const newStop = new Date(newStart);
+            newStop.setUTCMinutes(newStop.getUTCMinutes() + 30);
+            
+            // Create new program element
+            const programme = xmlDoc.createElement('programme');
+            programme.setAttribute('start', formatXMLTVDate(newStart));
+            programme.setAttribute('stop', formatXMLTVDate(newStop));
+            programme.setAttribute('channel', currentChannelId);
+            
+            const title = xmlDoc.createElement('title');
+            title.setAttribute('lang', 'it');
+            title.textContent = 'Nuovo Programma';
+            programme.appendChild(title);
+            
+            const desc = xmlDoc.createElement('desc');
+            desc.setAttribute('lang', 'it');
+            desc.textContent = 'Descrizione del nuovo programma';
+            programme.appendChild(desc);
+            
+            // Add to XML
+            xmlDoc.querySelector('tv').appendChild(programme);
+            
+            // Add to programs array
+            const newProgram = {
+                start: newStart,
+                stop: newStop,
+                title: 'Nuovo Programma',
+                desc: 'Descrizione del nuovo programma',
+                category: '',
+                rating: '0',
+                icon: '',
+                duration: 1800,
+                element: programme
+            };
+            
+            currentPrograms.push(newProgram);
+            currentPrograms.sort((a, b) => a.start - b.start);
+            
+            // Assign color
+            if (!formatColors[newProgram.title]) {
+                formatColors[newProgram.title] = colorPalette[colorIndex % colorPalette.length];
+                colorIndex++;
+            }
+            
+            loadPrograms();
+            showToast('Nuovo programma aggiunto', 'success');
         }
-        
-        // Show actualization dialog
+
+        // Actualization functions
         function showActualizationDialog() {
-            const dialog = document.getElementById('actualizationDialog');
-            const dateInput = document.getElementById('newStartDate');
-            
-            // Set default to today
-            const today = new Date();
-            dateInput.value = today.toISOString().split('T')[0];
-            
-            dialog.classList.remove('hidden');
-            dialog.classList.add('flex');
+            document.getElementById('actualizationDialog').classList.remove('hidden');
+            document.getElementById('newStartDate').value = scheduleDate.toISOString().split('T')[0];
         }
-        
-        // Close actualization dialog
+
         function closeActualizationDialog() {
-            const dialog = document.getElementById('actualizationDialog');
-            dialog.classList.add('hidden');
-            dialog.classList.remove('flex');
+            document.getElementById('actualizationDialog').classList.add('hidden');
         }
-        
-        // Actualize schedule
+
         function actualizeSchedule() {
-            const newDateStr = document.getElementById('newStartDate').value;
-            if (!newDateStr) {
-                showToast('Seleziona una data', 'error');
+            const newStartDateStr = document.getElementById('newStartDate').value;
+            const [year, month, day] = newStartDateStr.split('-').map(Number);
+            const newStartDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+            
+            const dayDiff = Math.floor((newStartDate - scheduleDate) / (1000 * 60 * 60 * 24));
+            
+            if (dayDiff === 0) {
+                showToast('La data selezionata è la stessa', 'info');
+                closeActualizationDialog();
                 return;
             }
             
-            const newDate = new Date(newDateStr + 'T00:00:00Z');
-            const oldDate = new Date(scheduleDate);
-            const daysDiff = Math.round((newDate - oldDate) / (1000 * 60 * 60 * 24));
-            
             // Update all program dates
             currentPrograms.forEach(program => {
-                program.start = new Date(program.start.getTime() + (daysDiff * 24 * 60 * 60 * 1000));
-                program.stop = new Date(program.stop.getTime() + (daysDiff * 24 * 60 * 60 * 1000));
+                const newStart = new Date(program.start);
+                newStart.setUTCDate(newStart.getUTCDate() + dayDiff);
+                const newStop = new Date(program.stop);
+                newStop.setUTCDate(newStop.getUTCDate() + dayDiff);
+                
+                program.start = newStart;
+                program.stop = newStop;
+                
+                program.element.setAttribute('start', formatXMLTVDate(newStart));
+                program.element.setAttribute('stop', formatXMLTVDate(newStop));
             });
             
+            // Update tv date attribute
+            xmlDoc.querySelector('tv').setAttribute('date', newStartDate.toISOString().split('T')[0]);
+            
             // Update schedule date
-            scheduleDate = newDate;
+            scheduleDate = newStartDate;
             document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
             
             // Reload programs
@@ -1761,157 +1839,88 @@
             closeActualizationDialog();
             showToast('Date attualizzate con successo', 'success');
         }
-        
-        // Export XMLTV
+
+        // Export function
         function exportXMLTV() {
-            if (!xmlDoc || currentPrograms.length === 0) {
-                showToast('Nessun dato da esportare', 'error');
-                return;
-            }
-            
-            // Create new XML document
-            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-            xml += '<tv>\n';
-            
-            // Add channel
-            xml += `  <channel id="${currentChannelId}">\n`;
-            xml += `    <display-name lang="it">${currentChannelName}</display-name>\n`;
-            xml += '  </channel>\n\n';
-            
-            // Add programs
-            currentPrograms.forEach(program => {
-                const startStr = formatXMLTVDate(program.start);
-                const stopStr = formatXMLTVDate(program.stop);
-                
-                xml += `  <programme start="${startStr}" stop="${stopStr}" channel="${currentChannelId}">\n`;
-                xml += `    <title lang="it">${escapeXml(program.title)}</title>\n`;
-                
-                if (program.desc) {
-                    xml += `    <desc lang="it">${escapeXml(program.desc)}</desc>\n`;
-                }
-                
-                if (program.category) {
-                    xml += `    <category lang="it">${escapeXml(program.category)}</category>\n`;
-                }
-                
-                if (program.rating && program.rating !== '0') {
-                    xml += '    <rating>\n';
-                    xml += `      <value>${program.rating}</value>\n`;
-                    xml += '    </rating>\n';
-                }
-                
-                if (program.icon) {
-                    xml += `    <icon src="${escapeXml(program.icon)}" />\n`;
-                }
-                
-                xml += '  </programme>\n';
-            });
-            
-            xml += '</tv>';
-            
-            // Download file
-            const blob = new Blob([xml], { type: 'text/xml;charset=utf-8' });
+            const serializer = new XMLSerializer();
+            const xmlString = serializer.serializeToString(xmlDoc);
+            const blob = new Blob([xmlString], { type: 'application/xml;charset=utf-8' });
             const url = URL.createObjectURL(blob);
+            
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${currentChannelId}_${scheduleDate.toISOString().split('T')[0]}.xml`;
+            const date = new Date().toISOString().split('T')[0];
+            a.download = `${currentChannelId}_treemap_${date}.xml`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
+            
             URL.revokeObjectURL(url);
-            
-            showToast('File XMLTV esportato', 'success');
+            showToast('File esportato con successo', 'success');
         }
-        
-        // Escape XML special characters
-        function escapeXml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
+
+        // Utility functions
+        function formatDateUTC(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
+            return date.toLocaleDateString('it-IT', options);
         }
-        
-        // Load test file
-        function loadTestFile() {
-            debugLog('Caricamento file di test...');
-            
-            const testXML = `<?xml version="1.0" encoding="UTF-8"?>
-<tv>
-  <channel id="TestChannel">
-    <display-name lang="it">Canale Test</display-name>
-  </channel>
-  
-  <programme start="2024-01-10T06:00:00+0000" stop="2024-01-10T08:00:00+0000" channel="TestChannel">
-    <title lang="it">Programma Mattina</title>
-    <desc lang="it">Descrizione del programma mattutino</desc>
-    <category lang="it">News</category>
-  </programme>
-  
-  <programme start="2024-01-10T08:00:00+0000" stop="2024-01-10T10:30:00+0000" channel="TestChannel">
-    <title lang="it">Talk Show</title>
-    <desc lang="it">Talk show del mattino</desc>
-    <category lang="it">Entertainment</category>
-  </programme>
-  
-  <programme start="2024-01-10T10:30:00+0000" stop="2024-01-10T12:00:00+0000" channel="TestChannel">
-    <title lang="it">Programma Mattina</title>
-    <desc lang="it">Seconda edizione</desc>
-    <category lang="it">News</category>
-  </programme>
-  
-  <programme start="2024-01-10T12:00:00+0000" stop="2024-01-10T14:00:00+0000" channel="TestChannel">
-    <title lang="it">Film del Pomeriggio</title>
-    <desc lang="it">Film drammatico</desc>
-    <category lang="it">Movie</category>
-  </programme>
-  
-  <programme start="2024-01-10T14:00:00+0000" stop="2024-01-10T16:00:00+0000" channel="TestChannel">
-    <title lang="it">Serie TV</title>
-    <desc lang="it">Episodi della serie</desc>
-    <category lang="it">Series</category>
-  </programme>
-  
-  <programme start="2024-01-10T16:00:00+0000" stop="2024-01-10T18:00:00+0000" channel="TestChannel">
-    <title lang="it">Talk Show</title>
-    <desc lang="it">Talk show pomeridiano</desc>
-    <category lang="it">Entertainment</category>
-  </programme>
-  
-  <programme start="2024-01-10T18:00:00+0000" stop="2024-01-10T20:00:00+0000" channel="TestChannel">
-    <title lang="it">Telegiornale</title>
-    <desc lang="it">Notizie della sera</desc>
-    <category lang="it">News</category>
-  </programme>
-  
-  <programme start="2024-01-10T20:00:00+0000" stop="2024-01-10T21:00:00+0000" channel="TestChannel">
-    <title lang="it">Quiz Show</title>
-    <desc lang="it">Quiz a premi</desc>
-    <category lang="it">Game Show</category>
-  </programme>
-  
-  <programme start="2024-01-10T21:00:00+0000" stop="2024-01-10T23:00:00+0000" channel="TestChannel">
-    <title lang="it">Film Prime Time</title>
-    <desc lang="it">Film blockbuster</desc>
-    <category lang="it">Movie</category>
-  </programme>
-  
-  <programme start="2024-01-10T23:00:00+0000" stop="2024-01-11T01:00:00+0000" channel="TestChannel">
-    <title lang="it">Talk Show</title>
-    <desc lang="it">Talk show notturno</desc>
-    <category lang="it">Entertainment</category>
-  </programme>
-  
-  <programme start="2024-01-11T01:00:00+0000" stop="2024-01-11T06:00:00+0000" channel="TestChannel">
-    <title lang="it">Programmi Notturni</title>
-    <desc lang="it">Programmazione notturna varia</desc>
-    <category lang="it">Mixed</category>
-  </programme>
-</tv>`;
-            
-            parseXML(testXML);
+
+        function formatTimeUTC(date) {
+            const hours = date.getUTCHours().toString().padStart(2, '0');
+            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
         }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (hours > 0) {
+                return `${hours}h ${minutes}min`;
+            } else {
+                return `${minutes}min`;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast p-4 rounded-lg shadow-lg ${type} min-w-[250px]`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" class="w-5 h-5"></i>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            container.appendChild(toast);
+            
+            // Re-initialize icons
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+        }
+
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark');
+        }
+
+        // Show info
+        function showInfo() {
+            alert(`XMLTV Viewer v${APP_VERSION}\n\nTreemap Aggregato per Format\n\nNuove Funzionalità v4.1:\n- CONTRASTI MIGLIORATI per modalità chiara\n- Visualizzazione TREEMAP AGGREGATA: ogni format ha un unico rettangolo\n- L'area di ogni rettangolo è proporzionale al tempo totale del format\n- Mostra numero episodi, ore totali e percentuale per format\n- Icone format visibili nei rettangoli (quando disponibili)\n- 3 algoritmi di layout: Squarify, Binary, Slice & Dice\n- Indicatore di riempimento con codice colore\n- Gap visualizzati con pattern rosso tratteggiato\n- Click su un format mostra tutti gli episodi\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
+        }
+
+        // Initialize
+        console.log('XMLTV Viewer v4.0 - Treemap Sequential Timeline ready!');
     </script>
 </body>
 </html>
