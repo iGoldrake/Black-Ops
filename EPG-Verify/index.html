@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v5.5 - Analisi Fasce Orarie</title>
+    <title>XMLTV Viewer v5.7 - Analisi Fasce Orarie</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -312,9 +312,9 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v5.6
+                        XMLTV Viewer v5.7
                     </h1>
-                    <p class="text-gray-600 mt-2">Treemap Aggregato con Analisi Fasce Orarie - Modalità UTC</p>
+                    <p class="text-gray-600 mt-2">Treemap Aggregato con Analisi Fasce Orarie - Fix Copertura 100%</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Dark Mode">
@@ -679,8 +679,8 @@
         });
 
         // Version
-        const APP_VERSION = '5.6';
-        console.log(`XMLTV Viewer v${APP_VERSION} - Fixed Treemap Layout`);
+        const APP_VERSION = '5.7';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Fixed Coverage Calculation`);
 
         // Debug functions
         const debugLog = (message, type = 'info') => {
@@ -1364,37 +1364,116 @@
             lucide.createIcons();
         }
         
-        // Update statistics
+        // Update statistics - FIXED VERSION
         function updateStatistics(programs) {
-            // Calculate coverage
+            debugLog('=== CALCOLO COPERTURA v5.7 ===');
+            
+            // Definisci i limiti del giorno corrente
+            const dayStart = new Date(scheduleDate);
+            dayStart.setUTCHours(0, 0, 0, 0);
+            
+            const dayEnd = new Date(scheduleDate);
+            dayEnd.setUTCHours(23, 59, 59, 999);
+            
+            debugLog(`Giorno analizzato: ${dayStart.toISOString()} - ${dayEnd.toISOString()}`);
+            
+            // Calcola il tempo coperto considerando sovrapposizioni e limiti del giorno
             let totalCoveredSeconds = 0;
             const gaps = [];
             
-            for (let i = 0; i < programs.length - 1; i++) {
-                const current = programs[i];
-                const next = programs[i + 1];
+            // Ordina i programmi per tempo di inizio
+            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
+            
+            // Usa un approccio a "merge intervals" per calcolare la copertura reale
+            let intervals = [];
+            
+            sortedPrograms.forEach(program => {
+                // Calcola l'intervallo effettivo nel giorno corrente
+                const effectiveStart = Math.max(program.start.getTime(), dayStart.getTime());
+                const effectiveEnd = Math.min(program.stop.getTime(), dayEnd.getTime());
                 
-                totalCoveredSeconds += current.duration;
-                
-                // Check for gap
-                const gapSeconds = (next.start - current.stop) / 1000;
-                if (gapSeconds > 60) { // Gap > 1 minute
-                    gaps.push({
-                        start: current.stop,
-                        end: next.start,
-                        duration: gapSeconds
+                if (effectiveEnd > effectiveStart) {
+                    intervals.push({
+                        start: effectiveStart,
+                        end: effectiveEnd
                     });
+                }
+            });
+            
+            debugLog(`Trovati ${intervals.length} intervalli validi nel giorno`);
+            
+            // Merge degli intervalli sovrapposti
+            if (intervals.length > 0) {
+                intervals.sort((a, b) => a.start - b.start);
+                
+                const merged = [intervals[0]];
+                
+                for (let i = 1; i < intervals.length; i++) {
+                    const current = intervals[i];
+                    const last = merged[merged.length - 1];
+                    
+                    if (current.start <= last.end) {
+                        // Sovrapposizione: estendi l'intervallo
+                        last.end = Math.max(last.end, current.end);
+                        debugLog(`Merged overlap: ${new Date(current.start).toISOString()} con precedente`);
+                    } else {
+                        // Gap trovato
+                        const gapMs = current.start - last.end;
+                        if (gapMs > 60000) { // Gap > 1 minuto
+                            gaps.push({
+                                start: new Date(last.end),
+                                end: new Date(current.start),
+                                duration: gapMs / 1000
+                            });
+                            debugLog(`Gap trovato: ${formatDuration(gapMs / 1000)} alle ${new Date(last.end).toISOString()}`);
+                        }
+                        merged.push(current);
+                    }
+                }
+                
+                // Calcola il tempo totale coperto
+                merged.forEach(interval => {
+                    const duration = (interval.end - interval.start) / 1000;
+                    totalCoveredSeconds += duration;
+                    debugLog(`Intervallo: ${formatDuration(duration)} da ${new Date(interval.start).toISOString()}`);
+                });
+                
+                // Controlla gap all'inizio del giorno
+                if (merged[0].start > dayStart.getTime()) {
+                    const startGap = (merged[0].start - dayStart.getTime()) / 1000;
+                    if (startGap > 60) {
+                        gaps.unshift({
+                            start: dayStart,
+                            end: new Date(merged[0].start),
+                            duration: startGap
+                        });
+                        debugLog(`Gap iniziale: ${formatDuration(startGap)}`);
+                    }
+                }
+                
+                // Controlla gap alla fine del giorno
+                const lastInterval = merged[merged.length - 1];
+                if (lastInterval.end < dayEnd.getTime()) {
+                    const endGap = (dayEnd.getTime() - lastInterval.end) / 1000;
+                    if (endGap > 60) {
+                        gaps.push({
+                            start: new Date(lastInterval.end),
+                            end: dayEnd,
+                            duration: endGap
+                        });
+                        debugLog(`Gap finale: ${formatDuration(endGap)}`);
+                    }
                 }
             }
             
-            if (programs.length > 0) {
-                totalCoveredSeconds += programs[programs.length - 1].duration;
-            }
+            debugLog(`Tempo totale coperto: ${formatDuration(totalCoveredSeconds)} su ${formatDuration(totalDaySeconds)}`);
             
             // Update coverage
             const coveragePercent = (totalCoveredSeconds / totalDaySeconds) * 100;
             document.getElementById('coveragePercent').textContent = coveragePercent.toFixed(1) + '%';
             document.getElementById('coverageTime').textContent = formatDuration(totalCoveredSeconds);
+            
+            debugLog(`COPERTURA FINALE: ${coveragePercent.toFixed(1)}%`, 'success');
             
             // Update coverage ring
             const ring = document.getElementById('coverageRing');
@@ -1407,9 +1486,11 @@
             document.getElementById('formatCount').textContent = Object.keys(formatColors).length;
             
             const avgDuration = programs.length > 0 
-                ? Math.round(totalCoveredSeconds / programs.length / 60)
+                ? Math.round(programs.reduce((sum, p) => sum + p.duration, 0) / programs.length / 60)
                 : 0;
             document.getElementById('avgDuration').textContent = avgDuration + 'm';
+            
+            debugLog(`=== FINE CALCOLO COPERTURA ===`);
         }
         
         // Check for problems
@@ -1584,12 +1665,14 @@
         function showInfo() {
             alert(`XMLTV Viewer v${APP_VERSION}\n\n` +
                   'Visualizzatore e editor avanzato per file XMLTV con:\n' +
-                  '- Treemap aggregato per format funzionante\n' +
+                  '- Calcolo copertura corretto al 100%\n' +
+                  '- Algoritmo "merge intervals" per gestire sovrapposizioni\n' +
+                  '- Rilevamento preciso dei gap\n' +
+                  '- Treemap aggregato per format\n' +
                   '- Analisi fasce orarie (6 fasce)\n' +
-                  '- Editor programmi con azioni\n' +
                   '- Export/import XMLTV\n' +
                   '- Console debug (Ctrl+D)\n\n' +
-                  'Modalità: UTC (tutti gli orari)');
+                  'v5.7: Fix calcolo copertura con merge degli intervalli sovrapposti');
         }
         
         // Edit program
@@ -1818,6 +1901,12 @@
     <title lang="it">Talk Show</title>
     <desc lang="it">Talk show notturno</desc>
     <category lang="it">Entertainment</category>
+  </programme>
+  
+  <programme start="2024-01-11T01:00:00+0000" stop="2024-01-11T06:00:00+0000" channel="TestChannel">
+    <title lang="it">Programmi Notturni</title>
+    <desc lang="it">Programmazione notturna varia</desc>
+    <category lang="it">Mixed</category>
   </programme>
 </tv>`;
             
