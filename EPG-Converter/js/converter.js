@@ -33,18 +33,6 @@ export class XMLTVGenerator {
      * Format date for XMLTV (converts to UTC)
      */
     formatXMLTVDate(date, timezoneOffset) {
-        // IMPORTANTE: Le date da Excel potrebbero non avere il timezone corretto
-        // Dobbiamo forzare la conversione manuale
-        
-        // Log per debug
-        if (!this._debugLogged) {
-            this.app.log(`🕐 DEBUG formatXMLTVDate:`);
-            this.app.log(`- Timezone offset: ${timezoneOffset}`);
-            this.app.log(`- Data input: ${date.toString()}`);
-            this.app.log(`- Data input ISO: ${date.toISOString()}`);
-            this._debugLogged = true;
-        }
-        
         // Prendiamo i componenti della data in ora locale
         const year = date.getFullYear();
         const month = date.getMonth();
@@ -67,18 +55,8 @@ export class XMLTVGenerator {
         const utcMinutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
         const utcSeconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
         
-        // Debug: verifichiamo la conversione
-        if (!this._logCount) this._logCount = 0;
-        if (this._logCount < 3) {
-            this.app.log(`📅 Conversione dettagliata:`);
-            this.app.log(`   - Locale: ${day}/${month+1}/${year} ${hours}:${minutes}`);
-            this.app.log(`   - UTC: ${utcDay}/${utcMonth}/${utcYear} ${utcHours}:${utcMinutes}`);
-            this.app.log(`   - Differenza ore: ${hours - parseInt(utcHours)}`);
-            this._logCount++;
-        }
-        
-        // Formato XMLTV: YYYYMMDDTHH:MM:SS+0000
-        return `${utcYear}${utcMonth}${utcDay}T${utcHours}:${utcMinutes}:${utcSeconds}+0000`;
+        // Formato XMLTV richiesto dal cliente: YYYY-MM-DDTHH:MM:SS+0000
+        return `${utcYear}-${utcMonth}-${utcDay}T${utcHours}:${utcMinutes}:${utcSeconds}+0000`;
     }
     
     /**
@@ -103,8 +81,7 @@ export class XMLTVGenerator {
      * Generate XMLTV for TV Moda sheet
      */
     async generateXMLForTVModaSheet(sheetData, dateInfo, params) {
-        this.app.log(`\n📺 Generazione XMLTV per ${dateInfo.sheetName} - ${dateInfo.date.toLocaleDateString('it-IT')}...`);
-        this.app.log(`🕐 Conversione orari da UTC${params.timezoneOffset >= 0 ? '+' : ''}${params.timezoneOffset} a UTC`);
+        this.app.log(`Generazione XMLTV per ${dateInfo.sheetName} - ${dateInfo.date.toLocaleDateString('it-IT')}...`);
         
         let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
         xml += `<tv date="${dateInfo.date.toISOString().split('T')[0]}">\n`;
@@ -126,7 +103,7 @@ export class XMLTVGenerator {
         
         xml += '</tv>';
         
-        this.app.log(`✅ Generati ${processedPrograms.length} programmi per ${dateInfo.date.toLocaleDateString('it-IT')}`);
+        this.app.log(`Generati ${processedPrograms.length} programmi per ${dateInfo.date.toLocaleDateString('it-IT')}`);
         
         return xml;
     }
@@ -136,8 +113,7 @@ export class XMLTVGenerator {
      */
     async generateXMLForClassCNBCDate(fileData, dateInfo, params) {
         const targetDate = dateInfo.date;
-        this.app.log(`\n📺 Generazione XMLTV per Class CNBC - ${targetDate.toLocaleDateString('it-IT')}...`);
-        this.app.log(`🕐 Conversione orari da UTC${params.timezoneOffset >= 0 ? '+' : ''}${params.timezoneOffset} a UTC`);
+        this.app.log(`Generazione XMLTV per Class CNBC - ${targetDate.toLocaleDateString('it-IT')}...`);
         
         let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
         xml += `<tv date="${targetDate.toISOString().split('T')[0]}">\n`;
@@ -159,7 +135,7 @@ export class XMLTVGenerator {
         
         xml += '</tv>';
         
-        this.app.log(`✅ Generati ${processedPrograms.length} programmi per ${targetDate.toLocaleDateString('it-IT')}`);
+        this.app.log(`Generati ${processedPrograms.length} programmi per ${targetDate.toLocaleDateString('it-IT')}`);
         
         return xml;
     }
@@ -292,7 +268,7 @@ export class XMLTVGenerator {
         const targetEnd = new Date(targetDate);
         targetEnd.setHours(23, 59, 59, 999);
         
-        this.app.log(`\n🗓️ Processo programmi per ${targetDate.toLocaleDateString('it-IT')}...`);
+        this.app.log(`\nProcesso programmi per ${targetDate.toLocaleDateString('it-IT')}...`);
         
         // Filter programs that touch this day
         const dayPrograms = allPrograms.filter(program => {
@@ -337,7 +313,7 @@ export class XMLTVGenerator {
             return;
         }
         
-        this.app.log('\n⏱️ Applico gap filling...');
+        this.app.log('\nApplico gap filling...');
         
         for (let i = 0; i < programs.length; i++) {
             const currentProgram = programs[i];
@@ -420,7 +396,7 @@ export class XMLTVGenerator {
             if (program.startTime < targetStart) {
                 adjustedProgram.startTime = new Date(targetStart);
                 adjustedProgram.wasAdjustedStart = true;
-                this.app.log(`  📅 Adattato inizio di "${program.title}" da ${program.startTime.toLocaleTimeString('it-IT')} a 00:00:00`);
+                this.app.log(`  Adattato inizio di "${program.title}" da ${program.startTime.toLocaleTimeString('it-IT')} a 00:00:00`);
             }
             
             // Adjust end if after day end
@@ -428,7 +404,7 @@ export class XMLTVGenerator {
                 adjustedProgram.endTime = new Date(targetEnd);
                 adjustedProgram.endTime.setSeconds(59);
                 adjustedProgram.wasAdjustedEnd = true;
-                this.app.log(`  📅 Adattato fine di "${program.title}" da ${program.endTime.toLocaleTimeString('it-IT')} a 23:59:59`);
+                this.app.log(`  Adattato fine di "${program.title}" da ${program.endTime.toLocaleTimeString('it-IT')} a 23:59:59`);
             }
             
             // Recalculate duration
