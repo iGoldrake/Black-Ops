@@ -3,69 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v5.4 - Debug Version</title>
+    <title>XMLTV Viewer v5.5 - Analisi Fasce Orarie</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
-        /* Debug Panel */
-        .debug-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 400px;
-            max-height: 300px;
-            background: rgba(0, 0, 0, 0.9);
-            color: #00ff00;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 12px;
-            overflow-y: auto;
-            z-index: 9999;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-        }
-        
-        .debug-line {
-            margin-bottom: 5px;
-            padding: 2px 0;
-            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
-        }
-        
-        .debug-error {
-            color: #ff6666;
-            font-weight: bold;
-        }
-        
-        .debug-success {
-            color: #66ff66;
-        }
-        
-        .debug-info {
-            color: #66ccff;
-        }
-
-        /* Treemap Styles */
+        /* Treemap Timeline Styles */
         .treemap-container {
             position: relative;
             width: 100%;
             max-width: 800px;
             height: 800px;
             margin: 0 auto;
-            background: #f0f0f0;
-            border: 2px solid #333;
-            border-radius: 8px;
+            background: #ffffff;
+            border-radius: 16px;
             overflow: hidden;
+            box-shadow: 
+                inset 0 0 0 2px rgba(0, 0, 0, 0.1),
+                0 20px 60px rgba(0, 0, 0, 0.1);
         }
 
         .treemap-item {
             position: absolute;
-            border: 2px solid white;
+            border: 3px solid white;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            overflow: hidden;
-            font-weight: bold;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
             text-align: center;
             color: white;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
@@ -77,123 +45,751 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
+        .treemap-icon {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0.3;
+        }
+
+        .treemap-label {
+            position: relative;
+            z-index: 2;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 6px;
+            backdrop-filter: blur(4px);
+            max-width: 90%;
+        }
+
+        /* Program preview tooltip */
+        .program-preview {
+            position: fixed;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            max-width: 350px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(10px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .program-preview.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Statistics Cards */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        /* Coverage Ring */
+        .coverage-ring {
+            transform: rotate(-90deg);
+            transition: stroke-dasharray 0.5s ease;
+        }
+
+        /* Fill percentage indicator */
         .fill-indicator {
             position: absolute;
             bottom: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(15, 23, 42, 0.9);
             color: white;
             padding: 8px 16px;
             border-radius: 8px;
             font-weight: 600;
             font-size: 14px;
+            backdrop-filter: blur(8px);
             z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .fill-indicator.complete {
+            background: rgba(34, 197, 94, 0.9);
+        }
+
+        .fill-indicator.warning {
+            background: rgba(245, 158, 11, 0.9);
+        }
+
+        .fill-indicator.error {
+            background: rgba(239, 68, 68, 0.9);
+        }
+
+        /* Time slot badge */
+        .time-slot-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .prime-time-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+        }
+
+        /* Format legend */
+        .format-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .format-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: white;
+            border-radius: 20px;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
+            color: #1e293b;
+        }
+
+        .format-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Toast */
+        .toast {
+            animation: slideInRight 0.3s ease-out;
+            backdrop-filter: blur(10px);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: #1e293b;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.95) 0%, rgba(22, 163, 74, 0.95) 100%);
+            color: white;
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(220, 38, 38, 0.95) 100%);
+            color: white;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .treemap-item.new {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        /* Dark mode */
+        .dark body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .dark .treemap-container {
+            background: #1e293b;
+            box-shadow: 
+                inset 0 0 40px rgba(0, 0, 0, 0.5),
+                0 20px 60px rgba(0, 0, 0, 0.7);
+        }
+
+        .dark .stat-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Time slot styles */
+        .time-slot-card {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .time-slot-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        /* Debug panel (optional) */
+        .debug-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 11px;
+            overflow-y: auto;
+            z-index: 9999;
+            display: none;
+        }
+
+        .debug-panel.active {
+            display: block;
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <!-- Debug Panel -->
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen">
+    <!-- Debug Panel (nascosto di default, attivabile con D) -->
     <div id="debugPanel" class="debug-panel">
-        <h3 style="color: #00ff00; margin-bottom: 10px;">🔍 DEBUG CONSOLE</h3>
+        <div style="color: #00ff00; margin-bottom: 5px;">DEBUG CONSOLE</div>
         <div id="debugContent"></div>
     </div>
 
     <div class="container mx-auto p-4 max-w-7xl">
         <!-- Header -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">XMLTV Viewer v5.4 - Debug Version</h1>
-            <p class="text-gray-600">Versione con debug completo per diagnostica</p>
-        </div>
-
-        <!-- File Upload -->
-        <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <p class="text-xl mb-4">Trascina qui il file XMLTV o clicca per selezionare</p>
-                <input type="file" id="fileInput" accept=".xml" class="hidden">
-                <button onclick="document.getElementById('fileInput').click()" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
-                    Seleziona File XML
-                </button>
-                <div class="mt-4">
-                    <button onclick="loadTestFile()" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600">
-                        Carica File di Test
+        <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
+                        <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
+                        XMLTV Viewer v5.5
+                    </h1>
+                    <p class="text-gray-600 mt-2">Treemap Aggregato con Analisi Fasce Orarie - Modalità UTC</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="toggleDarkMode()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Dark Mode">
+                        <i data-lucide="moon" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="showInfo()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Informazioni">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="toggleDebug()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Debug (D)">
+                        <i data-lucide="bug" class="w-5 h-5"></i>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Channel Info -->
-        <div id="channelInfo" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden">
-            <h2 class="text-xl font-bold mb-4">Informazioni Canale</h2>
-            <p>Canale: <span id="channelName" class="font-bold"></span></p>
-            <p>ID: <span id="channelId" class="text-gray-600"></span></p>
-            <p>Programmi: <span id="programCount" class="font-bold"></span></p>
-        </div>
-
-        <!-- Treemap -->
-        <div id="treemapSection" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden">
-            <h2 class="text-xl font-bold mb-4">Treemap Aggregato per Format</h2>
-            <div class="treemap-container" id="treemapContainer">
-                <div class="fill-indicator" id="fillIndicator">0% riempito</div>
+        <!-- File Upload -->
+        <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-6 border border-white/50">
+            <div class="border-3 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-blue-500 transition-all duration-300 hover:bg-blue-50/50" id="dropZone">
+                <i data-lucide="upload-cloud" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                <p class="text-xl mb-2 font-semibold text-gray-700">Trascina qui il file XMLTV</p>
+                <p class="text-gray-500 mb-4">oppure</p>
+                <input type="file" id="fileInput" accept=".xml" class="hidden">
+                <button onclick="document.getElementById('fileInput').click()" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105">
+                    Seleziona File
+                </button>
+                <div class="mt-4">
+                    <button onclick="loadTestFile()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm">
+                        Carica Dati di Test
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Program List -->
-        <div id="programList" class="bg-white rounded-lg shadow-lg p-6 hidden">
-            <h2 class="text-xl font-bold mb-4">Lista Programmi</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-4 py-2 text-left">Ora Inizio</th>
-                            <th class="px-4 py-2 text-left">Ora Fine</th>
-                            <th class="px-4 py-2 text-left">Titolo</th>
-                            <th class="px-4 py-2 text-left">Durata</th>
-                        </tr>
-                    </thead>
-                    <tbody id="programTableBody" class="divide-y divide-gray-200"></tbody>
-                </table>
+        <!-- Main Content (hidden until file loaded) -->
+        <div id="mainContent" class="hidden">
+            <!-- Channel Info & Stats -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="stat-card rounded-xl p-4">
+                        <h3 class="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                            <i data-lucide="tv-2" class="w-4 h-4 text-blue-600"></i>
+                            Canale
+                        </h3>
+                        <p class="text-2xl font-bold text-gray-900" id="channelName">-</p>
+                        <p class="text-sm text-gray-600" id="channelId">-</p>
+                    </div>
+                    <div class="stat-card rounded-xl p-4">
+                        <h3 class="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-blue-600"></i>
+                            Data Palinsesto
+                        </h3>
+                        <p class="text-2xl font-bold text-gray-900" id="scheduleDate">-</p>
+                        <p class="text-sm text-gray-600">
+                            <span id="programCount">-</span> programmi
+                        </p>
+                    </div>
+                    <div class="stat-card rounded-xl p-4">
+                        <h3 class="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i>
+                            Copertura
+                        </h3>
+                        <div class="flex items-center gap-3">
+                            <svg width="50" height="50" viewBox="0 0 50 50">
+                                <circle cx="25" cy="25" r="20" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+                                <circle cx="25" cy="25" r="20" fill="none" stroke="url(#coverageGradient)" stroke-width="8" 
+                                    stroke-dasharray="126" stroke-dashoffset="126" class="coverage-ring" id="coverageRing"/>
+                                <defs>
+                                    <linearGradient id="coverageGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#3b82f6"/>
+                                        <stop offset="100%" style="stop-color:#8b5cf6"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900" id="coveragePercent">0%</p>
+                                <p class="text-sm text-gray-600" id="coverageTime">0h 0m</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card rounded-xl p-4">
+                        <h3 class="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>
+                            Statistiche
+                        </h3>
+                        <div class="space-y-1">
+                            <p class="text-sm text-gray-700"><span class="font-semibold text-gray-900" id="gapCount">0</span> gaps</p>
+                            <p class="text-sm text-gray-700"><span class="font-semibold text-gray-900" id="formatCount">0</span> format unici</p>
+                            <p class="text-sm text-gray-700"><span class="font-semibold text-gray-900" id="avgDuration">0m</span> durata media</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex justify-center gap-3 mt-6">
+                    <button onclick="showActualizationDialog()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2.5 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                        Attualizza Date
+                    </button>
+                    <button onclick="exportXMLTV()" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Esporta XMLTV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Time Slot Analysis -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+                <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="clock-3" class="w-6 h-6 text-blue-600"></i>
+                        Analisi Fasce Orarie
+                    </span>
+                    <div class="flex gap-2">
+                        <span class="time-slot-badge prime-time-badge">
+                            <i data-lucide="star" class="w-3 h-3"></i>
+                            Prime Time
+                        </span>
+                    </div>
+                </h3>
+                
+                <!-- Time Slots Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Morning Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="sunrise" class="w-4 h-4 text-blue-500"></i>
+                                Mattina
+                            </h4>
+                            <span class="text-sm text-gray-600">06:00 - 12:00</span>
+                        </div>
+                        <div id="morningStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="morningCoverage" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Afternoon Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="sun" class="w-4 h-4 text-green-500"></i>
+                                Pomeriggio
+                            </h4>
+                            <span class="text-sm text-gray-600">12:00 - 18:00</span>
+                        </div>
+                        <div id="afternoonStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="afternoonCoverage" class="h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Evening Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="sunset" class="w-4 h-4 text-purple-500"></i>
+                                Sera
+                            </h4>
+                            <span class="text-sm text-gray-600">18:00 - 20:30</span>
+                        </div>
+                        <div id="eveningStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="eveningCoverage" class="h-full bg-purple-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Prime Time Slot -->
+                    <div class="time-slot-card rounded-xl p-4 border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="star" class="w-4 h-4 text-amber-600"></i>
+                                Prime Time
+                            </h4>
+                            <span class="text-sm text-gray-600 font-semibold">20:30 - 22:30</span>
+                        </div>
+                        <div id="primeTimeStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="primeTimeCoverage" class="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Late Evening Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="moon" class="w-4 h-4 text-indigo-500"></i>
+                                Seconda Serata
+                            </h4>
+                            <span class="text-sm text-gray-600">22:30 - 01:00</span>
+                        </div>
+                        <div id="lateEveningStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="lateEveningCoverage" class="h-full bg-indigo-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Night Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="moon-star" class="w-4 h-4 text-gray-600"></i>
+                                Notte
+                            </h4>
+                            <span class="text-sm text-gray-600">01:00 - 06:00</span>
+                        </div>
+                        <div id="nightStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="nightCoverage" class="h-full bg-gray-600 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Treemap Timeline -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i data-lucide="grid-3x3" class="w-6 h-6 text-blue-600"></i>
+                    Treemap Aggregato per Format
+                </h3>
+                
+                <div class="treemap-container" id="treemapContainer">
+                    <div class="fill-indicator" id="fillIndicator">
+                        <span id="fillPercent">0%</span> riempito
+                    </div>
+                </div>
+                
+                <!-- Format Legend -->
+                <div class="mt-6">
+                    <h4 class="font-semibold text-gray-800 mb-2">Riepilogo Format</h4>
+                    <div class="format-legend" id="formatLegend"></div>
+                </div>
+            </div>
+
+            <!-- Program Details -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50" id="programDetails" style="display:none;">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="tv-2" class="w-6 h-6 text-blue-600"></i>
+                    Dettagli Format
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-sm text-gray-700 mb-1">Titolo/Format</p>
+                        <p class="font-semibold text-lg text-gray-900" id="detailTitle">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-700 mb-1">Durata Totale</p>
+                        <p class="font-semibold text-lg text-gray-900" id="detailDuration">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-700 mb-1">Numero Episodi</p>
+                        <p class="font-semibold text-lg text-gray-900" id="detailCount">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-700 mb-1">Categoria</p>
+                        <p class="font-semibold text-lg text-gray-900" id="detailCategory">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Program Editor Table -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+                <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="edit-3" class="w-6 h-6 text-blue-600"></i>
+                        Editor Programmi
+                    </span>
+                    <button onclick="addProgram()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        Aggiungi Programma
+                    </button>
+                </h3>
+                <div class="overflow-x-auto rounded-lg border border-gray-200">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gradient-to-r from-gray-100 to-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Ora Inizio UTC</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Ora Fine UTC</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Durata</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Titolo/Format</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Categoria</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="programTable" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Problems Report -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-600"></i>
+                    Report Problemi
+                </h3>
+                <div id="problemsReport" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- Actualization Dialog -->
+        <div id="actualizationDialog" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl transform transition-all">
+                <h3 class="text-2xl font-bold mb-4 gradient-text">Attualizza Date Palinsesto</h3>
+                <p class="text-gray-600 mb-6">Seleziona la nuova data di inizio. Gli orari rimarranno invariati.</p>
+                <input type="date" id="newStartDate" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+                <div class="flex justify-end gap-3 mt-6">
+                    <button onclick="closeActualizationDialog()" class="px-6 py-2.5 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold">
+                        Annulla
+                    </button>
+                    <button onclick="actualizeSchedule()" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl">
+                        Attualizza
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Container -->
+        <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-3"></div>
+
+        <!-- Program Preview -->
+        <div id="programPreview" class="program-preview">
+            <h4 class="font-bold text-xl mb-3" id="previewTitle"></h4>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Durata totale:</span>
+                    <span class="font-semibold" id="previewDuration"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Episodi:</span>
+                    <span class="font-semibold" id="previewCount"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Percentuale:</span>
+                    <span class="font-semibold" id="previewPercent"></span>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Debug logging
+        // Initialize Lucide icons
+        window.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+
+        // Version
+        const APP_VERSION = '5.5';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Complete Working Version`);
+
+        // Debug functions
         const debugLog = (message, type = 'info') => {
             const debugContent = document.getElementById('debugContent');
-            const line = document.createElement('div');
-            line.className = `debug-line debug-${type}`;
-            const timestamp = new Date().toLocaleTimeString();
-            line.textContent = `[${timestamp}] ${message}`;
-            debugContent.appendChild(line);
-            debugContent.scrollTop = debugContent.scrollHeight;
+            if (debugContent) {
+                const line = document.createElement('div');
+                line.style.marginBottom = '2px';
+                line.style.color = type === 'error' ? '#ff6666' : type === 'success' ? '#66ff66' : '#66ccff';
+                const timestamp = new Date().toLocaleTimeString();
+                line.textContent = `[${timestamp}] ${message}`;
+                debugContent.appendChild(line);
+                debugContent.scrollTop = debugContent.scrollHeight;
+            }
             console.log(`[${type.toUpperCase()}] ${message}`);
         };
 
-        // Global variables
-        let xmlDoc = null;
-        let programs = [];
-        let channelId = '';
-        let channelName = '';
+        // Toggle debug panel
+        function toggleDebug() {
+            const panel = document.getElementById('debugPanel');
+            panel.classList.toggle('active');
+        }
 
-        // Color palette
-        const colors = [
-            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
-            '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B195', '#F67280',
-            '#C06C84', '#6C5B7B', '#355C7D', '#2ECC71', '#3498DB'
-        ];
-
-        // Initialize
-        debugLog('XMLTV Viewer v5.4 inizializzato', 'success');
-
-        // File input handler
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            debugLog('File selezionato: ' + e.target.files[0]?.name);
-            if (e.target.files.length > 0) {
-                loadFile(e.target.files[0]);
+        // Keyboard shortcut for debug
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'd' && e.ctrlKey) {
+                toggleDebug();
             }
         });
 
-        // Load file
+        // Global state
+        let xmlDoc = null;
+        let currentPrograms = [];
+        let currentChannelId = '';
+        let currentChannelName = '';
+        let scheduleDate = null;
+        let formatColors = {};
+        let colorIndex = 0;
+        const totalDaySeconds = 86400; // 24 hours in seconds
+
+        // Modern color palette
+        const colorPalette = [
+            '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', 
+            '#10b981', '#06b6d4', '#6366f1', '#f43f5e',
+            '#84cc16', '#a855f7', '#0ea5e9', '#f97316',
+            '#14b8a6', '#d946ef', '#0891b2', '#dc2626',
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'
+        ];
+
+        // Time slot definitions (in UTC hours)
+        const timeSlots = {
+            morning: { start: 6, end: 12, name: 'Mattina', icon: 'sunrise' },
+            afternoon: { start: 12, end: 18, name: 'Pomeriggio', icon: 'sun' },
+            evening: { start: 18, end: 20.5, name: 'Sera', icon: 'sunset' },
+            primeTime: { start: 20.5, end: 22.5, name: 'Prime Time', icon: 'star' },
+            lateEvening: { start: 22.5, end: 25, name: 'Seconda Serata', icon: 'moon' },
+            night: { start: 1, end: 6, name: 'Notte', icon: 'moon-star' }
+        };
+
+        // File handling
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight drop zone
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('border-blue-500', 'bg-blue-50');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            }, false);
+        });
+
+        // Handle dropped files
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        }
+
+        fileInput.addEventListener('change', function(e) {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === 'text/xml' || file.type === 'application/xml' || file.name.endsWith('.xml')) {
+                    loadFile(file);
+                } else {
+                    showToast('Seleziona un file XML valido', 'error');
+                }
+            }
+        }
+
         function loadFile(file) {
             debugLog(`Caricamento file: ${file.name} (${file.size} bytes)`);
             
@@ -205,17 +801,18 @@
                     parseXML(e.target.result);
                 } catch (error) {
                     debugLog(`Errore parsing: ${error.message}`, 'error');
+                    showToast('Errore nel parsing del file: ' + error.message, 'error');
                 }
             };
             
             reader.onerror = function(e) {
                 debugLog(`Errore lettura file: ${e.target.error}`, 'error');
+                showToast('Errore nella lettura del file', 'error');
             };
             
             reader.readAsText(file);
         }
 
-        // Parse XML
         function parseXML(xmlString) {
             debugLog('Inizio parsing XML...');
             
@@ -226,6 +823,7 @@
             const parseError = xmlDoc.querySelector('parsererror');
             if (parseError) {
                 debugLog('Errore nel parsing XML: ' + parseError.textContent, 'error');
+                showToast('Errore nel parsing XML', 'error');
                 return;
             }
             
@@ -235,122 +833,187 @@
             const channelElement = xmlDoc.querySelector('channel');
             if (!channelElement) {
                 debugLog('Nessun elemento channel trovato', 'error');
+                showToast('Nessun canale trovato nel file', 'error');
                 return;
             }
             
-            channelId = channelElement.getAttribute('id') || 'Unknown';
+            currentChannelId = channelElement.getAttribute('id') || 'Unknown';
             const displayNameElement = channelElement.querySelector('display-name');
-            channelName = displayNameElement ? displayNameElement.textContent : channelId;
+            currentChannelName = displayNameElement ? displayNameElement.textContent : currentChannelId;
             
-            debugLog(`Canale trovato: ${channelName} (ID: ${channelId})`, 'success');
+            debugLog(`Canale trovato: ${currentChannelName} (ID: ${currentChannelId})`, 'success');
             
-            // Get programs
+            // Update UI
+            document.getElementById('channelName').textContent = currentChannelName;
+            document.getElementById('channelId').textContent = `ID: ${currentChannelId}`;
+            
+            // Parse programs
+            parsePrograms();
+            
+            // Show main content
+            document.getElementById('mainContent').classList.remove('hidden');
+            
+            showToast('File caricato con successo', 'success');
+        }
+
+        function parsePrograms() {
             const programElements = xmlDoc.querySelectorAll('programme');
-            debugLog(`Trovati ${programElements.length} elementi programme`);
+            currentPrograms = [];
+            formatColors = {}; // Reset colors
+            colorIndex = 0;
             
-            programs = [];
+            debugLog(`Trovati ${programElements.length} elementi programme`);
             
             programElements.forEach((prog, index) => {
                 try {
-                    const start = prog.getAttribute('start');
-                    const stop = prog.getAttribute('stop');
-                    const title = prog.querySelector('title')?.textContent || 'Senza titolo';
+                    const startStr = prog.getAttribute('start');
+                    const stopStr = prog.getAttribute('stop');
                     
-                    if (!start || !stop) {
+                    if (!startStr || !stopStr) {
                         debugLog(`Programma ${index} senza start/stop`, 'error');
                         return;
                     }
                     
-                    const startDate = parseDate(start);
-                    const stopDate = parseDate(stop);
-                    const duration = (stopDate - startDate) / 1000; // seconds
+                    const startDate = parseXMLTVDate(startStr);
+                    const stopDate = parseXMLTVDate(stopStr);
+                    const title = prog.querySelector('title')?.textContent || 'Senza titolo';
                     
-                    programs.push({
+                    const program = {
                         start: startDate,
                         stop: stopDate,
                         title: title,
-                        duration: duration,
+                        duration: (stopDate - startDate) / 1000, // seconds
                         desc: prog.querySelector('desc')?.textContent || '',
-                        category: prog.querySelector('category')?.textContent || ''
-                    });
+                        category: prog.querySelector('category')?.textContent || '',
+                        rating: prog.querySelector('rating value')?.textContent || '0',
+                        icon: prog.querySelector('icon')?.getAttribute('src') || ''
+                    };
+                    
+                    currentPrograms.push(program);
+                    
+                    // Assign color to format
+                    if (!formatColors[title]) {
+                        formatColors[title] = colorPalette[colorIndex % colorPalette.length];
+                        colorIndex++;
+                    }
                     
                 } catch (e) {
                     debugLog(`Errore parsing programma ${index}: ${e.message}`, 'error');
                 }
             });
             
-            debugLog(`Parsati ${programs.length} programmi validi`, 'success');
+            debugLog(`Parsati ${currentPrograms.length} programmi validi`, 'success');
             
-            if (programs.length > 0) {
-                displayData();
-            } else {
-                debugLog('Nessun programma valido trovato', 'error');
+            if (currentPrograms.length === 0) {
+                showToast('Nessun programma trovato nel file', 'error');
+                return;
             }
+            
+            // Sort programs by start time
+            currentPrograms.sort((a, b) => a.start - b.start);
+            
+            // Auto-detect the main programming day
+            detectMainProgrammingDay();
+            
+            // Load programs
+            loadPrograms();
         }
 
-        // Parse XMLTV date
-        function parseDate(dateStr) {
+        function parseXMLTVDate(dateStr) {
             // Handle both formats: YYYYMMDDHHmmss +0000 and YYYY-MM-DDTHH:mm:ss+0000
             if (dateStr.includes('T')) {
-                return new Date(dateStr.replace(/\+\d{4}$/, 'Z'));
+                // ISO format
+                const cleanDate = dateStr.replace(/[+-]\d{4}$/, 'Z');
+                return new Date(cleanDate);
             } else {
-                const year = dateStr.substr(0, 4);
-                const month = dateStr.substr(4, 2);
-                const day = dateStr.substr(6, 2);
-                const hour = dateStr.substr(8, 2);
-                const minute = dateStr.substr(10, 2);
-                const second = dateStr.substr(12, 2);
-                return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}Z`);
+                // Classic XMLTV format
+                const year = parseInt(dateStr.substr(0, 4));
+                const month = parseInt(dateStr.substr(4, 2)) - 1;
+                const day = parseInt(dateStr.substr(6, 2));
+                const hour = parseInt(dateStr.substr(8, 2));
+                const minute = parseInt(dateStr.substr(10, 2));
+                const second = parseInt(dateStr.substr(12, 2));
+                
+                return new Date(Date.UTC(year, month, day, hour, minute, second));
             }
         }
 
-        // Display data
-        function displayData() {
-            debugLog('Visualizzazione dati...');
+        function detectMainProgrammingDay() {
+            // Count programs per day
+            const programsByDay = {};
             
-            // Show sections
-            document.getElementById('channelInfo').classList.remove('hidden');
-            document.getElementById('treemapSection').classList.remove('hidden');
-            document.getElementById('programList').classList.remove('hidden');
-            
-            // Update channel info
-            document.getElementById('channelName').textContent = channelName;
-            document.getElementById('channelId').textContent = channelId;
-            document.getElementById('programCount').textContent = programs.length;
-            
-            // Sort programs
-            programs.sort((a, b) => a.start - b.start);
-            
-            // Display programs
-            displayProgramList();
-            
-            // Draw treemap
-            drawTreemap();
-        }
-
-        // Display program list
-        function displayProgramList() {
-            debugLog('Creazione lista programmi...');
-            
-            const tbody = document.getElementById('programTableBody');
-            tbody.innerHTML = '';
-            
-            programs.forEach((prog, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="px-4 py-2">${prog.start.toLocaleTimeString()}</td>
-                    <td class="px-4 py-2">${prog.stop.toLocaleTimeString()}</td>
-                    <td class="px-4 py-2 font-medium">${prog.title}</td>
-                    <td class="px-4 py-2">${Math.round(prog.duration / 60)} min</td>
-                `;
-                tbody.appendChild(row);
+            currentPrograms.forEach(program => {
+                const dayKey = program.start.toISOString().split('T')[0];
+                if (!programsByDay[dayKey]) {
+                    programsByDay[dayKey] = [];
+                }
+                programsByDay[dayKey].push(program);
             });
             
-            debugLog(`Aggiunti ${programs.length} programmi alla tabella`, 'success');
+            debugLog('Programmi per giorno: ' + Object.keys(programsByDay).map(k => `${k}: ${programsByDay[k].length}`).join(', '));
+            
+            // Find the day with most programs
+            let maxPrograms = 0;
+            let bestDay = null;
+            
+            Object.entries(programsByDay).forEach(([day, programs]) => {
+                if (programs.length > maxPrograms) {
+                    maxPrograms = programs.length;
+                    bestDay = day;
+                }
+            });
+            
+            // Set schedule date
+            if (bestDay) {
+                const [year, month, day] = bestDay.split('-').map(Number);
+                scheduleDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+            } else {
+                scheduleDate = new Date(currentPrograms[0].start);
+                scheduleDate.setUTCHours(0, 0, 0, 0);
+            }
+            
+            debugLog('Data palinsesto selezionata: ' + scheduleDate.toISOString(), 'success');
+            document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
         }
 
-        // Draw treemap
-        function drawTreemap() {
+        function loadPrograms() {
+            // Get programs for the schedule day
+            const dayStart = new Date(scheduleDate);
+            dayStart.setUTCHours(0, 0, 0, 0);
+            
+            const dayEnd = new Date(scheduleDate);
+            dayEnd.setUTCHours(23, 59, 59, 999);
+            
+            const dayPrograms = currentPrograms.filter(p => {
+                return (p.start >= dayStart && p.start <= dayEnd) || 
+                       (p.start < dayStart && p.stop > dayStart);
+            }).sort((a, b) => a.start - b.start);
+            
+            debugLog(`Filtrati ${dayPrograms.length} programmi per ${scheduleDate.toISOString().split('T')[0]}`);
+            
+            document.getElementById('programCount').textContent = dayPrograms.length;
+            
+            // Draw treemap
+            drawTreemap(dayPrograms);
+            
+            // Update table
+            updateProgramTable(dayPrograms);
+            
+            // Update statistics
+            updateStatistics(dayPrograms);
+            
+            // Check for problems
+            checkProblems(dayPrograms);
+            
+            // Update format legend
+            updateFormatLegend(dayPrograms);
+            
+            // Analyze time slots
+            analyzeTimeSlots(dayPrograms);
+        }
+
+        // Draw treemap - Working version from debug
+        function drawTreemap(programs) {
             debugLog('Creazione treemap...');
             
             const container = document.getElementById('treemapContainer');
@@ -363,7 +1026,9 @@
                     formats[prog.title] = {
                         title: prog.title,
                         duration: 0,
-                        count: 0
+                        count: 0,
+                        category: prog.category,
+                        icon: prog.icon
                     };
                 }
                 formats[prog.title].duration += prog.duration;
@@ -377,10 +1042,22 @@
             
             // Calculate total duration
             const totalDuration = formatArray.reduce((sum, f) => sum + f.duration, 0);
-            const dayDuration = 24 * 60 * 60; // 24 hours in seconds
-            const fillPercent = (totalDuration / dayDuration * 100).toFixed(1);
+            const fillPercent = (totalDuration / totalDaySeconds * 100).toFixed(1);
             
-            document.getElementById('fillIndicator').textContent = `${fillPercent}% riempito`;
+            const fillIndicator = document.getElementById('fillIndicator');
+            fillIndicator.textContent = `${fillPercent}% riempito`;
+            
+            // Update fill indicator style
+            if (fillPercent >= 95) {
+                fillIndicator.classList.add('complete');
+                fillIndicator.classList.remove('warning', 'error');
+            } else if (fillPercent >= 80) {
+                fillIndicator.classList.add('warning');
+                fillIndicator.classList.remove('complete', 'error');
+            } else {
+                fillIndicator.classList.add('error');
+                fillIndicator.classList.remove('complete', 'warning');
+            }
             
             // Simple treemap layout
             const containerWidth = 796; // 800 - 4 for border
@@ -402,30 +1079,612 @@
                 
                 // Create element
                 const div = document.createElement('div');
-                div.className = 'treemap-item';
+                div.className = 'treemap-item new';
                 div.style.left = x + 'px';
                 div.style.top = y + 'px';
                 div.style.width = width + 'px';
                 div.style.height = height + 'px';
-                div.style.backgroundColor = colors[index % colors.length];
-                div.innerHTML = `
-                    <div style="padding: 5px;">
-                        <div>${format.title}</div>
-                        <div style="font-size: 0.8em;">${Math.round(format.duration / 60)} min</div>
-                    </div>
+                div.style.backgroundColor = formatColors[format.title];
+                
+                // Add icon if available
+                if (format.icon && width > 80 && height > 80) {
+                    const img = document.createElement('img');
+                    img.src = format.icon;
+                    img.className = 'treemap-icon';
+                    img.onerror = function() { this.style.display = 'none'; };
+                    div.appendChild(img);
+                }
+                
+                // Add label
+                const label = document.createElement('div');
+                label.className = 'treemap-label';
+                label.innerHTML = `
+                    <div>${format.title}</div>
+                    <div style="font-size: 0.8em;">${formatDuration(format.duration)}</div>
                 `;
+                div.appendChild(label);
+                
+                // Add events
+                div.addEventListener('click', () => showFormatDetails(format));
+                div.addEventListener('mouseenter', (e) => showProgramPreview(format, e));
+                div.addEventListener('mouseleave', hideProgramPreview);
                 
                 container.appendChild(div);
                 
                 x += width;
                 rowHeight = Math.max(rowHeight, height);
                 
-                debugLog(`Creato elemento treemap: ${format.title} (${width.toFixed(0)}x${height.toFixed(0)})`);
+                debugLog(`Creato elemento: ${format.title} (${width.toFixed(0)}x${height.toFixed(0)})`);
             });
             
             debugLog('Treemap completato', 'success');
         }
 
+        // Show format details
+        function showFormatDetails(format) {
+            const detailsDiv = document.getElementById('programDetails');
+            detailsDiv.style.display = 'block';
+            
+            document.getElementById('detailTitle').textContent = format.title;
+            document.getElementById('detailDuration').textContent = formatDuration(format.duration);
+            document.getElementById('detailCount').textContent = format.count + ' episodi';
+            document.getElementById('detailCategory').textContent = format.category || '-';
+            
+            // Scroll to details
+            detailsDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Show program preview
+        function showProgramPreview(format, event) {
+            const preview = document.getElementById('programPreview');
+            const rect = event.target.getBoundingClientRect();
+            
+            // Update content
+            document.getElementById('previewTitle').textContent = format.title;
+            document.getElementById('previewDuration').textContent = formatDuration(format.duration);
+            document.getElementById('previewCount').textContent = format.count + ' episodi';
+            
+            const percentage = ((format.duration / totalDaySeconds) * 100).toFixed(1);
+            document.getElementById('previewPercent').textContent = `${percentage}% del giorno`;
+            
+            // Position preview
+            let left = rect.right + 10;
+            let top = rect.top;
+            
+            // Adjust if would go off screen
+            if (left + 350 > window.innerWidth) {
+                left = rect.left - 360;
+            }
+            
+            if (top + 300 > window.innerHeight) {
+                top = window.innerHeight - 310;
+            }
+            
+            preview.style.left = left + 'px';
+            preview.style.top = top + 'px';
+            
+            // Show with animation
+            preview.classList.add('show');
+        }
+
+        function hideProgramPreview() {
+            const preview = document.getElementById('programPreview');
+            preview.classList.remove('show');
+        }
+
+        // Analyze time slots
+        function analyzeTimeSlots(programs) {
+            Object.entries(timeSlots).forEach(([slotKey, slot]) => {
+                const slotPrograms = programs.filter(p => {
+                    const startHour = p.start.getUTCHours() + p.start.getUTCMinutes() / 60;
+                    const stopHour = p.stop.getUTCHours() + p.stop.getUTCMinutes() / 60;
+                    
+                    if (slot.end > 24) {
+                        return (startHour >= slot.start || startHour < slot.end - 24) ||
+                               (stopHour > slot.start || stopHour < slot.end - 24);
+                    } else if (slotKey === 'night') {
+                        return (startHour >= slot.start && startHour < slot.end) ||
+                               (stopHour > slot.start && stopHour <= slot.end);
+                    } else {
+                        return (startHour < slot.end && stopHour > slot.start);
+                    }
+                });
+                
+                // Calculate coverage
+                let totalSlotSeconds = (slot.end - slot.start) * 3600;
+                if (slot.end > 24) {
+                    totalSlotSeconds = ((slot.end - 24) + (24 - slot.start)) * 3600;
+                }
+                
+                let coveredSeconds = 0;
+                const formatCounts = {};
+                
+                slotPrograms.forEach(p => {
+                    const slotStart = new Date(scheduleDate);
+                    slotStart.setUTCHours(Math.floor(slot.start), (slot.start % 1) * 60, 0, 0);
+                    
+                    const slotEnd = new Date(scheduleDate);
+                    if (slot.end > 24) {
+                        slotEnd.setUTCDate(slotEnd.getUTCDate() + 1);
+                        slotEnd.setUTCHours(Math.floor(slot.end - 24), ((slot.end - 24) % 1) * 60, 0, 0);
+                    } else {
+                        slotEnd.setUTCHours(Math.floor(slot.end), (slot.end % 1) * 60, 0, 0);
+                    }
+                    
+                    if (slotKey === 'night') {
+                        slotStart.setUTCHours(1, 0, 0, 0);
+                        slotEnd.setUTCHours(6, 0, 0, 0);
+                    }
+                    
+                    const overlapStart = Math.max(p.start.getTime(), slotStart.getTime());
+                    const overlapEnd = Math.min(p.stop.getTime(), slotEnd.getTime());
+                    
+                    if (overlapEnd > overlapStart) {
+                        const overlapSeconds = (overlapEnd - overlapStart) / 1000;
+                        coveredSeconds += overlapSeconds;
+                        
+                        if (!formatCounts[p.title]) {
+                            formatCounts[p.title] = 0;
+                        }
+                        formatCounts[p.title] += overlapSeconds;
+                    }
+                });
+                
+                // Find dominant format
+                let dominantFormat = '-';
+                let maxSeconds = 0;
+                Object.entries(formatCounts).forEach(([format, seconds]) => {
+                    if (seconds > maxSeconds) {
+                        maxSeconds = seconds;
+                        dominantFormat = format;
+                    }
+                });
+                
+                // Update UI
+                const coverage = Math.min(100, (coveredSeconds / totalSlotSeconds) * 100);
+                const statsDiv = document.getElementById(`${slotKey}Stats`);
+                if (statsDiv) {
+                    statsDiv.innerHTML = `
+                        <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">${coverage.toFixed(1)}%</span></p>
+                        <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">${dominantFormat}</span></p>
+                        <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div id="${slotKey}Coverage" class="h-full ${getSlotColorClass(slotKey)} transition-all duration-500" style="width: ${coverage}%"></div>
+                        </div>
+                    `;
+                }
+            });
+        }
+        
+        function getSlotColorClass(slotKey) {
+            const colorMap = {
+                morning: 'bg-blue-500',
+                afternoon: 'bg-green-500',
+                evening: 'bg-purple-500',
+                primeTime: 'bg-gradient-to-r from-amber-500 to-orange-500',
+                lateEvening: 'bg-indigo-500',
+                night: 'bg-gray-600'
+            };
+            return colorMap[slotKey] || 'bg-gray-400';
+        }
+
+        // Update program table
+        function updateProgramTable(programs) {
+            const tbody = document.getElementById('programTable');
+            tbody.innerHTML = '';
+            
+            programs.forEach((program, index) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors';
+                
+                row.innerHTML = `
+                    <td class="px-4 py-2">${formatTimeUTC(program.start)}</td>
+                    <td class="px-4 py-2">${formatTimeUTC(program.stop)}</td>
+                    <td class="px-4 py-2">${formatDuration(program.duration)}</td>
+                    <td class="px-4 py-2 font-medium">${program.title}</td>
+                    <td class="px-4 py-2">${program.category || '-'}</td>
+                    <td class="px-4 py-2">
+                        <button onclick="editProgram(${index})" class="text-blue-600 hover:text-blue-800 mr-2" title="Modifica">
+                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteProgram(${index})" class="text-red-600 hover:text-red-800" title="Elimina">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            // Re-initialize icons
+            lucide.createIcons();
+        }
+        
+        // Update statistics
+        function updateStatistics(programs) {
+            // Calculate coverage
+            let totalCoveredSeconds = 0;
+            const gaps = [];
+            
+            for (let i = 0; i < programs.length - 1; i++) {
+                const current = programs[i];
+                const next = programs[i + 1];
+                
+                totalCoveredSeconds += current.duration;
+                
+                // Check for gap
+                const gapSeconds = (next.start - current.stop) / 1000;
+                if (gapSeconds > 60) { // Gap > 1 minute
+                    gaps.push({
+                        start: current.stop,
+                        end: next.start,
+                        duration: gapSeconds
+                    });
+                }
+            }
+            
+            if (programs.length > 0) {
+                totalCoveredSeconds += programs[programs.length - 1].duration;
+            }
+            
+            // Update coverage
+            const coveragePercent = (totalCoveredSeconds / totalDaySeconds) * 100;
+            document.getElementById('coveragePercent').textContent = coveragePercent.toFixed(1) + '%';
+            document.getElementById('coverageTime').textContent = formatDuration(totalCoveredSeconds);
+            
+            // Update coverage ring
+            const ring = document.getElementById('coverageRing');
+            const circumference = 2 * Math.PI * 20;
+            const offset = circumference - (coveragePercent / 100) * circumference;
+            ring.style.strokeDashoffset = offset;
+            
+            // Update other stats
+            document.getElementById('gapCount').textContent = gaps.length;
+            document.getElementById('formatCount').textContent = Object.keys(formatColors).length;
+            
+            const avgDuration = programs.length > 0 
+                ? Math.round(totalCoveredSeconds / programs.length / 60)
+                : 0;
+            document.getElementById('avgDuration').textContent = avgDuration + 'm';
+        }
+        
+        // Check for problems
+        function checkProblems(programs) {
+            const problems = [];
+            
+            // Check for gaps
+            for (let i = 0; i < programs.length - 1; i++) {
+                const current = programs[i];
+                const next = programs[i + 1];
+                const gapSeconds = (next.start - current.stop) / 1000;
+                
+                if (gapSeconds > 300) { // Gap > 5 minutes
+                    problems.push({
+                        type: 'gap',
+                        severity: gapSeconds > 1800 ? 'error' : 'warning',
+                        message: `Gap di ${formatDuration(gapSeconds)} tra "${current.title}" e "${next.title}" (${formatTimeUTC(current.stop)})`
+                    });
+                }
+            }
+            
+            // Check for overlaps
+            for (let i = 0; i < programs.length - 1; i++) {
+                const current = programs[i];
+                const next = programs[i + 1];
+                
+                if (current.stop > next.start) {
+                    const overlapSeconds = (current.stop - next.start) / 1000;
+                    problems.push({
+                        type: 'overlap',
+                        severity: 'error',
+                        message: `Sovrapposizione di ${formatDuration(overlapSeconds)} tra "${current.title}" e "${next.title}"`
+                    });
+                }
+            }
+            
+            // Check for very short programs
+            programs.forEach(p => {
+                if (p.duration < 300) { // Less than 5 minutes
+                    problems.push({
+                        type: 'short',
+                        severity: 'warning',
+                        message: `"${p.title}" dura solo ${formatDuration(p.duration)}`
+                    });
+                }
+            });
+            
+            // Display problems
+            const reportDiv = document.getElementById('problemsReport');
+            if (problems.length === 0) {
+                reportDiv.innerHTML = '<p class="text-green-600">✓ Nessun problema rilevato</p>';
+            } else {
+                reportDiv.innerHTML = problems.map(p => {
+                    const icon = p.severity === 'error' ? '❌' : '⚠️';
+                    const color = p.severity === 'error' ? 'text-red-600' : 'text-yellow-600';
+                    return `<p class="${color}">${icon} ${p.message}</p>`;
+                }).join('');
+            }
+        }
+        
+        // Update format legend
+        function updateFormatLegend(programs) {
+            const legendDiv = document.getElementById('formatLegend');
+            legendDiv.innerHTML = '';
+            
+            // Calculate format statistics
+            const formatStats = {};
+            programs.forEach(p => {
+                if (!formatStats[p.title]) {
+                    formatStats[p.title] = {
+                        count: 0,
+                        duration: 0
+                    };
+                }
+                formatStats[p.title].count++;
+                formatStats[p.title].duration += p.duration;
+            });
+            
+            // Sort by duration
+            const sortedFormats = Object.entries(formatStats)
+                .sort((a, b) => b[1].duration - a[1].duration);
+            
+            sortedFormats.forEach(([title, stats]) => {
+                const div = document.createElement('div');
+                div.className = 'format-item';
+                
+                const color = document.createElement('div');
+                color.className = 'format-color';
+                color.style.backgroundColor = formatColors[title];
+                
+                const label = document.createElement('span');
+                label.textContent = `${title} (${stats.count}x, ${formatDuration(stats.duration)})`;
+                
+                div.appendChild(color);
+                div.appendChild(label);
+                legendDiv.appendChild(div);
+            });
+        }
+        
+        // Utility functions
+        function formatTimeUTC(date) {
+            const hours = date.getUTCHours().toString().padStart(2, '0');
+            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+        function formatDateUTC(date) {
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                timeZone: 'UTC'
+            };
+            return date.toLocaleDateString('it-IT', options);
+        }
+        
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+        }
+        
+        function formatXMLTVDate(date) {
+            const pad = (n) => String(n).padStart(2, '0');
+            const year = date.getUTCFullYear();
+            const month = pad(date.getUTCMonth() + 1);
+            const day = pad(date.getUTCDate());
+            const hours = pad(date.getUTCHours());
+            const minutes = pad(date.getUTCMinutes());
+            const seconds = pad(date.getUTCSeconds());
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
+        }
+        
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type} px-6 py-4 rounded-lg flex items-center gap-3`;
+            
+            const icon = type === 'success' ? 'check-circle' : 
+                         type === 'error' ? 'alert-circle' : 'info';
+            
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5"></i>
+                <span>${message}</span>
+            `;
+            
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            // Re-initialize icons
+            lucide.createIcons();
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            showToast('Dark mode ' + (document.body.classList.contains('dark') ? 'attivato' : 'disattivato'));
+        }
+        
+        // Show info
+        function showInfo() {
+            alert(`XMLTV Viewer v${APP_VERSION}\n\n` +
+                  'Visualizzatore e editor avanzato per file XMLTV con:\n' +
+                  '- Treemap aggregato per format funzionante\n' +
+                  '- Analisi fasce orarie (6 fasce)\n' +
+                  '- Editor programmi con azioni\n' +
+                  '- Export/import XMLTV\n' +
+                  '- Console debug (Ctrl+D)\n\n' +
+                  'Modalità: UTC (tutti gli orari)');
+        }
+        
+        // Edit program
+        function editProgram(index) {
+            showToast('Funzione di modifica in sviluppo', 'info');
+        }
+        
+        // Delete program
+        function deleteProgram(index) {
+            if (confirm('Eliminare questo programma?')) {
+                // Find the program in the current day's programs
+                const dayStart = new Date(scheduleDate);
+                dayStart.setUTCHours(0, 0, 0, 0);
+                
+                const dayEnd = new Date(scheduleDate);
+                dayEnd.setUTCHours(23, 59, 59, 999);
+                
+                const dayPrograms = currentPrograms.filter(p => {
+                    return (p.start >= dayStart && p.start <= dayEnd) || 
+                           (p.start < dayStart && p.stop > dayStart);
+                }).sort((a, b) => a.start - b.start);
+                
+                if (index >= 0 && index < dayPrograms.length) {
+                    const programToDelete = dayPrograms[index];
+                    const globalIndex = currentPrograms.indexOf(programToDelete);
+                    
+                    if (globalIndex !== -1) {
+                        currentPrograms.splice(globalIndex, 1);
+                        loadPrograms();
+                        showToast('Programma eliminato', 'success');
+                    }
+                }
+            }
+        }
+        
+        // Add program
+        function addProgram() {
+            showToast('Funzione di aggiunta in sviluppo', 'info');
+        }
+        
+        // Show actualization dialog
+        function showActualizationDialog() {
+            const dialog = document.getElementById('actualizationDialog');
+            const dateInput = document.getElementById('newStartDate');
+            
+            // Set default to today
+            const today = new Date();
+            dateInput.value = today.toISOString().split('T')[0];
+            
+            dialog.classList.remove('hidden');
+            dialog.classList.add('flex');
+        }
+        
+        // Close actualization dialog
+        function closeActualizationDialog() {
+            const dialog = document.getElementById('actualizationDialog');
+            dialog.classList.add('hidden');
+            dialog.classList.remove('flex');
+        }
+        
+        // Actualize schedule
+        function actualizeSchedule() {
+            const newDateStr = document.getElementById('newStartDate').value;
+            if (!newDateStr) {
+                showToast('Seleziona una data', 'error');
+                return;
+            }
+            
+            const newDate = new Date(newDateStr + 'T00:00:00Z');
+            const oldDate = new Date(scheduleDate);
+            const daysDiff = Math.round((newDate - oldDate) / (1000 * 60 * 60 * 24));
+            
+            // Update all program dates
+            currentPrograms.forEach(program => {
+                program.start = new Date(program.start.getTime() + (daysDiff * 24 * 60 * 60 * 1000));
+                program.stop = new Date(program.stop.getTime() + (daysDiff * 24 * 60 * 60 * 1000));
+            });
+            
+            // Update schedule date
+            scheduleDate = newDate;
+            document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
+            
+            // Reload programs
+            loadPrograms();
+            
+            closeActualizationDialog();
+            showToast('Date attualizzate con successo', 'success');
+        }
+        
+        // Export XMLTV
+        function exportXMLTV() {
+            if (!xmlDoc || currentPrograms.length === 0) {
+                showToast('Nessun dato da esportare', 'error');
+                return;
+            }
+            
+            // Create new XML document
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            xml += '<tv>\n';
+            
+            // Add channel
+            xml += `  <channel id="${currentChannelId}">\n`;
+            xml += `    <display-name lang="it">${currentChannelName}</display-name>\n`;
+            xml += '  </channel>\n\n';
+            
+            // Add programs
+            currentPrograms.forEach(program => {
+                const startStr = formatXMLTVDate(program.start);
+                const stopStr = formatXMLTVDate(program.stop);
+                
+                xml += `  <programme start="${startStr}" stop="${stopStr}" channel="${currentChannelId}">\n`;
+                xml += `    <title lang="it">${escapeXml(program.title)}</title>\n`;
+                
+                if (program.desc) {
+                    xml += `    <desc lang="it">${escapeXml(program.desc)}</desc>\n`;
+                }
+                
+                if (program.category) {
+                    xml += `    <category lang="it">${escapeXml(program.category)}</category>\n`;
+                }
+                
+                if (program.rating && program.rating !== '0') {
+                    xml += '    <rating>\n';
+                    xml += `      <value>${program.rating}</value>\n`;
+                    xml += '    </rating>\n';
+                }
+                
+                if (program.icon) {
+                    xml += `    <icon src="${escapeXml(program.icon)}" />\n`;
+                }
+                
+                xml += '  </programme>\n';
+            });
+            
+            xml += '</tv>';
+            
+            // Download file
+            const blob = new Blob([xml], { type: 'text/xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentChannelId}_${scheduleDate.toISOString().split('T')[0]}.xml`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('File XMLTV esportato', 'success');
+        }
+        
+        // Escape XML special characters
+        function escapeXml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
         // Load test file
         function loadTestFile() {
             debugLog('Caricamento file di test...');
