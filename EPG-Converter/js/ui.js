@@ -211,10 +211,11 @@ export class UIManager {
      * Get conversion parameters from form
      */
     getConversionParameters() {
+        const timezoneValue = document.getElementById('timezone').value;
         return {
             channelId: document.getElementById('channelId').value.trim(),
             channelName: document.getElementById('channelName').value.trim(),
-            timezoneOffset: parseInt(document.getElementById('timezone').value),
+            timezoneOffset: parseInt(timezoneValue, 10), // Forziamo la conversione a numero
             iconUrl: document.getElementById('iconUrl').value.trim()
         };
     }

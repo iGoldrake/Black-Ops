@@ -440,6 +440,13 @@ class EPGConverter {
         // Get parameters
         const params = this.ui.getConversionParameters();
         
+        // DEBUG: Verifichiamo cosa stiamo leggendo
+        const timezoneSelect = document.getElementById('timezone');
+        this.log(`\n🔍 DEBUG Timezone:`);
+        this.log(`- Valore select: "${timezoneSelect.value}"`);
+        this.log(`- Opzione selezionata: "${timezoneSelect.options[timezoneSelect.selectedIndex].text}"`);
+        this.log(`- Parametro passato: ${params.timezoneOffset}`);
+        
         this.log('\n🔧 CONFIGURAZIONE:');
         this.log(`- Tipo canale: ${this.state.currentChannel}`);
         this.log(`- Canale ID: ${params.channelId}`);
