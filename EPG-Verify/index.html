@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v4.1 - Treemap Sequential Timeline</title>
+    <title>XMLTV Viewer v4.2.0 - Treemap Sequential Timeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -356,6 +356,20 @@
         .fill-indicator.error {
             background: rgba(239, 68, 68, 0.9);
         }
+
+        /* Timezone mode indicator */
+        .timezone-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen">
@@ -366,9 +380,15 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v4.1
+                        XMLTV Viewer v4.2.0
                     </h1>
-                    <p class="text-gray-600 mt-2">Treemap Sequenziale - Modalità UTC</p>
+                    <p class="text-gray-600 mt-2">
+                        Treemap Sequenziale - 
+                        <span class="timezone-indicator">
+                            <i data-lucide="globe" class="w-3 h-3"></i>
+                            Orari Locali Italia
+                        </span>
+                    </p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Dark Mode">
@@ -509,7 +529,7 @@
                         <p class="font-semibold text-lg text-gray-900" id="detailTitle">-</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-700 mb-1">Orario UTC</p>
+                        <p class="text-sm text-gray-700 mb-1">Orario Italia</p>
                         <p class="font-semibold text-lg text-gray-900" id="detailTime">-</p>
                     </div>
                     <div>
@@ -550,8 +570,8 @@
                     <table class="w-full text-sm">
                         <thead class="bg-gradient-to-r from-gray-100 to-gray-50 border-b border-gray-200">
                             <tr>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Ora Inizio UTC</th>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Ora Fine UTC</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Ora Inizio Italia</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-800">Ora Fine Italia</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-800">Durata</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-800">Titolo/Format</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-800">Categoria</th>
@@ -603,7 +623,7 @@
             <h4 class="font-bold text-xl mb-3" id="previewTitle"></h4>
             <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                    <span class="text-gray-400">Orario UTC:</span>
+                    <span class="text-gray-400">Orario Italia:</span>
                     <span class="font-semibold" id="previewTime"></span>
                 </div>
                 <div class="flex justify-between">
@@ -634,8 +654,8 @@
         });
 
         // Version
-        const APP_VERSION = '4.1';
-        console.log(`XMLTV Viewer v${APP_VERSION} - Treemap Sequential Timeline`);
+        const APP_VERSION = '4.2.0';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Treemap Sequential Timeline with Italian Timezone`);
 
         // Global state
         let xmlDoc = null;
@@ -656,6 +676,40 @@
             '#84cc16', '#a855f7', '#0ea5e9', '#f97316',
             '#14b8a6', '#d946ef', '#0891b2', '#dc2626'
         ];
+
+        // Italian timezone helpers
+        function isItalianDST(date) {
+            // In Italia l'ora legale va dall'ultima domenica di marzo all'ultima domenica di ottobre
+            const year = date.getFullYear();
+            
+            // Trova l'ultima domenica di marzo
+            const lastSundayMarch = new Date(year, 2, 31); // 31 marzo
+            lastSundayMarch.setDate(31 - lastSundayMarch.getDay());
+            
+            // Trova l'ultima domenica di ottobre
+            const lastSundayOctober = new Date(year, 9, 31); // 31 ottobre
+            lastSundayOctober.setDate(31 - lastSundayOctober.getDay());
+            
+            return date >= lastSundayMarch && date < lastSundayOctober;
+        }
+
+        function getItalianOffset(date) {
+            // Italia è UTC+1 in inverno (CET) e UTC+2 in estate (CEST)
+            return isItalianDST(date) ? 2 : 1;
+        }
+
+        function utcToItalianTime(utcDate) {
+            const offset = getItalianOffset(utcDate);
+            const italianTime = new Date(utcDate.getTime() + offset * 60 * 60 * 1000);
+            return italianTime;
+        }
+
+        function italianToUTCTime(italianDate, referenceUTC) {
+            // Usa la data UTC di riferimento per determinare l'offset corretto
+            const offset = getItalianOffset(referenceUTC);
+            const utcTime = new Date(italianDate.getTime() - offset * 60 * 60 * 1000);
+            return utcTime;
+        }
 
         // File handling
         const dropZone = document.getElementById('dropZone');
@@ -808,18 +862,22 @@
         }
 
         function detectMainProgrammingDay() {
-            // Count programs per day
+            // Il palinsesto italiano inizia tipicamente alle 00:00 ora italiana
+            // che corrisponde alle 22:00 UTC in estate o 23:00 UTC in inverno
+            
+            // Conta i programmi per giorno (in ora italiana)
             const programsByDay = {};
             
             currentPrograms.forEach(program => {
-                const dayKey = program.start.toISOString().split('T')[0];
+                const italianTime = utcToItalianTime(program.start);
+                const dayKey = italianTime.toISOString().split('T')[0];
                 if (!programsByDay[dayKey]) {
                     programsByDay[dayKey] = [];
                 }
                 programsByDay[dayKey].push(program);
             });
             
-            // Find the day with most programs
+            // Trova il giorno con più programmi
             let maxPrograms = 0;
             let bestDay = null;
             
@@ -830,16 +888,17 @@
                 }
             });
             
-            // Set schedule date
+            // Imposta la data del palinsesto
             if (bestDay) {
                 const [year, month, day] = bestDay.split('-').map(Number);
-                scheduleDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+                scheduleDate = new Date(year, month - 1, day); // Data locale italiana
             } else {
-                scheduleDate = new Date(currentPrograms[0].start);
-                scheduleDate.setUTCHours(0, 0, 0, 0);
+                const firstItalianTime = utcToItalianTime(currentPrograms[0].start);
+                scheduleDate = new Date(firstItalianTime);
+                scheduleDate.setHours(0, 0, 0, 0);
             }
             
-            document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
+            document.getElementById('scheduleDate').textContent = formatDateItalian(scheduleDate);
         }
 
         function parseXMLTVDateUTC(dateStr) {
@@ -880,17 +939,19 @@
         }
 
         function loadPrograms() {
-            // Get programs for the schedule day (including evening programs from previous day)
-            const dayStart = new Date(scheduleDate);
-            dayStart.setUTCHours(21, 0, 0, 0); // Start from 21:00 previous day
-            dayStart.setUTCDate(dayStart.getUTCDate() - 1);
+            // Calcola l'inizio del giorno del palinsesto in UTC
+            const dayStartUTC = new Date(scheduleDate);
+            const offset = getItalianOffset(dayStartUTC);
             
-            const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCHours(21, 0, 0, 0); // End at 21:00 current day
+            // Il palinsesto inizia alle 00:00 ora italiana
+            dayStartUTC.setUTCHours(-offset, 0, 0, 0);
+            
+            const dayEndUTC = new Date(dayStartUTC);
+            dayEndUTC.setUTCHours(dayEndUTC.getUTCHours() + 24);
             
             const dayPrograms = currentPrograms.filter(p => {
-                return (p.start >= dayStart && p.start < dayEnd) || 
-                       (p.start < dayStart && p.stop > dayStart);
+                return (p.start >= dayStartUTC && p.start < dayEndUTC) || 
+                       (p.start < dayStartUTC && p.stop > dayStartUTC);
             }).sort((a, b) => a.start - b.start);
             
             document.getElementById('programCount').textContent = dayPrograms.length;
@@ -1077,9 +1138,12 @@
                 
                 container.appendChild(div);
             }
+            
+            // Store formatGroups globally for legend
+            window.formatGroups = formatGroups;
         }
 
-        // Treemap layout algorithms
+        // Treemap layout algorithms (same as v4.1)
         function squarify(children, parent, totalValue) {
             const area = (parent.x1 - parent.x0) * (parent.y1 - parent.y0);
             
@@ -1343,8 +1407,8 @@
             legend.innerHTML = '';
             
             // Usa i format groups se disponibili
-            if (Object.keys(formatGroups).length > 0) {
-                const sortedFormats = Object.values(formatGroups)
+            if (window.formatGroups && Object.keys(window.formatGroups).length > 0) {
+                const sortedFormats = Object.values(window.formatGroups)
                     .sort((a, b) => b.totalDuration - a.totalDuration);
                 
                 sortedFormats.forEach(format => {
@@ -1389,14 +1453,19 @@
             const firstProgram = sortedPrograms[0];
             const lastProgram = sortedPrograms[sortedPrograms.length - 1];
             
-            document.getElementById('detailTime').textContent = `Prima: ${formatTimeUTC(firstProgram.start)} - Ultima: ${formatTimeUTC(lastProgram.stop)}`;
+            const firstStartItaly = utcToItalianTime(firstProgram.start);
+            const lastStopItaly = utcToItalianTime(lastProgram.stop);
+            
+            document.getElementById('detailTime').textContent = `Prima: ${formatTimeItalian(firstStartItaly)} - Ultima: ${formatTimeItalian(lastStopItaly)}`;
             document.getElementById('detailDuration').textContent = `${(formatNode.totalDuration / 3600).toFixed(1)} ore totali (${formatNode.programCount} episodi)`;
             document.getElementById('detailCategory').textContent = formatNode.category || '-';
             
             // Lista tutti gli episodi
-            const episodesList = sortedPrograms.map(p => 
-                `• ${formatTimeUTC(p.start)} - ${formatTimeUTC(p.stop)} (${formatDuration(p.duration)})`
-            ).join('\n');
+            const episodesList = sortedPrograms.map(p => {
+                const startItaly = utcToItalianTime(p.start);
+                const stopItaly = utcToItalianTime(p.stop);
+                return `• ${formatTimeItalian(startItaly)} - ${formatTimeItalian(stopItaly)} (${formatDuration(p.duration)})`;
+            }).join('\n');
             
             document.getElementById('detailDescription').textContent = `Episodi:\n${episodesList}`;
             
@@ -1435,7 +1504,7 @@
                 
                 // Show format rank by duration
                 const allFormats = Object.values(formatColors).length;
-                const formatRank = Object.values(formatGroups)
+                const formatRank = Object.values(window.formatGroups)
                     .sort((a, b) => b.totalDuration - a.totalDuration)
                     .findIndex(f => f.title === formatNode.title) + 1;
                 
@@ -1446,11 +1515,14 @@
                 const areaPercent = (area / totalArea) * 100;
                 document.getElementById('previewArea').textContent = `${percentage}% del tempo`;
                 
-                // Show time slots
+                // Show time slots in Italian time
                 const timeSlots = formatNode.programs
                     .sort((a, b) => a.start - b.start)
                     .slice(0, 3)
-                    .map(p => formatTimeUTC(p.start))
+                    .map(p => {
+                        const italianTime = utcToItalianTime(p.start);
+                        return formatTimeItalian(italianTime);
+                    })
                     .join(', ');
                 
                 document.getElementById('previewDesc').textContent = `Orari: ${timeSlots}${formatNode.programs.length > 3 ? '...' : ''}`;
@@ -1480,9 +1552,6 @@
             }, 300);
         }
 
-        // Add global variable to store format groups
-        let formatGroups = {};
-
         function hideProgramPreview() {
             if (currentPreviewTimeout) {
                 clearTimeout(currentPreviewTimeout);
@@ -1494,7 +1563,11 @@
         function showProgramDetails(program) {
             document.getElementById('programDetails').style.display = 'block';
             document.getElementById('detailTitle').textContent = program.title;
-            document.getElementById('detailTime').textContent = `${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`;
+            
+            const startItaly = utcToItalianTime(program.start);
+            const stopItaly = utcToItalianTime(program.stop);
+            
+            document.getElementById('detailTime').textContent = `${formatTimeItalian(startItaly)} - ${formatTimeItalian(stopItaly)}`;
             document.getElementById('detailDuration').textContent = formatDuration(program.duration);
             document.getElementById('detailCategory').textContent = program.category || '-';
             document.getElementById('detailDescription').textContent = program.desc || '-';
@@ -1522,8 +1595,11 @@
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-gray-50 transition-colors';
                 
-                const startTimeStr = `${program.start.getUTCHours().toString().padStart(2, '0')}:${program.start.getUTCMinutes().toString().padStart(2, '0')}`;
-                const stopTimeStr = `${program.stop.getUTCHours().toString().padStart(2, '0')}:${program.stop.getUTCMinutes().toString().padStart(2, '0')}`;
+                const startItaly = utcToItalianTime(program.start);
+                const stopItaly = utcToItalianTime(program.stop);
+                
+                const startTimeStr = `${startItaly.getHours().toString().padStart(2, '0')}:${startItaly.getMinutes().toString().padStart(2, '0')}`;
+                const stopTimeStr = `${stopItaly.getHours().toString().padStart(2, '0')}:${stopItaly.getMinutes().toString().padStart(2, '0')}`;
                 
                 row.innerHTML = `
                     <td class="px-4 py-3">
@@ -1615,16 +1691,17 @@
         }
 
         function getCurrentDayPrograms() {
-            const dayStart = new Date(scheduleDate);
-            dayStart.setUTCHours(21, 0, 0, 0);
-            dayStart.setUTCDate(dayStart.getUTCDate() - 1);
+            // Calcola l'inizio del giorno in UTC
+            const dayStartUTC = new Date(scheduleDate);
+            const offset = getItalianOffset(dayStartUTC);
+            dayStartUTC.setUTCHours(-offset, 0, 0, 0);
             
-            const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCHours(21, 0, 0, 0);
+            const dayEndUTC = new Date(dayStartUTC);
+            dayEndUTC.setUTCHours(dayEndUTC.getUTCHours() + 24);
             
             return currentPrograms.filter(p => {
-                return (p.start >= dayStart && p.start < dayEnd) || 
-                       (p.start < dayStart && p.stop > dayStart);
+                return (p.start >= dayStartUTC && p.start < dayEndUTC) || 
+                       (p.start < dayStartUTC && p.stop > dayStartUTC);
             }).sort((a, b) => a.start - b.start);
         }
 
@@ -1687,20 +1764,31 @@
             if (!program) return;
             
             const [hours, minutes] = newTime.split(':').map(Number);
-            const newDate = new Date(program[timeType === 'start' ? 'start' : 'stop']);
-            newDate.setUTCHours(hours, minutes, 0, 0);
+            
+            // Crea una data italiana basata sulla data del palinsesto
+            const italianDate = new Date(scheduleDate);
+            italianDate.setHours(hours, minutes, 0, 0);
+            
+            // Se l'orario è nelle prime ore del mattino, potrebbe essere del giorno dopo
+            if (hours < 6 && timeType === 'stop') {
+                italianDate.setDate(italianDate.getDate() + 1);
+            }
+            
+            // Converti in UTC
+            const newUTCDate = italianToUTCTime(italianDate, program[timeType]);
             
             // Ensure stop time is after start time
-            if (timeType === 'stop' && newDate <= program.start) {
-                newDate.setUTCDate(newDate.getUTCDate() + 1);
+            if (timeType === 'stop' && newUTCDate <= program.start) {
+                showToast('L\'ora di fine deve essere dopo l\'ora di inizio', 'error');
+                return;
             }
             
             if (timeType === 'start') {
-                program.start = newDate;
-                program.element.setAttribute('start', formatXMLTVDate(newDate));
+                program.start = newUTCDate;
+                program.element.setAttribute('start', formatXMLTVDate(newUTCDate));
             } else {
-                program.stop = newDate;
-                program.element.setAttribute('stop', formatXMLTVDate(newDate));
+                program.stop = newUTCDate;
+                program.element.setAttribute('stop', formatXMLTVDate(newUTCDate));
             }
             
             program.duration = (program.stop - program.start) / 1000;
@@ -1737,8 +1825,12 @@
             if (lastProgram) {
                 newStart = new Date(lastProgram.stop);
             } else {
+                // Inizia alle 6:00 ora italiana
                 newStart = new Date(scheduleDate);
-                newStart.setUTCHours(6, 0, 0, 0);
+                newStart.setHours(6, 0, 0, 0);
+                // Converti in UTC
+                const offset = getItalianOffset(newStart);
+                newStart = new Date(newStart.getTime() - offset * 60 * 60 * 1000);
             }
             
             const newStop = new Date(newStart);
@@ -1802,7 +1894,7 @@
         function actualizeSchedule() {
             const newStartDateStr = document.getElementById('newStartDate').value;
             const [year, month, day] = newStartDateStr.split('-').map(Number);
-            const newStartDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+            const newStartDate = new Date(year, month - 1, day);
             
             const dayDiff = Math.floor((newStartDate - scheduleDate) / (1000 * 60 * 60 * 24));
             
@@ -1831,7 +1923,7 @@
             
             // Update schedule date
             scheduleDate = newStartDate;
-            document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
+            document.getElementById('scheduleDate').textContent = formatDateItalian(scheduleDate);
             
             // Reload programs
             loadPrograms();
@@ -1860,14 +1952,14 @@
         }
 
         // Utility functions
-        function formatDateUTC(date) {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
+        function formatDateItalian(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             return date.toLocaleDateString('it-IT', options);
         }
 
-        function formatTimeUTC(date) {
-            const hours = date.getUTCHours().toString().padStart(2, '0');
-            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        function formatTimeItalian(date) {
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
             return `${hours}:${minutes}`;
         }
 
@@ -1916,11 +2008,8 @@
 
         // Show info
         function showInfo() {
-            alert(`XMLTV Viewer v${APP_VERSION}\n\nTreemap Aggregato per Format\n\nNuove Funzionalità v4.1:\n- CONTRASTI MIGLIORATI per modalità chiara\n- Visualizzazione TREEMAP AGGREGATA: ogni format ha un unico rettangolo\n- L'area di ogni rettangolo è proporzionale al tempo totale del format\n- Mostra numero episodi, ore totali e percentuale per format\n- Icone format visibili nei rettangoli (quando disponibili)\n- 3 algoritmi di layout: Squarify, Binary, Slice & Dice\n- Indicatore di riempimento con codice colore\n- Gap visualizzati con pattern rosso tratteggiato\n- Click su un format mostra tutti gli episodi\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
+            alert(`XMLTV Viewer v${APP_VERSION}\n\nTreemap Aggregato per Format con Timezone Italia\n\nNuove Funzionalità v4.2.0:\n- CORREZIONE TIMEZONE: Mostra orari locali italiani (CET/CEST)\n- Rilevamento automatico ora legale/solare italiana\n- Palinsesto inizia alle 00:00 ora italiana\n- Conversione automatica da/verso UTC per export\n- Editor programmi con orari italiani\n- Statistiche basate su giornata italiana\n\nFunzionalità esistenti:\n- Visualizzazione TREEMAP AGGREGATA per format\n- 3 algoritmi di layout: Squarify, Binary, Slice & Dice\n- Editor inline programmi\n- Attualizzazione date palinsesto\n- Export XMLTV con orari UTC corretti\n\nSviluppato per Class CNBC e Class TV Moda`);
         }
 
         // Initialize
-        console.log('XMLTV Viewer v4.0 - Treemap Sequential Timeline ready!');
-    </script>
-</body>
-</html>
+        console.log('XMLTV Viewer v4.2.0 - Treemap Sequential Timeline with Italian Timezone ready!');
