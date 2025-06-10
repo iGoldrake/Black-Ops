@@ -35,14 +35,16 @@ class EPGConverter {
                 tvmoda: {},
                 classcnbc: {}
             },
-            options: {
-                fillGaps: true,
-                validateData: false,
-                debugMode: false,
-                useRealDates: true
-            },
             categoryMapping: {},
             ratingMapping: {}
+        };
+        
+        // Options (separate from config for clarity)
+        this.options = {
+            fillGaps: true,
+            validateData: false,
+            debugMode: false,
+            useRealDates: true
         };
         
         // Initialize managers
@@ -453,7 +455,7 @@ class EPGConverter {
         this.log(`- Nome Canale: ${params.channelName}`);
         this.log(`- Timezone input: UTC${params.timezoneOffset >= 0 ? '+' : ''}${params.timezoneOffset}`);
         this.log(`- Output: UTC (conversione automatica)`);
-        this.log(`- Gap filling: ${this.config.options.fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
+        this.log(`- Gap filling: ${this.options.fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
         this.log(`- Date da processare: ${this.state.detectedDates.length}`);
         
         try {
@@ -571,11 +573,11 @@ class EPGConverter {
      * Toggle option
      */
     toggleOption(optionName) {
-        this.config.options[optionName] = !this.config.options[optionName];
+        this.options[optionName] = !this.options[optionName];
         const toggle = document.getElementById(optionName);
-        toggle.classList.toggle('active', this.config.options[optionName]);
+        toggle.classList.toggle('active', this.options[optionName]);
         
-        this.log(`⚙️ ${optionName}: ${this.config.options[optionName] ? 'ATTIVO' : 'DISATTIVO'}`);
+        this.log(`⚙️ ${optionName}: ${this.options[optionName] ? 'ATTIVO' : 'DISATTIVO'}`);
         this.savePreferences();
     }
     
@@ -799,7 +801,7 @@ class EPGConverter {
      */
     savePreferences() {
         const prefs = {
-            options: this.config.options,
+            options: this.options,
             lastChannel: this.state.currentChannel
         };
         localStorage.setItem('epg-preferences', JSON.stringify(prefs));
@@ -816,13 +818,13 @@ class EPGConverter {
                 
                 // Apply options
                 if (prefs.options) {
-                    Object.assign(this.config.options, prefs.options);
+                    Object.assign(this.options, prefs.options);
                     
                     // Update UI
-                    Object.keys(this.config.options).forEach(key => {
+                    Object.keys(this.options).forEach(key => {
                         const toggle = document.getElementById(key);
                         if (toggle) {
-                            toggle.classList.toggle('active', this.config.options[key]);
+                            toggle.classList.toggle('active', this.options[key]);
                         }
                     });
                 }

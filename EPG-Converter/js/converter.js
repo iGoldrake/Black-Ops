@@ -37,10 +37,12 @@ export class XMLTVGenerator {
         // Se siamo a UTC+2 (Roma estate), le 00:00 locali sono le 22:00 UTC del giorno prima
         // Se siamo a UTC+1 (Roma inverno), le 00:00 locali sono le 23:00 UTC del giorno prima
         
-        // Log per debug del parametro
-        if (this.app.config.options.debugMode && !this._offsetLogged) {
-            this.app.log(`🕐 Timezone offset ricevuto: ${timezoneOffset} (tipo: ${typeof timezoneOffset})`);
-            this._offsetLogged = true;
+        // TEMPORANEO: Log sempre attivo per debug
+        if (!this._firstLogDone) {
+            this.app.log(`\n🕐 DEBUG CONVERSIONE ORARI:`);
+            this.app.log(`- Timezone offset ricevuto: ${timezoneOffset} (tipo: ${typeof timezoneOffset})`);
+            this.app.log(`- Formula: Ora UTC = Ora Locale - ${timezoneOffset} ore`);
+            this._firstLogDone = true;
         }
         
         // Creiamo una nuova data sottraendo l'offset in millisecondi
@@ -55,10 +57,13 @@ export class XMLTVGenerator {
         const minutes = String(utcDate.getUTCMinutes()).padStart(2, '0');
         const seconds = String(utcDate.getUTCSeconds()).padStart(2, '0');
         
-        if (this.app.config.options.debugMode) {
+        // TEMPORANEO: Log dei primi 3 programmi per debug
+        if (!this._logCount) this._logCount = 0;
+        if (this._logCount < 3) {
             const localStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
             const utcStr = `${day}/${month}/${year} ${hours}:${minutes}`;
-            this.app.log(`📅 Conversione: ${localStr} (UTC+${timezoneOffset}) → ${utcStr} UTC`);
+            this.app.log(`📅 Esempio ${this._logCount + 1}: ${localStr} (UTC+${timezoneOffset}) → ${utcStr} UTC`);
+            this._logCount++;
         }
         
         return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
