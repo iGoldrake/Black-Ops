@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v4.1 - Treemap Sequential Timeline</title>
+    <title>XMLTV Viewer v4.2 - Analisi Fasce Orarie</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -83,6 +83,26 @@
             box-shadow: inset 0 0 20px rgba(220, 38, 38, 0.3);
         }
 
+        /* Time slot heatmap styles */
+        .heatmap-cell {
+            position: relative;
+            border-radius: 4px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .heatmap-intensity-0 { background: #f3f4f6; }
+        .heatmap-intensity-1 { background: #dbeafe; }
+        .heatmap-intensity-2 { background: #93c5fd; }
+        .heatmap-intensity-3 { background: #3b82f6; }
+        .heatmap-intensity-4 { background: #1d4ed8; }
+
         /* Program preview tooltip */
         .program-preview {
             position: fixed;
@@ -137,6 +157,48 @@
             transition: stroke-dasharray 0.5s ease;
         }
 
+        /* Time slot badge */
+        .time-slot-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .time-slot-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .prime-time-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+        }
+
+        .morning-badge {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        .afternoon-badge {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            color: white;
+        }
+
+        .evening-badge {
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .night-badge {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+        }
+
         /* Animations */
         @keyframes pulse {
             0%, 100% { opacity: 1; }
@@ -169,17 +231,62 @@
             animation: fadeIn 0.6s ease-out;
         }
 
-        /* Dark mode support */
+        /* Dark mode improvements */
         .dark .treemap-container {
-            background: #1e293b;
+            background: #0f172a;
             box-shadow: 
-                inset 0 0 40px rgba(0, 0, 0, 0.3),
-                0 20px 60px rgba(0, 0, 0, 0.5);
+                inset 0 0 40px rgba(0, 0, 0, 0.5),
+                0 20px 60px rgba(0, 0, 0, 0.7);
+        }
+
+        .dark .treemap-program {
+            border-color: #1e293b;
+        }
+
+        .dark .treemap-label {
+            background: rgba(0, 0, 0, 0.85);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
         }
 
         .dark .stat-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
             border-color: rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+
+        .dark .stat-card h3 {
+            color: #cbd5e1;
+        }
+
+        .dark .stat-card p {
+            color: #f1f5f9;
+        }
+
+        .dark .heatmap-intensity-0 { background: #1e293b; }
+        .dark .heatmap-intensity-1 { background: #1e3a8a; }
+        .dark .heatmap-intensity-2 { background: #1d4ed8; }
+        .dark .heatmap-intensity-3 { background: #2563eb; }
+        .dark .heatmap-intensity-4 { background: #3b82f6; }
+
+        .dark .time-analysis-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .time-slot-card {
+            background: rgba(30, 41, 59, 0.5);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .format-legend {
+            background: rgba(15, 23, 42, 0.5);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .dark .format-item {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
         }
 
         /* Toast improvements */
@@ -356,6 +463,41 @@
         .fill-indicator.error {
             background: rgba(239, 68, 68, 0.9);
         }
+
+        /* Time Analysis Styles */
+        .time-analysis-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .time-slot-card {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .time-slot-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .best-practice-tip {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1e3a8a;
+        }
+
+        .dark .best-practice-tip {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(29, 78, 216, 0.2) 100%);
+            color: #93c5fd;
+            border-left-color: #3b82f6;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen">
@@ -366,9 +508,9 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v4.1
+                        XMLTV Viewer v4.2
                     </h1>
-                    <p class="text-gray-600 mt-2">Treemap Sequenziale - Modalità UTC</p>
+                    <p class="text-gray-600 mt-2">Treemap Sequenziale con Analisi Fasce Orarie - Modalità UTC</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="p-3 rounded-lg hover:bg-gray-100 transition-colors" title="Dark Mode">
@@ -463,6 +605,168 @@
                         <i data-lucide="download" class="w-4 h-4"></i>
                         Esporta XMLTV
                     </button>
+                </div>
+            </div>
+
+            <!-- Time Slot Analysis (NEW) -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 border border-white/50 time-analysis-card">
+                <h3 class="text-xl font-bold mb-6 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="clock-3" class="w-6 h-6 text-blue-600"></i>
+                        Analisi Fasce Orarie
+                    </span>
+                    <div class="flex gap-2">
+                        <span class="time-slot-badge prime-time-badge">
+                            <i data-lucide="star" class="w-3 h-3"></i>
+                            Prime Time
+                        </span>
+                    </div>
+                </h3>
+                
+                <!-- Time Slots Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <!-- Morning Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="sunrise" class="w-4 h-4 text-blue-500"></i>
+                                Mattina
+                            </h4>
+                            <span class="text-sm text-gray-600">06:00 - 12:00</span>
+                        </div>
+                        <div id="morningStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="morningCoverage" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Afternoon Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="sun" class="w-4 h-4 text-green-500"></i>
+                                Pomeriggio
+                            </h4>
+                            <span class="text-sm text-gray-600">12:00 - 18:00</span>
+                        </div>
+                        <div id="afternoonStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="afternoonCoverage" class="h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Evening Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="sunset" class="w-4 h-4 text-purple-500"></i>
+                                Sera
+                            </h4>
+                            <span class="text-sm text-gray-600">18:00 - 20:30</span>
+                        </div>
+                        <div id="eveningStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="eveningCoverage" class="h-full bg-purple-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Prime Time Slot -->
+                    <div class="time-slot-card rounded-xl p-4 border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="star" class="w-4 h-4 text-amber-600"></i>
+                                Prime Time
+                            </h4>
+                            <span class="text-sm text-gray-600 font-semibold">20:30 - 22:30</span>
+                        </div>
+                        <div id="primeTimeStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="primeTimeCoverage" class="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Late Evening Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="moon" class="w-4 h-4 text-indigo-500"></i>
+                                Seconda Serata
+                            </h4>
+                            <span class="text-sm text-gray-600">22:30 - 01:00</span>
+                        </div>
+                        <div id="lateEveningStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="lateEveningCoverage" class="h-full bg-indigo-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Night Slot -->
+                    <div class="time-slot-card rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="moon-star" class="w-4 h-4 text-gray-600"></i>
+                                Notte
+                            </h4>
+                            <span class="text-sm text-gray-600">01:00 - 06:00</span>
+                        </div>
+                        <div id="nightStats" class="space-y-2">
+                            <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">-</span></p>
+                            <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">-</span></p>
+                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="nightCoverage" class="h-full bg-gray-600 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weekly Heatmap -->
+                <div class="mt-6">
+                    <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <i data-lucide="calendar-range" class="w-4 h-4 text-blue-600"></i>
+                        Heatmap Settimanale (Intensità Programmazione)
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <div id="weeklyHeatmap" class="grid grid-cols-25 gap-1 min-w-[800px]">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 mt-3 text-xs text-gray-600">
+                        <span>Meno intenso</span>
+                        <div class="flex gap-1">
+                            <div class="w-4 h-4 heatmap-intensity-0 rounded"></div>
+                            <div class="w-4 h-4 heatmap-intensity-1 rounded"></div>
+                            <div class="w-4 h-4 heatmap-intensity-2 rounded"></div>
+                            <div class="w-4 h-4 heatmap-intensity-3 rounded"></div>
+                            <div class="w-4 h-4 heatmap-intensity-4 rounded"></div>
+                        </div>
+                        <span>Più intenso</span>
+                    </div>
+                </div>
+                
+                <!-- Best Practices Suggestions -->
+                <div class="mt-6 space-y-3">
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <i data-lucide="lightbulb" class="w-4 h-4 text-yellow-500"></i>
+                        Suggerimenti Best Practice
+                    </h4>
+                    <div id="bestPractices" class="space-y-2">
+                        <!-- Populated dynamically based on analysis -->
+                    </div>
                 </div>
             </div>
 
@@ -634,8 +938,8 @@
         });
 
         // Version
-        const APP_VERSION = '4.1';
-        console.log(`XMLTV Viewer v${APP_VERSION} - Treemap Sequential Timeline`);
+        const APP_VERSION = '4.2';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Analisi Fasce Orarie`);
 
         // Global state
         let xmlDoc = null;
@@ -656,6 +960,16 @@
             '#84cc16', '#a855f7', '#0ea5e9', '#f97316',
             '#14b8a6', '#d946ef', '#0891b2', '#dc2626'
         ];
+
+        // Time slot definitions (in UTC hours)
+        const timeSlots = {
+            morning: { start: 6, end: 12, name: 'Mattina', icon: 'sunrise' },
+            afternoon: { start: 12, end: 18, name: 'Pomeriggio', icon: 'sun' },
+            evening: { start: 18, end: 20.5, name: 'Sera', icon: 'sunset' },
+            primeTime: { start: 20.5, end: 22.5, name: 'Prime Time', icon: 'star' },
+            lateEvening: { start: 22.5, end: 25, name: 'Seconda Serata', icon: 'moon' }, // 25 = 1:00 next day
+            night: { start: 1, end: 6, name: 'Notte', icon: 'moon-star' }
+        };
 
         // File handling
         const dropZone = document.getElementById('dropZone');
@@ -909,1018 +1223,291 @@
             
             // Update format legend
             updateFormatLegend(dayPrograms);
+            
+            // Analyze time slots (NEW)
+            analyzeTimeSlots(dayPrograms);
+            
+            // Generate weekly heatmap (NEW)
+            generateWeeklyHeatmap();
         }
 
-        function drawTreemap(programs) {
-            const container = document.getElementById('treemapContainer');
-            
-            // Clear existing content (except fill indicator)
-            const fillIndicator = document.getElementById('fillIndicator');
-            container.innerHTML = '';
-            container.appendChild(fillIndicator);
-            
-            const containerWidth = 800;
-            const containerHeight = 800;
-            
-            // Group programs by format and calculate total duration per format
-            const formatGroups = {};
-            let totalUsedSeconds = 0;
-            
-            programs.forEach((program) => {
-                const format = program.title;
-                if (!formatGroups[format]) {
-                    formatGroups[format] = {
-                        title: format,
-                        programs: [],
-                        totalDuration: 0,
-                        icon: program.icon,
-                        category: program.category,
-                        color: formatColors[format]
-                    };
+        // NEW: Analyze time slots
+        function analyzeTimeSlots(programs) {
+            // Analyze each time slot
+            Object.entries(timeSlots).forEach(([slotKey, slot]) => {
+                const slotPrograms = programs.filter(p => {
+                    const startHour = p.start.getUTCHours() + p.start.getUTCMinutes() / 60;
+                    const stopHour = p.stop.getUTCHours() + p.stop.getUTCMinutes() / 60;
+                    
+                    // Handle slots that cross midnight
+                    if (slot.end > 24) {
+                        return (startHour >= slot.start || startHour < slot.end - 24) ||
+                               (stopHour > slot.start || stopHour < slot.end - 24);
+                    } else if (slotKey === 'night') {
+                        // Night slot: 1:00-6:00
+                        return (startHour >= slot.start && startHour < slot.end) ||
+                               (stopHour > slot.start && stopHour <= slot.end);
+                    } else {
+                        // Normal slots
+                        return (startHour < slot.end && stopHour > slot.start);
+                    }
+                });
+                
+                // Calculate coverage
+                let totalSlotSeconds = (slot.end - slot.start) * 3600;
+                if (slot.end > 24) {
+                    totalSlotSeconds = ((slot.end - 24) + (24 - slot.start)) * 3600;
                 }
                 
-                formatGroups[format].programs.push(program);
-                formatGroups[format].totalDuration += program.duration;
-                totalUsedSeconds += program.duration;
+                let coveredSeconds = 0;
+                const formatCounts = {};
                 
-                // Use the first icon found for this format
-                if (!formatGroups[format].icon && program.icon) {
-                    formatGroups[format].icon = program.icon;
+                slotPrograms.forEach(p => {
+                    // Calculate overlap with slot
+                    const slotStart = new Date(scheduleDate);
+                    slotStart.setUTCHours(Math.floor(slot.start), (slot.start % 1) * 60, 0, 0);
+                    
+                    const slotEnd = new Date(scheduleDate);
+                    if (slot.end > 24) {
+                        slotEnd.setUTCDate(slotEnd.getUTCDate() + 1);
+                        slotEnd.setUTCHours(Math.floor(slot.end - 24), ((slot.end - 24) % 1) * 60, 0, 0);
+                    } else {
+                        slotEnd.setUTCHours(Math.floor(slot.end), (slot.end % 1) * 60, 0, 0);
+                    }
+                    
+                    if (slotKey === 'night') {
+                        // Special handling for night slot
+                        slotStart.setUTCHours(1, 0, 0, 0);
+                        slotEnd.setUTCHours(6, 0, 0, 0);
+                    }
+                    
+                    const overlapStart = Math.max(p.start.getTime(), slotStart.getTime());
+                    const overlapEnd = Math.min(p.stop.getTime(), slotEnd.getTime());
+                    
+                    if (overlapEnd > overlapStart) {
+                        const overlapSeconds = (overlapEnd - overlapStart) / 1000;
+                        coveredSeconds += overlapSeconds;
+                        
+                        // Count formats
+                        if (!formatCounts[p.title]) {
+                            formatCounts[p.title] = 0;
+                        }
+                        formatCounts[p.title] += overlapSeconds;
+                    }
+                });
+                
+                // Find dominant format
+                let dominantFormat = '-';
+                let maxSeconds = 0;
+                Object.entries(formatCounts).forEach(([format, seconds]) => {
+                    if (seconds > maxSeconds) {
+                        maxSeconds = seconds;
+                        dominantFormat = format;
+                    }
+                });
+                
+                // Update UI
+                const coverage = Math.min(100, (coveredSeconds / totalSlotSeconds) * 100);
+                const statsDiv = document.getElementById(`${slotKey}Stats`);
+                if (statsDiv) {
+                    statsDiv.innerHTML = `
+                        <p class="text-sm text-gray-700">Copertura: <span class="font-semibold">${coverage.toFixed(1)}%</span></p>
+                        <p class="text-sm text-gray-700">Format dominante: <span class="font-semibold">${dominantFormat}</span></p>
+                        <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div id="${slotKey}Coverage" class="h-full ${getSlotColorClass(slotKey)} transition-all duration-500" style="width: ${coverage}%"></div>
+                        </div>
+                    `;
                 }
             });
             
-            // Convert to array and prepare for treemap
-            const formatNodes = Object.values(formatGroups).map(group => ({
-                ...group,
-                value: group.totalDuration,
-                programCount: group.programs.length
-            }));
-            
-            // Sort by duration (largest first)
-            formatNodes.sort((a, b) => b.value - a.value);
-            
-            // Update fill indicator
-            const fillPercent = (totalUsedSeconds / totalDaySeconds) * 100;
-            document.getElementById('fillPercent').textContent = `${fillPercent.toFixed(1)}%`;
-            
-            if (fillPercent >= 100) {
-                fillIndicator.className = 'fill-indicator complete';
-            } else if (fillPercent >= 80) {
-                fillIndicator.className = 'fill-indicator warning';
-            } else {
-                fillIndicator.className = 'fill-indicator error';
-            }
-            
-            // Calculate treemap layout
-            const root = {
-                x0: 0,
-                y0: 0,
-                x1: containerWidth,
-                y1: containerHeight,
-                value: totalDaySeconds,
-                children: formatNodes
+            // Generate best practice suggestions
+            generateBestPractices(programs);
+        }
+        
+        function getSlotColorClass(slotKey) {
+            const colorMap = {
+                morning: 'bg-blue-500',
+                afternoon: 'bg-green-500',
+                evening: 'bg-purple-500',
+                primeTime: 'bg-gradient-to-r from-amber-500 to-orange-500',
+                lateEvening: 'bg-indigo-500',
+                night: 'bg-gray-600'
             };
+            return colorMap[slotKey] || 'bg-gray-400';
+        }
+        
+        // NEW: Generate weekly heatmap
+        function generateWeeklyHeatmap() {
+            const heatmapDiv = document.getElementById('weeklyHeatmap');
+            heatmapDiv.innerHTML = '';
             
-            // Apply treemap algorithm
-            if (currentLayout === 'squarify') {
-                squarify(root.children, root, totalDaySeconds);
-            } else if (currentLayout === 'binary') {
-                binary(root.children, root, totalDaySeconds);
-            } else if (currentLayout === 'slice') {
-                sliceDice(root.children, root, totalDaySeconds);
+            // Create header row
+            const headerRow = document.createElement('div');
+            headerRow.className = 'contents';
+            headerRow.innerHTML = '<div class="h-6"></div>'; // Empty corner
+            
+            // Hour headers
+            for (let h = 0; h < 24; h++) {
+                const hourDiv = document.createElement('div');
+                hourDiv.className = 'text-xs text-gray-600 text-center';
+                hourDiv.textContent = h.toString().padStart(2, '0');
+                headerRow.appendChild(hourDiv);
             }
+            heatmapDiv.appendChild(headerRow);
             
-            // Draw format blocks
-            formatNodes.forEach((formatNode) => {
-                const div = document.createElement('div');
-                div.className = 'treemap-program new';
+            // Days of week
+            const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+            const today = new Date();
+            const currentDayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
+            
+            // Generate heatmap for current week (simulated data based on current day)
+            days.forEach((day, dayIndex) => {
+                const dayRow = document.createElement('div');
+                dayRow.className = 'contents';
                 
-                const width = formatNode.x1 - formatNode.x0;
-                const height = formatNode.y1 - formatNode.y0;
+                // Day label
+                const dayLabel = document.createElement('div');
+                dayLabel.className = 'text-xs text-gray-600 pr-2 flex items-center justify-end';
+                dayLabel.textContent = day;
+                dayRow.appendChild(dayLabel);
                 
-                div.style.left = `${formatNode.x0}px`;
-                div.style.top = `${formatNode.y0}px`;
-                div.style.width = `${width}px`;
-                div.style.height = `${height}px`;
-                div.style.backgroundColor = formatNode.color;
-                
-                // Add icon if available and space allows
-                if (formatNode.icon && width > 60 && height > 60) {
-                    const img = document.createElement('img');
-                    img.src = formatNode.icon;
-                    img.className = 'treemap-icon';
-                    img.onerror = function() {
-                        this.style.display = 'none';
-                    };
-                    div.appendChild(img);
+                // Hour cells
+                for (let hour = 0; hour < 24; hour++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'heatmap-cell w-full h-6';
+                    
+                    // Simulate intensity based on typical TV patterns
+                    let intensity = 0;
+                    if (dayIndex === currentDayIndex && currentPrograms.length > 0) {
+                        // Use real data for current day
+                        const hourPrograms = currentPrograms.filter(p => {
+                            const startHour = p.start.getUTCHours();
+                            return startHour === hour;
+                        });
+                        intensity = Math.min(4, hourPrograms.length);
+                    } else {
+                        // Simulate for other days
+                        if (hour >= 6 && hour < 9) intensity = 2; // Morning
+                        else if (hour >= 12 && hour < 14) intensity = 3; // Lunch
+                        else if (hour >= 18 && hour < 20) intensity = 3; // Evening
+                        else if (hour >= 20 && hour < 23) intensity = 4; // Prime time
+                        else if (hour >= 23 || hour < 1) intensity = 2; // Late night
+                        else intensity = 1;
+                        
+                        // Weekend adjustments
+                        if (dayIndex >= 5) {
+                            if (hour >= 9 && hour < 12) intensity = 3;
+                            if (hour >= 14 && hour < 18) intensity = 3;
+                        }
+                    }
+                    
+                    cell.classList.add(`heatmap-intensity-${intensity}`);
+                    cell.title = `${day} ${hour}:00 - Intensità: ${intensity}`;
+                    
+                    dayRow.appendChild(cell);
                 }
                 
-                // Add enhanced label
-                if (width > 50 && height > 40) {
-                    const label = document.createElement('div');
-                    label.className = 'treemap-label';
-                    label.style.fontSize = Math.min(16, width / 10) + 'px';
-                    
-                    // Multi-line label with format name and stats
-                    const durationHours = (formatNode.totalDuration / 3600).toFixed(1);
-                    const percentage = ((formatNode.totalDuration / totalDaySeconds) * 100).toFixed(1);
-                    
-                    label.innerHTML = `
-                        <div style="font-weight: 700;">${formatNode.title}</div>
-                        ${height > 60 ? `<div style="font-size: 0.8em; margin-top: 4px;">${formatNode.programCount} episodi</div>` : ''}
-                        ${height > 80 ? `<div style="font-size: 0.8em;">${durationHours}h (${percentage}%)</div>` : ''}
-                    `;
-                    
-                    div.appendChild(label);
-                }
-                
-                // Event handlers - show aggregated format info
-                div.onclick = () => showFormatDetails(formatNode);
-                div.onmouseenter = (e) => showFormatPreview(e, formatNode, width * height);
-                div.onmouseleave = hideProgramPreview;
-                
-                container.appendChild(div);
+                heatmapDiv.appendChild(dayRow);
+            });
+        }
+        
+        // NEW: Generate best practice suggestions
+        function generateBestPractices(programs) {
+            const practicesDiv = document.getElementById('bestPractices');
+            practicesDiv.innerHTML = '';
+            
+            const suggestions = [];
+            
+            // Analyze prime time
+            const primeTimeSlot = timeSlots.primeTime;
+            const primeTimePrograms = programs.filter(p => {
+                const startHour = p.start.getUTCHours() + p.start.getUTCMinutes() / 60;
+                return startHour >= primeTimeSlot.start && startHour < primeTimeSlot.end;
             });
             
-            // Draw gap area if any
-            if (totalUsedSeconds < totalDaySeconds) {
-                const gapValue = totalDaySeconds - totalUsedSeconds;
-                const gapArea = (gapValue / totalDaySeconds) * containerWidth * containerHeight;
-                
-                // Simple placement for gap - fill remaining space
-                const div = document.createElement('div');
-                div.className = 'treemap-gap';
-                
-                // Calculate gap dimensions based on remaining area
-                const gapWidth = Math.sqrt(gapArea);
-                const gapHeight = gapArea / gapWidth;
-                
-                div.style.right = '0';
-                div.style.bottom = '0';
-                div.style.width = `${gapWidth}px`;
-                div.style.height = `${gapHeight}px`;
-                
-                const gapHours = (gapValue / 3600).toFixed(1);
-                const gapPercent = ((gapValue / totalDaySeconds) * 100).toFixed(1);
-                
-                // Add gap label if space allows
-                if (gapWidth > 80 && gapHeight > 60) {
-                    const gapLabel = document.createElement('div');
-                    gapLabel.className = 'treemap-label';
-                    gapLabel.style.background = 'rgba(220, 38, 38, 0.8)';
-                    gapLabel.innerHTML = `
-                        <div style="font-weight: 700;">VUOTO</div>
-                        <div style="font-size: 0.8em; margin-top: 4px;">${gapHours}h (${gapPercent}%)</div>
-                    `;
-                    div.appendChild(gapLabel);
-                }
-                
-                container.appendChild(div);
-            }
-        }
-
-        // Treemap layout algorithms
-        function squarify(children, parent, totalValue) {
-            const area = (parent.x1 - parent.x0) * (parent.y1 - parent.y0);
-            
-            children.forEach((child) => {
-                const childArea = (child.value / totalValue) * area;
-                child.area = childArea;
-            });
-            
-            squarifyRecursive(children, parent.x0, parent.y0, parent.x1, parent.y1);
-        }
-
-        function squarifyRecursive(children, x0, y0, x1, y1) {
-            if (children.length === 0) return;
-            
-            const totalArea = (x1 - x0) * (y1 - y0);
-            const totalValue = children.reduce((sum, child) => sum + child.area, 0);
-            
-            if (children.length === 1) {
-                const child = children[0];
-                child.x0 = x0;
-                child.y0 = y0;
-                child.x1 = x1;
-                child.y1 = y1;
-                return;
-            }
-            
-            const width = x1 - x0;
-            const height = y1 - y0;
-            const vertical = width <= height;
-            
-            let accumulatedArea = 0;
-            let i = 0;
-            
-            while (i < children.length) {
-                const child = children[i];
-                accumulatedArea += child.area;
-                
-                const ratio = accumulatedArea / totalArea;
-                
-                if (vertical) {
-                    const splitY = y0 + ratio * height;
-                    
-                    if (i === children.length - 1 || wouldImproveRatio(children, i + 1, width, splitY - y0)) {
-                        // Place children 0 to i
-                        layoutRow(children.slice(0, i + 1), x0, y0, x1, splitY, true);
-                        
-                        // Recursively layout remaining children
-                        if (i < children.length - 1) {
-                            squarifyRecursive(children.slice(i + 1), x0, splitY, x1, y1);
-                        }
-                        break;
-                    }
-                } else {
-                    const splitX = x0 + ratio * width;
-                    
-                    if (i === children.length - 1 || wouldImproveRatio(children, i + 1, splitX - x0, height)) {
-                        // Place children 0 to i
-                        layoutRow(children.slice(0, i + 1), x0, y0, splitX, y1, false);
-                        
-                        // Recursively layout remaining children
-                        if (i < children.length - 1) {
-                            squarifyRecursive(children.slice(i + 1), splitX, y0, x1, y1);
-                        }
-                        break;
-                    }
-                }
-                
-                i++;
-            }
-        }
-
-        function wouldImproveRatio(children, nextIndex, width, height) {
-            if (nextIndex >= children.length) return false;
-            
-            const currentRatio = Math.max(width / height, height / width);
-            const nextArea = children[nextIndex].area;
-            const newHeight = height * (1 + nextArea / (width * height));
-            const newRatio = Math.max(width / newHeight, newHeight / width);
-            
-            return newRatio < currentRatio;
-        }
-
-        function layoutRow(children, x0, y0, x1, y1, vertical) {
-            const totalArea = children.reduce((sum, child) => sum + child.area, 0);
-            
-            if (vertical) {
-                const width = x1 - x0;
-                let currentX = x0;
-                
-                children.forEach(child => {
-                    const childWidth = (child.area / totalArea) * width;
-                    child.x0 = currentX;
-                    child.y0 = y0;
-                    child.x1 = currentX + childWidth;
-                    child.y1 = y1;
-                    currentX += childWidth;
+            if (primeTimePrograms.length === 0) {
+                suggestions.push({
+                    type: 'error',
+                    icon: 'alert-circle',
+                    text: 'Nessun programma in Prime Time (20:30-22:30). Considera di posizionare i contenuti più forti in questa fascia.'
                 });
-            } else {
-                const height = y1 - y0;
-                let currentY = y0;
-                
-                children.forEach(child => {
-                    const childHeight = (child.area / totalArea) * height;
-                    child.x0 = x0;
-                    child.y0 = currentY;
-                    child.x1 = x1;
-                    child.y1 = currentY + childHeight;
-                    currentY += childHeight;
+            } else if (primeTimePrograms.length === 1) {
+                suggestions.push({
+                    type: 'warning',
+                    icon: 'alert-triangle',
+                    text: 'Solo un programma in Prime Time. Valuta se il format ha la durata ottimale per massimizzare l\'audience.'
                 });
             }
-        }
-
-        function binary(children, parent, totalValue) {
-            binaryRecursive(children, parent.x0, parent.y0, parent.x1, parent.y1, totalValue);
-        }
-
-        function binaryRecursive(children, x0, y0, x1, y1, totalValue) {
-            if (children.length === 0) return;
             
-            if (children.length === 1) {
-                const child = children[0];
-                child.x0 = x0;
-                child.y0 = y0;
-                child.x1 = x1;
-                child.y1 = y1;
-                return;
+            // Check morning coverage
+            const morningCoverage = parseInt(document.querySelector('#morningStats span.font-semibold')?.textContent || '0');
+            if (morningCoverage < 80) {
+                suggestions.push({
+                    type: 'info',
+                    icon: 'info',
+                    text: `Copertura mattutina al ${morningCoverage}%. Considera di aggiungere programmi per catturare l'audience del mattino.`
+                });
             }
             
-            const mid = Math.floor(children.length / 2);
-            const leftChildren = children.slice(0, mid);
-            const rightChildren = children.slice(mid);
-            
-            const leftValue = leftChildren.reduce((sum, child) => sum + child.value, 0);
-            const rightValue = rightChildren.reduce((sum, child) => sum + child.value, 0);
-            
-            const width = x1 - x0;
-            const height = y1 - y0;
-            
-            if (width > height) {
-                // Split vertically
-                const splitX = x0 + (leftValue / totalValue) * width;
-                binaryRecursive(leftChildren, x0, y0, splitX, y1, leftValue);
-                binaryRecursive(rightChildren, splitX, y0, x1, y1, rightValue);
-            } else {
-                // Split horizontally
-                const splitY = y0 + (leftValue / totalValue) * height;
-                binaryRecursive(leftChildren, x0, y0, x1, splitY, leftValue);
-                binaryRecursive(rightChildren, x0, splitY, x1, y1, rightValue);
-            }
-        }
-
-        function sliceDice(children, parent, totalValue) {
-            const width = parent.x1 - parent.x0;
-            const height = parent.y1 - parent.y0;
-            const area = width * height;
-            
-            let currentX = parent.x0;
-            let currentY = parent.y0;
-            let rowHeight = 0;
-            let rowChildren = [];
-            let rowValue = 0;
-            
-            children.forEach((child, index) => {
-                const childArea = (child.value / totalValue) * area;
-                const childWidth = Math.sqrt(childArea);
-                
-                if (currentX + childWidth > parent.x1 && rowChildren.length > 0) {
-                    // Layout current row
-                    layoutRowSlice(rowChildren, parent.x0, currentY, parent.x1, currentY + rowHeight);
-                    
-                    // Start new row
-                    currentY += rowHeight;
-                    currentX = parent.x0;
-                    rowHeight = 0;
-                    rowChildren = [];
-                    rowValue = 0;
-                }
-                
-                rowChildren.push(child);
-                rowValue += child.value;
-                rowHeight = Math.max(rowHeight, childArea / childWidth);
-                currentX += childWidth;
-            });
-            
-            // Layout last row
-            if (rowChildren.length > 0) {
-                layoutRowSlice(rowChildren, parent.x0, currentY, parent.x1, Math.min(parent.y1, currentY + rowHeight));
-            }
-        }
-
-        function layoutRowSlice(children, x0, y0, x1, y1) {
-            const totalValue = children.reduce((sum, child) => sum + child.value, 0);
-            const width = x1 - x0;
-            let currentX = x0;
-            
-            children.forEach(child => {
-                const childWidth = (child.value / totalValue) * width;
-                child.x0 = currentX;
-                child.y0 = y0;
-                child.x1 = Math.min(currentX + childWidth, x1);
-                child.y1 = y1;
-                currentX += childWidth;
-            });
-        }
-
-        function setLayout(layout) {
-            currentLayout = layout;
-            
-            // Update UI
-            document.querySelectorAll('.layout-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`[data-layout="${layout}"]`).classList.add('active');
-            
-            // Redraw
-            if (currentPrograms.length > 0) {
-                loadPrograms();
+            // Check for very short programs
+            const shortPrograms = programs.filter(p => p.duration < 900); // Less than 15 minutes
+            if (shortPrograms.length > 5) {
+                suggestions.push({
+                    type: 'warning',
+                    icon: 'clock',
+                    text: `${shortPrograms.length} programmi sotto i 15 minuti. Troppi cambi possono confondere gli spettatori.`
+                });
             }
             
-            showToast(`Layout cambiato in ${layout}`, 'success');
-        }
-
-        function updateStatistics(programs) {
-            // Calculate total coverage
-            const totalDuration = programs.reduce((sum, p) => sum + p.duration, 0);
-            const coveragePercent = Math.min(100, (totalDuration / totalDaySeconds) * 100);
-            const coverageHours = Math.floor(totalDuration / 3600);
-            const coverageMinutes = Math.floor((totalDuration % 3600) / 60);
-            
-            document.getElementById('coveragePercent').textContent = `${coveragePercent.toFixed(1)}%`;
-            document.getElementById('coverageTime').textContent = `${coverageHours}h ${coverageMinutes}m`;
-            
-            // Update coverage ring
-            const ring = document.getElementById('coverageRing');
-            const circumference = 2 * Math.PI * 20;
-            const offset = circumference - (coveragePercent / 100) * circumference;
-            ring.style.strokeDashoffset = offset;
-            
-            // Count gaps
-            let gapCount = 0;
-            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
-            for (let i = 0; i < sortedPrograms.length - 1; i++) {
-                if (sortedPrograms[i + 1].start > sortedPrograms[i].stop) {
-                    gapCount++;
-                }
-            }
-            document.getElementById('gapCount').textContent = gapCount;
-            
-            // Count unique formats
+            // Check format variety
             const uniqueFormats = [...new Set(programs.map(p => p.title))];
-            document.getElementById('formatCount').textContent = uniqueFormats.length;
-            
-            // Calculate average duration
-            const avgDuration = totalDuration / programs.length;
-            const avgMinutes = Math.floor(avgDuration / 60);
-            document.getElementById('avgDuration').textContent = `${avgMinutes}m`;
-        }
-
-        function updateFormatLegend(programs) {
-            const legend = document.getElementById('formatLegend');
-            legend.innerHTML = '';
-            
-            // Usa i format groups se disponibili
-            if (Object.keys(formatGroups).length > 0) {
-                const sortedFormats = Object.values(formatGroups)
-                    .sort((a, b) => b.totalDuration - a.totalDuration);
-                
-                sortedFormats.forEach(format => {
-                    const item = document.createElement('div');
-                    item.className = 'format-item';
-                    const hours = (format.totalDuration / 3600).toFixed(1);
-                    const percentage = ((format.totalDuration / totalDaySeconds) * 100).toFixed(1);
-                    
-                    item.innerHTML = `
-                        <div class="format-color" style="background: ${format.color}"></div>
-                        <span>${format.title}</span>
-                        <span style="margin-left: auto; font-size: 11px; color: #666;">
-                            ${format.programCount} ep. • ${hours}h • ${percentage}%
-                        </span>
-                    `;
-                    legend.appendChild(item);
-                });
-            } else {
-                // Fallback alla vecchia versione
-                const formats = [...new Set(programs.map(p => p.title))];
-                formats.forEach(format => {
-                    const item = document.createElement('div');
-                    item.className = 'format-item';
-                    item.innerHTML = `
-                        <div class="format-color" style="background: ${formatColors[format]}"></div>
-                        <span>${format}</span>
-                    `;
-                    legend.appendChild(item);
+            if (uniqueFormats.length < 5) {
+                suggestions.push({
+                    type: 'info',
+                    icon: 'shuffle',
+                    text: 'Poca varietà di format. Diversificare la programmazione può attrarre pubblici diversi.'
                 });
             }
-        }
-
-        function showFormatDetails(formatNode) {
-            const detailsDiv = document.getElementById('programDetails');
-            detailsDiv.style.display = 'block';
             
-            // Mostra informazioni aggregate del format
-            document.getElementById('detailTitle').textContent = formatNode.title;
+            // Check late night programming
+            const nightPrograms = programs.filter(p => {
+                const hour = p.start.getUTCHours();
+                return hour >= 1 && hour < 6;
+            });
             
-            // Calcola orari di inizio e fine del format
-            const sortedPrograms = formatNode.programs.sort((a, b) => a.start - b.start);
-            const firstProgram = sortedPrograms[0];
-            const lastProgram = sortedPrograms[sortedPrograms.length - 1];
-            
-            document.getElementById('detailTime').textContent = `Prima: ${formatTimeUTC(firstProgram.start)} - Ultima: ${formatTimeUTC(lastProgram.stop)}`;
-            document.getElementById('detailDuration').textContent = `${(formatNode.totalDuration / 3600).toFixed(1)} ore totali (${formatNode.programCount} episodi)`;
-            document.getElementById('detailCategory').textContent = formatNode.category || '-';
-            
-            // Lista tutti gli episodi
-            const episodesList = sortedPrograms.map(p => 
-                `• ${formatTimeUTC(p.start)} - ${formatTimeUTC(p.stop)} (${formatDuration(p.duration)})`
-            ).join('\n');
-            
-            document.getElementById('detailDescription').textContent = `Episodi:\n${episodesList}`;
-            
-            const iconDiv = document.getElementById('detailIcon');
-            const iconUrl = document.getElementById('detailIconUrl');
-            
-            if (formatNode.icon) {
-                iconDiv.style.backgroundImage = `url(${formatNode.icon})`;
-                iconUrl.textContent = formatNode.icon;
-            } else {
-                iconDiv.style.backgroundImage = 'none';
-                iconDiv.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400">Nessuna icona</div>';
-                iconUrl.textContent = 'Nessuna icona specificata';
+            if (nightPrograms.length === 0) {
+                suggestions.push({
+                    type: 'info',
+                    icon: 'moon',
+                    text: 'Nessuna programmazione notturna (01:00-06:00). Considera repliche o contenuti evergreen.'
+                });
             }
             
-            detailsDiv.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function showFormatPreview(event, formatNode, area) {
-            if (currentPreviewTimeout) {
-                clearTimeout(currentPreviewTimeout);
+            // Display suggestions
+            if (suggestions.length === 0) {
+                suggestions.push({
+                    type: 'success',
+                    icon: 'check-circle',
+                    text: 'Il palinsesto segue le best practice di programmazione TV!'
+                });
             }
             
-            currentPreviewTimeout = setTimeout(() => {
-                const preview = document.getElementById('programPreview');
+            suggestions.forEach(suggestion => {
+                const div = document.createElement('div');
+                div.className = 'best-practice-tip flex items-start gap-3';
                 
-                document.getElementById('previewTitle').textContent = formatNode.title;
+                const iconColor = suggestion.type === 'error' ? 'text-red-600' : 
+                                 suggestion.type === 'warning' ? 'text-yellow-600' :
+                                 suggestion.type === 'success' ? 'text-green-600' : 'text-blue-600';
                 
-                // Mostra info aggregate
-                const durationHours = (formatNode.totalDuration / 3600).toFixed(1);
-                const percentage = ((formatNode.totalDuration / totalDaySeconds) * 100).toFixed(1);
-                
-                document.getElementById('previewTime').textContent = `${formatNode.programCount} episodi`;
-                document.getElementById('previewDuration').textContent = `${durationHours} ore totali`;
-                document.getElementById('previewCategory').textContent = formatNode.category || 'N/A';
-                
-                // Show format rank by duration
-                const allFormats = Object.values(formatColors).length;
-                const formatRank = Object.values(formatGroups)
-                    .sort((a, b) => b.totalDuration - a.totalDuration)
-                    .findIndex(f => f.title === formatNode.title) + 1;
-                
-                document.getElementById('previewPosition').textContent = `${formatRank}° su ${allFormats} format`;
-                
-                // Show area percentage
-                const totalArea = 800 * 800;
-                const areaPercent = (area / totalArea) * 100;
-                document.getElementById('previewArea').textContent = `${percentage}% del tempo`;
-                
-                // Show time slots
-                const timeSlots = formatNode.programs
-                    .sort((a, b) => a.start - b.start)
-                    .slice(0, 3)
-                    .map(p => formatTimeUTC(p.start))
-                    .join(', ');
-                
-                document.getElementById('previewDesc').textContent = `Orari: ${timeSlots}${formatNode.programs.length > 3 ? '...' : ''}`;
-                
-                const iconDiv = document.getElementById('previewIcon');
-                if (formatNode.icon) {
-                    iconDiv.style.backgroundImage = `url(${formatNode.icon})`;
-                    iconDiv.style.display = 'block';
-                } else {
-                    iconDiv.style.display = 'none';
-                }
-                
-                // Position preview
-                const rect = event.target.getBoundingClientRect();
-                let top = rect.bottom + 10;
-                let left = rect.left + rect.width / 2 - 175;
-                
-                if (left < 10) left = 10;
-                if (left + 350 > window.innerWidth) left = window.innerWidth - 360;
-                if (top + 300 > window.innerHeight) {
-                    top = rect.top - 300 - 10;
-                }
-                
-                preview.style.left = left + 'px';
-                preview.style.top = top + 'px';
-                preview.classList.add('show');
-            }, 300);
-        }
-
-        // Add global variable to store format groups
-        let formatGroups = {};
-
-        function hideProgramPreview() {
-            if (currentPreviewTimeout) {
-                clearTimeout(currentPreviewTimeout);
-                currentPreviewTimeout = null;
-            }
-            document.getElementById('programPreview').classList.remove('show');
-        }
-
-        function showProgramDetails(program) {
-            document.getElementById('programDetails').style.display = 'block';
-            document.getElementById('detailTitle').textContent = program.title;
-            document.getElementById('detailTime').textContent = `${formatTimeUTC(program.start)} - ${formatTimeUTC(program.stop)}`;
-            document.getElementById('detailDuration').textContent = formatDuration(program.duration);
-            document.getElementById('detailCategory').textContent = program.category || '-';
-            document.getElementById('detailDescription').textContent = program.desc || '-';
-            
-            const iconDiv = document.getElementById('detailIcon');
-            const iconUrl = document.getElementById('detailIconUrl');
-            
-            if (program.icon) {
-                iconDiv.style.backgroundImage = `url(${program.icon})`;
-                iconUrl.textContent = program.icon;
-            } else {
-                iconDiv.style.backgroundImage = 'none';
-                iconDiv.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400">Nessuna icona</div>';
-                iconUrl.textContent = 'Nessuna icona specificata';
-            }
-            
-            document.getElementById('programDetails').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function updateProgramTable(programs) {
-            const tbody = document.getElementById('programTable');
-            tbody.innerHTML = '';
-            
-            programs.forEach((program, index) => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 transition-colors';
-                
-                const startTimeStr = `${program.start.getUTCHours().toString().padStart(2, '0')}:${program.start.getUTCMinutes().toString().padStart(2, '0')}`;
-                const stopTimeStr = `${program.stop.getUTCHours().toString().padStart(2, '0')}:${program.stop.getUTCMinutes().toString().padStart(2, '0')}`;
-                
-                row.innerHTML = `
-                    <td class="px-4 py-3">
-                        <input type="time" value="${startTimeStr}" 
-                               onchange="updateProgramTime(${index}, 'start', this.value)"
-                               class="px-2 py-1 border rounded-lg focus:border-blue-500 focus:outline-none">
-                    </td>
-                    <td class="px-4 py-3">
-                        <input type="time" value="${stopTimeStr}" 
-                               onchange="updateProgramTime(${index}, 'stop', this.value)"
-                               class="px-2 py-1 border rounded-lg focus:border-blue-500 focus:outline-none">
-                    </td>
-                    <td class="px-4 py-3">${formatDuration(program.duration)}</td>
-                    <td class="px-4 py-3 cursor-pointer hover:bg-blue-50 rounded transition-colors" onclick="editCell(this, ${index}, 'title')">${program.title}</td>
-                    <td class="px-4 py-3 cursor-pointer hover:bg-blue-50 rounded transition-colors" onclick="editCell(this, ${index}, 'category')">${program.category || '-'}</td>
-                    <td class="px-4 py-3">
-                        <button onclick="deleteProgram(${index})" class="text-red-500 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-lg" title="Elimina">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </td>
+                div.innerHTML = `
+                    <i data-lucide="${suggestion.icon}" class="w-5 h-5 ${iconColor} flex-shrink-0 mt-0.5"></i>
+                    <span class="text-sm">${suggestion.text}</span>
                 `;
                 
-                tbody.appendChild(row);
+                practicesDiv.appendChild(div);
             });
             
             // Re-initialize icons
             lucide.createIcons();
         }
-
-        function checkProblems(programs) {
-            const report = document.getElementById('problemsReport');
-            report.innerHTML = '';
-            const problems = [];
-            
-            // Check for overlaps
-            for (let i = 0; i < programs.length; i++) {
-                for (let j = i + 1; j < programs.length; j++) {
-                    if (programs[i].stop > programs[j].start && programs[i].start < programs[j].stop) {
-                        const overlapMinutes = Math.floor((Math.min(programs[i].stop, programs[j].stop) - Math.max(programs[i].start, programs[j].start)) / 60000);
-                        problems.push({
-                            type: 'overlap',
-                            severity: 'error',
-                            message: `Sovrapposizione di ${overlapMinutes} minuti tra "${programs[i].title}" e "${programs[j].title}"`
-                        });
-                    }
-                }
-            }
-            
-            // Check for gaps
-            const sortedPrograms = [...programs].sort((a, b) => a.start - b.start);
-            for (let i = 0; i < sortedPrograms.length - 1; i++) {
-                const gap = sortedPrograms[i + 1].start - sortedPrograms[i].stop;
-                if (gap > 60000) { // More than 1 minute
-                    const gapMinutes = Math.floor(gap / 60000);
-                    problems.push({
-                        type: 'gap',
-                        severity: gapMinutes > 30 ? 'error' : 'warning',
-                        message: `Buco di ${gapMinutes} minuti dopo "${sortedPrograms[i].title}"`
-                    });
-                }
-            }
-            
-            // Check total coverage
-            const totalDuration = programs.reduce((sum, p) => sum + p.duration, 0);
-            if (totalDuration < totalDaySeconds) {
-                const missingHours = ((totalDaySeconds - totalDuration) / 3600).toFixed(1);
-                problems.push({
-                    type: 'coverage',
-                    severity: 'info',
-                    message: `Mancano ${missingHours} ore per completare le 24h`
-                });
-            }
-            
-            // Display problems
-            if (problems.length === 0) {
-                report.innerHTML = '<p class="text-green-600 font-semibold">✅ Nessun problema rilevato</p>';
-            } else {
-                problems.forEach(problem => {
-                    const div = document.createElement('div');
-                    div.className = `p-3 rounded-lg text-sm ${
-                        problem.severity === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
-                        problem.severity === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
-                        'bg-blue-50 text-blue-700 border border-blue-200'
-                    }`;
-                    div.textContent = problem.message;
-                    report.appendChild(div);
-                });
-            }
-        }
-
-        function getCurrentDayPrograms() {
-            const dayStart = new Date(scheduleDate);
-            dayStart.setUTCHours(21, 0, 0, 0);
-            dayStart.setUTCDate(dayStart.getUTCDate() - 1);
-            
-            const dayEnd = new Date(scheduleDate);
-            dayEnd.setUTCHours(21, 0, 0, 0);
-            
-            return currentPrograms.filter(p => {
-                return (p.start >= dayStart && p.start < dayEnd) || 
-                       (p.start < dayStart && p.stop > dayStart);
-            }).sort((a, b) => a.start - b.start);
-        }
-
-        // Edit functions
-        function editCell(cell, programIndex, field) {
-            const dayPrograms = getCurrentDayPrograms();
-            const program = dayPrograms[programIndex];
-            if (!program) return;
-            
-            const currentValue = cell.textContent;
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = currentValue === '-' ? '' : currentValue;
-            input.className = 'w-full px-2 py-1 border rounded-lg focus:border-blue-500 focus:outline-none';
-            
-            input.onblur = () => {
-                const newValue = input.value.trim();
-                cell.textContent = newValue || '-';
-                
-                program[field] = newValue;
-                
-                // Update XML
-                const elem = program.element.querySelector(field);
-                if (elem) {
-                    elem.textContent = newValue;
-                } else if (field === 'category' && newValue) {
-                    const catElem = xmlDoc.createElement('category');
-                    catElem.setAttribute('lang', 'it');
-                    catElem.textContent = newValue;
-                    program.element.appendChild(catElem);
-                }
-                
-                // Reload if title changed
-                if (field === 'title') {
-                    if (!formatColors[newValue]) {
-                        formatColors[newValue] = colorPalette[colorIndex % colorPalette.length];
-                        colorIndex++;
-                    }
-                    loadPrograms();
-                }
-            };
-            
-            input.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    input.blur();
-                } else if (e.key === 'Escape') {
-                    cell.textContent = currentValue;
-                }
-            };
-            
-            cell.textContent = '';
-            cell.appendChild(input);
-            input.focus();
-            input.select();
-        }
-
-        function updateProgramTime(programIndex, timeType, newTime) {
-            const dayPrograms = getCurrentDayPrograms();
-            const program = dayPrograms[programIndex];
-            if (!program) return;
-            
-            const [hours, minutes] = newTime.split(':').map(Number);
-            const newDate = new Date(program[timeType === 'start' ? 'start' : 'stop']);
-            newDate.setUTCHours(hours, minutes, 0, 0);
-            
-            // Ensure stop time is after start time
-            if (timeType === 'stop' && newDate <= program.start) {
-                newDate.setUTCDate(newDate.getUTCDate() + 1);
-            }
-            
-            if (timeType === 'start') {
-                program.start = newDate;
-                program.element.setAttribute('start', formatXMLTVDate(newDate));
-            } else {
-                program.stop = newDate;
-                program.element.setAttribute('stop', formatXMLTVDate(newDate));
-            }
-            
-            program.duration = (program.stop - program.start) / 1000;
-            
-            loadPrograms();
-            showToast('Orario aggiornato', 'success');
-        }
-
-        function deleteProgram(programIndex) {
-            if (!confirm('Eliminare questo programma?')) return;
-            
-            const dayPrograms = getCurrentDayPrograms();
-            const program = dayPrograms[programIndex];
-            if (!program) return;
-            
-            // Remove from XML
-            program.element.remove();
-            
-            // Remove from global array
-            const globalIndex = currentPrograms.indexOf(program);
-            if (globalIndex > -1) {
-                currentPrograms.splice(globalIndex, 1);
-            }
-            
-            loadPrograms();
-            showToast('Programma eliminato', 'success');
-        }
-
-        function addProgram() {
-            const dayPrograms = getCurrentDayPrograms();
-            const lastProgram = dayPrograms[dayPrograms.length - 1];
-            
-            let newStart;
-            if (lastProgram) {
-                newStart = new Date(lastProgram.stop);
-            } else {
-                newStart = new Date(scheduleDate);
-                newStart.setUTCHours(6, 0, 0, 0);
-            }
-            
-            const newStop = new Date(newStart);
-            newStop.setUTCMinutes(newStop.getUTCMinutes() + 30);
-            
-            // Create new program element
-            const programme = xmlDoc.createElement('programme');
-            programme.setAttribute('start', formatXMLTVDate(newStart));
-            programme.setAttribute('stop', formatXMLTVDate(newStop));
-            programme.setAttribute('channel', currentChannelId);
-            
-            const title = xmlDoc.createElement('title');
-            title.setAttribute('lang', 'it');
-            title.textContent = 'Nuovo Programma';
-            programme.appendChild(title);
-            
-            const desc = xmlDoc.createElement('desc');
-            desc.setAttribute('lang', 'it');
-            desc.textContent = 'Descrizione del nuovo programma';
-            programme.appendChild(desc);
-            
-            // Add to XML
-            xmlDoc.querySelector('tv').appendChild(programme);
-            
-            // Add to programs array
-            const newProgram = {
-                start: newStart,
-                stop: newStop,
-                title: 'Nuovo Programma',
-                desc: 'Descrizione del nuovo programma',
-                category: '',
-                rating: '0',
-                icon: '',
-                duration: 1800,
-                element: programme
-            };
-            
-            currentPrograms.push(newProgram);
-            currentPrograms.sort((a, b) => a.start - b.start);
-            
-            // Assign color
-            if (!formatColors[newProgram.title]) {
-                formatColors[newProgram.title] = colorPalette[colorIndex % colorPalette.length];
-                colorIndex++;
-            }
-            
-            loadPrograms();
-            showToast('Nuovo programma aggiunto', 'success');
-        }
-
-        // Actualization functions
-        function showActualizationDialog() {
-            document.getElementById('actualizationDialog').classList.remove('hidden');
-            document.getElementById('newStartDate').value = scheduleDate.toISOString().split('T')[0];
-        }
-
-        function closeActualizationDialog() {
-            document.getElementById('actualizationDialog').classList.add('hidden');
-        }
-
-        function actualizeSchedule() {
-            const newStartDateStr = document.getElementById('newStartDate').value;
-            const [year, month, day] = newStartDateStr.split('-').map(Number);
-            const newStartDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
-            
-            const dayDiff = Math.floor((newStartDate - scheduleDate) / (1000 * 60 * 60 * 24));
-            
-            if (dayDiff === 0) {
-                showToast('La data selezionata è la stessa', 'info');
-                closeActualizationDialog();
-                return;
-            }
-            
-            // Update all program dates
-            currentPrograms.forEach(program => {
-                const newStart = new Date(program.start);
-                newStart.setUTCDate(newStart.getUTCDate() + dayDiff);
-                const newStop = new Date(program.stop);
-                newStop.setUTCDate(newStop.getUTCDate() + dayDiff);
-                
-                program.start = newStart;
-                program.stop = newStop;
-                
-                program.element.setAttribute('start', formatXMLTVDate(newStart));
-                program.element.setAttribute('stop', formatXMLTVDate(newStop));
-            });
-            
-            // Update tv date attribute
-            xmlDoc.querySelector('tv').setAttribute('date', newStartDate.toISOString().split('T')[0]);
-            
-            // Update schedule date
-            scheduleDate = newStartDate;
-            document.getElementById('scheduleDate').textContent = formatDateUTC(scheduleDate);
-            
-            // Reload programs
-            loadPrograms();
-            
-            closeActualizationDialog();
-            showToast('Date attualizzate con successo', 'success');
-        }
-
-        // Export function
-        function exportXMLTV() {
-            const serializer = new XMLSerializer();
-            const xmlString = serializer.serializeToString(xmlDoc);
-            const blob = new Blob([xmlString], { type: 'application/xml;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            const date = new Date().toISOString().split('T')[0];
-            a.download = `${currentChannelId}_treemap_${date}.xml`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            URL.revokeObjectURL(url);
-            showToast('File esportato con successo', 'success');
-        }
-
-        // Utility functions
-        function formatDateUTC(date) {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
-            return date.toLocaleDateString('it-IT', options);
-        }
-
-        function formatTimeUTC(date) {
-            const hours = date.getUTCHours().toString().padStart(2, '0');
-            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-            return `${hours}:${minutes}`;
-        }
-
-        function formatDuration(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            if (hours > 0) {
-                return `${hours}h ${minutes}min`;
-            } else {
-                return `${minutes}min`;
-            }
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast p-4 rounded-lg shadow-lg ${type} min-w-[250px]`;
-            toast.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" class="w-5 h-5"></i>
-                    <span class="font-medium">${message}</span>
-                </div>
-            `;
-            container.appendChild(toast);
-            
-            // Re-initialize icons
-            lucide.createIcons();
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // Dark mode toggle
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark');
-            localStorage.setItem('darkMode', document.body.classList.contains('dark'));
-        }
-
-        // Load dark mode preference
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark');
-        }
-
-        // Show info
-        function showInfo() {
-            alert(`XMLTV Viewer v${APP_VERSION}\n\nTreemap Aggregato per Format\n\nNuove Funzionalità v4.1:\n- CONTRASTI MIGLIORATI per modalità chiara\n- Visualizzazione TREEMAP AGGREGATA: ogni format ha un unico rettangolo\n- L'area di ogni rettangolo è proporzionale al tempo totale del format\n- Mostra numero episodi, ore totali e percentuale per format\n- Icone format visibili nei rettangoli (quando disponibili)\n- 3 algoritmi di layout: Squarify, Binary, Slice & Dice\n- Indicatore di riempimento con codice colore\n- Gap visualizzati con pattern rosso tratteggiato\n- Click su un format mostra tutti gli episodi\n\nModalità UTC - Nessuna conversione timezone\n\nSviluppato per Class CNBC e Class TV Moda`);
-        }
-
-        // Initialize
-        console.log('XMLTV Viewer v4.0 - Treemap Sequential Timeline ready!');
-    </script>
-</body>
-</html>
