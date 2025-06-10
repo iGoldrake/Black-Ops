@@ -1163,7 +1163,7 @@
             // Calculate total duration
             const totalDuration = formats.reduce((sum, f) => sum + f.duration, 0);
             
-            // Apply binary treemap algorithm
+            // Apply squarify treemap algorithm
             const nodes = formats.map(f => ({
                 value: f.duration,
                 data: f
@@ -1176,7 +1176,7 @@
                 height: size
             };
             
-            const layoutNodes = binary(nodes, root);
+            const layoutNodes = squarify(nodes, root);
             
             // Create elements
             layoutNodes.forEach((node, index) => {
@@ -1234,11 +1234,56 @@
             }
         }
         
-        // Binary treemap layout algorithm
-        function binary(nodes, container) {
+        // Squarify treemap layout algorithm (più bilanciato visivamente)
+        function squarify(nodes, container) {
+            const area = container.width * container.height;
+            const totalValue = nodes.reduce((sum, n) => sum + n.value, 0);
+            
+            // Calcola l'area proporzionale per ogni nodo
+            nodes.forEach(node => {
+                node.area = (node.value / totalValue) * area;
+            });
+            
+            // Ordina i nodi per area decrescente
+            nodes.sort((a, b) => b.area - a.area);
+            
             const layoutNodes = [];
             
-            function layout(nodes, x, y, width, height, vertical) {
+            function layoutRow(row, x, y, width, height) {
+                const rowArea = row.reduce((sum, node) => sum + node.area, 0);
+                let currentX = x;
+                let currentY = y;
+                
+                if (width > height) {
+                    // Layout orizzontale
+                    row.forEach(node => {
+                        const nodeWidth = (node.area / rowArea) * width;
+                        layoutNodes.push({
+                            x: currentX,
+                            y: currentY,
+                            width: nodeWidth,
+                            height: height,
+                            data: node.data
+                        });
+                        currentX += nodeWidth;
+                    });
+                } else {
+                    // Layout verticale
+                    row.forEach(node => {
+                        const nodeHeight = (node.area / rowArea) * height;
+                        layoutNodes.push({
+                            x: currentX,
+                            y: currentY,
+                            width: width,
+                            height: nodeHeight,
+                            data: node.data
+                        });
+                        currentY += nodeHeight;
+                    });
+                }
+            }
+            
+            function squarifyRecursive(nodes, x, y, width, height) {
                 if (nodes.length === 0) return;
                 if (nodes.length === 1) {
                     layoutNodes.push({
@@ -1251,26 +1296,47 @@
                     return;
                 }
                 
-                const mid = Math.floor(nodes.length / 2);
-                const leftNodes = nodes.slice(0, mid);
-                const rightNodes = nodes.slice(mid);
+                const row = [];
+                let remaining = [...nodes];
+                const totalArea = remaining.reduce((sum, n) => sum + n.area, 0);
                 
-                const leftValue = leftNodes.reduce((sum, n) => sum + n.value, 0);
-                const rightValue = rightNodes.reduce((sum, n) => sum + n.value, 0);
-                const totalValue = leftValue + rightValue;
+                // Determina la direzione del layout
+                const vertical = width > height;
+                
+                // Costruisci la prima riga
+                while (remaining.length > 0) {
+                    const candidate = remaining[0];
+                    const testRow = [...row, candidate];
+                    const testArea = testRow.reduce((sum, n) => sum + n.area, 0);
+                    
+                    if (row.length === 0 || testArea / totalArea <= 0.4) {
+                        row.push(candidate);
+                        remaining.shift();
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Layout della riga corrente
+                const rowArea = row.reduce((sum, n) => sum + n.area, 0);
+                const rowRatio = rowArea / totalArea;
                 
                 if (vertical) {
-                    const leftHeight = height * (leftValue / totalValue);
-                    layout(leftNodes, x, y, width, leftHeight, !vertical);
-                    layout(rightNodes, x, y + leftHeight, width, height - leftHeight, !vertical);
+                    const rowWidth = width * rowRatio;
+                    layoutRow(row, x, y, rowWidth, height);
+                    if (remaining.length > 0) {
+                        squarifyRecursive(remaining, x + rowWidth, y, width - rowWidth, height);
+                    }
                 } else {
-                    const leftWidth = width * (leftValue / totalValue);
-                    layout(leftNodes, x, y, leftWidth, height, !vertical);
-                    layout(rightNodes, x + leftWidth, y, width - leftWidth, height, !vertical);
+                    const rowHeight = height * rowRatio;
+                    layoutRow(row, x, y, width, rowHeight);
+                    if (remaining.length > 0) {
+                        squarifyRecursive(remaining, x, y + rowHeight, width, height - rowHeight);
+                    }
                 }
             }
             
-            layout(nodes, container.x, container.y, container.width, container.height, true);
+            squarifyRecursive(nodes, container.x, container.y, container.width, container.height);
             return layoutNodes;
         }
         
@@ -1603,7 +1669,7 @@
         function showInfo() {
             alert(`XMLTV Viewer v${APP_VERSION}\n\n` +
                   'Visualizzatore e editor avanzato per file XMLTV con:\n' +
-                  '- Treemap aggregato per format (layout Binary)\n' +
+                  '- Treemap aggregato per format (layout Squarify)\n' +
                   '- Analisi fasce orarie (6 fasce)\n' +
                   '- Editor programmi inline\n' +
                   '- Export/import XMLTV\n\n' +
