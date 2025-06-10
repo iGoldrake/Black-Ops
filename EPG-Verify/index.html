@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLTV Viewer v4.2 - Analisi Fasce Orarie</title>
+    <title>XMLTV Viewer v4.3 - Analisi Fasce Orarie</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -508,7 +508,7 @@
                 <div>
                     <h1 class="text-4xl font-bold gradient-text flex items-center gap-3">
                         <i data-lucide="tv" class="w-10 h-10 text-blue-600"></i>
-                        XMLTV Viewer v4.2
+                        XMLTV Viewer v4.3
                     </h1>
                     <p class="text-gray-600 mt-2">Treemap Sequenziale con Analisi Fasce Orarie - Modalità UTC</p>
                 </div>
@@ -938,8 +938,8 @@
         });
 
         // Version
-        const APP_VERSION = '4.2';
-        console.log(`XMLTV Viewer v${APP_VERSION} - Analisi Fasce Orarie`);
+        const APP_VERSION = '4.3';
+        console.log(`XMLTV Viewer v${APP_VERSION} - Bug Fix e Completamento`);
 
         // Global state
         let xmlDoc = null;
@@ -1224,14 +1224,14 @@
             // Update format legend
             updateFormatLegend(dayPrograms);
             
-            // Analyze time slots (NEW)
+            // Analyze time slots
             analyzeTimeSlots(dayPrograms);
             
-            // Generate weekly heatmap (NEW)
+            // Generate weekly heatmap
             generateWeeklyHeatmap();
         }
 
-        // NEW: Analyze time slots
+        // Analyze time slots
         function analyzeTimeSlots(programs) {
             // Analyze each time slot
             Object.entries(timeSlots).forEach(([slotKey, slot]) => {
@@ -1336,7 +1336,7 @@
             return colorMap[slotKey] || 'bg-gray-400';
         }
         
-        // NEW: Generate weekly heatmap
+        // Generate weekly heatmap
         function generateWeeklyHeatmap() {
             const heatmapDiv = document.getElementById('weeklyHeatmap');
             heatmapDiv.innerHTML = '';
@@ -1411,7 +1411,7 @@
             });
         }
         
-        // NEW: Generate best practice suggestions
+        // Generate best practice suggestions
         function generateBestPractices(programs) {
             const practicesDiv = document.getElementById('bestPractices');
             practicesDiv.innerHTML = '';
