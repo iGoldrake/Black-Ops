@@ -212,12 +212,13 @@ export class UIManager {
      */
     getConversionParameters() {
         const timezoneValue = document.getElementById('timezone').value;
+        const fillGapsToggle = document.getElementById('fillGaps');
         return {
             channelId: document.getElementById('channelId').value.trim(),
             channelName: document.getElementById('channelName').value.trim(),
             timezoneOffset: parseInt(timezoneValue, 10), // Forziamo la conversione a numero
             iconUrl: document.getElementById('iconUrl').value.trim(),
-            fillGaps: this.app.options.fillGaps
+            fillGaps: fillGapsToggle.classList.contains('active')
         };
     }
     
