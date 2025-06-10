@@ -264,7 +264,7 @@ export class XMLTVGenerator {
         this.calculateDurations(programs, fillGaps);
         
         // Process for the specific day
-        const dayPrograms = this.processDayPrograms(programs, targetDate, channel);
+        const dayPrograms = this.processDayPrograms(programs, targetDate, channel, fillGaps);
         
         return dayPrograms;
     }
@@ -272,7 +272,7 @@ export class XMLTVGenerator {
     /**
      * Process programs for a specific day
      */
-    processDayPrograms(allPrograms, targetDate, channel) {
+    processDayPrograms(allPrograms, targetDate, channel, fillGaps) {
         const targetStart = new Date(targetDate);
         targetStart.setHours(0, 0, 0, 0);
         const targetEnd = new Date(targetDate);
@@ -300,7 +300,7 @@ export class XMLTVGenerator {
         const adjustedPrograms = this.adjustProgramsForDay(uniquePrograms, targetStart, targetEnd);
         
         // Fill gaps if enabled
-        const filledPrograms = this.fillGapsInDay(adjustedPrograms, targetStart, targetEnd, channel);
+        const filledPrograms = fillGaps ? this.fillGapsInDay(adjustedPrograms, targetStart, targetEnd, channel) : adjustedPrograms;
         
         const totalMinutes = filledPrograms.reduce((sum, p) => sum + (p.duration / 60), 0);
         this.app.log(`  ✅ Copertura totale: ${totalMinutes.toFixed(0)} minuti (su 1440 attesi)`);
