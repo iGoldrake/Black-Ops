@@ -582,17 +582,84 @@ class EPGConverter {
     }
     
     /**
-     * Scan for missing formats
+     * Scan for missing formats - VERSIONE MIGLIORATA
      */
     scanForMissingFormats() {
         if (this.state.detectedFormats.size === 0) {
-            this.ui.showStatus('Carica prima un file Excel per verificare i format mancanti', 'info');
+            this.ui.showStatus('⚠️ Carica prima un file Excel per verificare i format mancanti', 'info');
+            this.log('⚠️ Nessun file caricato - impossibile verificare i format');
             return;
         }
         
         const formatIcons = this.config.formatIcons[this.state.currentChannel];
         const missingFormats = [];
+        const foundFormats = [];
         
+        // Verifica ogni format rilevato
+        for (const format of this.state.detectedFormats) {
+            const normalizedFormat = format.trim().toUpperCase();
+            let found = false;
+            
+            for (const key of Object.keys(formatIcons)) {
+                if (key.toUpperCase() === normalizedFormat) {
+                    found = true;
+                    foundFormats.push(format);
+                    break;
+                }
+            }
+            
+            if (!found) {
+                missingFormats.push(format);
+            }
+        }
+        
+        // Log dettagliato
+        this.log('\n🔍 SCANSIONE FORMAT COMPLETATA:');
+        this.log(`   Format totali rilevati: ${this.state.detectedFormats.size}`);
+        this.log(`   Format con icona: ${foundFormats.length}`);
+        this.log(`   Format SENZA icona: ${missingFormats.length}`);
+        
+        if (missingFormats.length === 0) {
+            this.ui.showStatus('✅ Tutti i format hanno un\'icona associata!', 'success');
+            this.log('✅ Tutti i format sono mappati correttamente!');
+        } else {
+            // Mostra i format mancanti nel log
+            this.log('\n⚠️ FORMAT SENZA ICONA:');
+            missingFormats.forEach((format, index) => {
+                this.log(`   ${index + 1}. "${format}"`);
+            });
+            
+            // Mostra il risultato nell'UI
+            const scanResultDiv = document.getElementById('scan-result');
+            if (scanResultDiv) {
+                scanResultDiv.innerHTML = `
+                    <div class="scan-result-content">
+                        <h4>⚠️ ${missingFormats.length} format senza icona:</h4>
+                        <div class="missing-formats-list">
+                            ${missingFormats.slice(0, 10).map(f => `<div class="missing-format-item">• ${f}</div>`).join('')}
+                            ${missingFormats.length > 10 ? `<div class="missing-format-item">... e altri ${missingFormats.length - 10}</div>` : ''}
+                        </div>
+                        <button class="btn btn-secondary mt-2" onclick="window.app.autoAddMissingFormats()">
+                            Aggiungi tutti con icona default
+                        </button>
+                    </div>
+                `;
+                scanResultDiv.classList.remove('hidden');
+            } else {
+                // Fallback se non c'è il div scan-result
+                this.ui.showStatus(`⚠️ ${missingFormats.length} format senza icona - controlla il log`, 'info');
+            }
+        }
+    }
+    
+    /**
+     * Auto-add missing formats with default icon
+     */
+    autoAddMissingFormats() {
+        const formatIcons = this.config.formatIcons[this.state.currentChannel];
+        const missingFormats = [];
+        
+        // Trova di nuovo i format mancanti
         for (const format of this.state.detectedFormats) {
             const normalizedFormat = format.trim().toUpperCase();
             let found = false;
@@ -606,22 +673,19 @@ class EPGConverter {
             
             if (!found) {
                 missingFormats.push(format);
+                formatIcons[format] = 'default.jpg';
             }
         }
         
-        if (missingFormats.length === 0) {
-            this.ui.showStatus('✅ Tutti i format hanno un\'icona associata!', 'success');
-        } else {
-            const message = `⚠️ ${missingFormats.length} format senza icona:\n${missingFormats.slice(0, 5).join('\n')}${missingFormats.length > 5 ? '\n...' : ''}`;
-            alert(message);
+        if (missingFormats.length > 0) {
+            this.ui.updateIconList(this.state.currentChannel);
+            this.ui.showStatus(`✅ Aggiunti ${missingFormats.length} format con icona default`, 'success');
+            this.log(`✅ Aggiunti automaticamente ${missingFormats.length} format con icona default`);
             
-            // Auto-add missing formats
-            if (confirm('Vuoi aggiungere automaticamente questi format con icona default?')) {
-                missingFormats.forEach(format => {
-                    formatIcons[format] = 'default.jpg';
-                });
-                this.ui.updateIconList(this.state.currentChannel);
-                this.ui.showStatus(`Aggiunti ${missingFormats.length} format con icona default`, 'success');
+            // Nascondi il risultato della scansione
+            const scanResultDiv = document.getElementById('scan-result');
+            if (scanResultDiv) {
+                scanResultDiv.classList.add('hidden');
             }
         }
     }
