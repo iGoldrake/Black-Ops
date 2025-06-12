@@ -3,366 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPG Converter 4.0.0 - Modular Edition</title>
-    
-    <!-- External Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Styles -->
+    <title>EPG Converter 4.0 - Excel to XMLTV</title>
     <link rel="stylesheet" href="css/styles.css">
-    
-    <!-- External Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
-    <div class="app-container">
+    <div class="container">
         <!-- Header -->
         <header class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <div class="logo-icon">📺</div>
-                    <span>EPG Converter</span>
-                    <span class="badge badge-warning">v4.0.0</span>
-                    <span class="badge badge-success">Modular Edition</span>
-                </div>
-                
-                <div class="header-actions">
-                    <div class="tooltip">
-                        <button class="btn btn-ghost btn-icon" id="shortcuts-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
-                                <path d="M7 11V7a5 5 0 0110 0v4"/>
-                            </svg>
-                        </button>
-                        <span class="tooltip-content">Shortcuts (Ctrl+/)</span>
-                    </div>
-                </div>
-            </div>
+            <h1>EPG Converter <span class="version">v4.0</span></h1>
+            <p class="subtitle">Conversione palinsesti da Excel a XMLTV</p>
         </header>
-        
+
         <!-- Main Content -->
-        <div class="main-wrapper">
-            <!-- Sidebar -->
+        <div class="main-layout">
+            <!-- Sidebar Navigation -->
             <aside class="sidebar">
-                <h3 class="sidebar-title">Passaggi Conversione</h3>
-                <div class="step-list" id="step-list">
+                <nav class="step-nav">
                     <div class="step-item active" data-step="1">
                         <div class="step-number">1</div>
                         <div class="step-label">Seleziona Canale</div>
                     </div>
                     <div class="step-item" data-step="2">
                         <div class="step-number">2</div>
-                        <div class="step-label">Carica File Excel</div>
+                        <div class="step-label">Carica File</div>
                     </div>
                     <div class="step-item" data-step="3">
                         <div class="step-number">3</div>
-                        <div class="step-label">Configura Opzioni</div>
+                        <div class="step-label">Configura</div>
                     </div>
                     <div class="step-item" data-step="4">
                         <div class="step-number">4</div>
-                        <div class="step-label">Converti e Scarica</div>
+                        <div class="step-label">Converti</div>
+                    </div>
+                </nav>
+
+                <!-- Recent Sessions -->
+                <div class="recent-sessions">
+                    <h3>Sessioni Recenti</h3>
+                    <div id="recent-sessions">
+                        <p class="text-xs opacity-50">Nessuna sessione recente</p>
                     </div>
                 </div>
-                
-                <div class="mt-4">
-                    <h4 class="sidebar-title">Sessioni Recenti</h4>
-                    <div id="recent-sessions" class="text-sm text-secondary">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
+
+                <!-- Shortcuts -->
+                <button id="shortcuts-btn" class="btn btn-ghost btn-sm mt-4">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    </svg>
+                    Scorciatoie
+                </button>
             </aside>
-            
-            <!-- Main Content Area -->
-            <main class="main-content">
+
+            <!-- Content Area -->
+            <main class="content">
                 <!-- Step 1: Channel Selection -->
-                <div class="card step-content" data-step="1">
-                    <div class="card-header">
-                        <h2 class="card-title">Seleziona il Canale</h2>
-                        <p class="card-description">Scegli il canale per cui vuoi generare l'EPG</p>
-                    </div>
+                <section class="step-content" data-step="1">
+                    <h2 class="step-title">Seleziona il Canale</h2>
                     
-                    <div class="channel-selector">
-                        <div class="channel-card classcnbc" data-channel="classcnbc" id="channel-classcnbc">
-                            <div class="channel-icon">📊</div>
-                            <h3 class="channel-name">Class CNBC</h3>
-                            <p class="channel-info">Business & Finance</p>
-                            <p class="text-xs mt-2 opacity-50">Un file per ogni cambio data</p>
+                    <div class="channel-grid">
+                        <div class="channel-card" data-channel="classcnbc">
+                            <div class="channel-logo">
+                                <img src="https://via.placeholder.com/120x60/1a1a1a/ffffff?text=Class+CNBC" alt="Class CNBC">
+                            </div>
+                            <h3>Class CNBC</h3>
+                            <p>Canale economico-finanziario</p>
                         </div>
                         
-                        <div class="channel-card tvmoda" data-channel="tvmoda" id="channel-tvmoda">
-                            <div class="channel-icon">👗</div>
-                            <h3 class="channel-name">Class TV Moda</h3>
-                            <p class="channel-info">Fashion & Style</p>
-                            <p class="text-xs mt-2 opacity-50">Un file per ogni foglio con data</p>
+                        <div class="channel-card" data-channel="tvmoda">
+                            <div class="channel-logo">
+                                <img src="https://via.placeholder.com/120x60/ff1493/ffffff?text=TV+Moda" alt="TV Moda">
+                            </div>
+                            <h3>Class TV Moda</h3>
+                            <p>Canale fashion & lifestyle</p>
                         </div>
                     </div>
-                </div>
-                
+                </section>
+
                 <!-- Step 2: File Upload -->
-                <div class="card step-content hidden" data-step="2">
-                    <div class="card-header">
-                        <h2 class="card-title">Carica File Excel</h2>
-                        <p class="card-description">Trascina o seleziona il file EPG in formato Excel</p>
-                    </div>
+                <section class="step-content hidden" data-step="2">
+                    <h2 class="step-title">Carica File Excel</h2>
                     
-                    <div class="upload-area" id="uploadArea">
-                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <div id="uploadArea" class="upload-area">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3">
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
                         </svg>
-                        <h3 class="upload-text">Trascina qui il file Excel</h3>
-                        <p class="upload-hint">oppure clicca per selezionarlo</p>
-                        <button class="btn btn-primary" id="select-file-btn">
-                            Seleziona File
-                        </button>
-                        <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" />
+                        <p>Trascina qui il file Excel o clicca per selezionare</p>
+                        <button id="select-file-btn" class="btn btn-primary">Seleziona File</button>
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
                     </div>
                     
-                    <div id="file-info" class="hidden mt-4"></div>
-                    
-                    <!-- Date Preview Section -->
+                    <div id="file-info" class="file-info hidden"></div>
                     <div id="date-preview" class="date-preview hidden">
-                        <h3 class="date-preview-title">📅 Date rilevate nel palinsesto</h3>
-                        <div id="date-grid" class="date-grid">
-                            <!-- Populated by JS -->
-                        </div>
+                        <h3>Date Rilevate</h3>
+                        <div id="date-grid" class="date-grid"></div>
                     </div>
                     
-                    <!-- Navigation button -->
-                    <div class="mt-4 text-right hidden" id="step2-nav">
-                        <button class="btn btn-primary" id="nav-step3">
-                            Configura Opzioni
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                        </button>
+                    <div class="nav-buttons">
+                        <button id="step2-nav" class="btn btn-primary hidden">Continua</button>
                     </div>
-                </div>
-                
+                </section>
+
                 <!-- Step 3: Configuration -->
-                <div class="card step-content hidden" data-step="3">
-                    <div class="card-header">
-                        <h2 class="card-title">Configurazione</h2>
-                        <p class="card-description">Personalizza le impostazioni di conversione</p>
-                    </div>
+                <section class="step-content hidden" data-step="3">
+                    <h2 class="step-title">Configurazione</h2>
                     
+                    <!-- Tabs -->
                     <div class="tabs">
                         <div class="tab active" data-tab="general">Generale</div>
+                        <div class="tab" data-tab="icons">Gestione Icone</div>
                         <div class="tab" data-tab="advanced">Avanzate</div>
-                        <div class="tab" data-tab="icons">Icone Format</div>
                     </div>
-                    
+
                     <!-- General Tab -->
                     <div class="tab-content" data-tab="general">
-                        <div class="grid grid-2">
-                            <div class="form-group">
-                                <label class="form-label" for="channelId">ID Canale</label>
-                                <input type="text" id="channelId" class="form-control" value="ClassCNBC" />
-                                <p class="form-hint">Identificativo univoco del canale</p>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label" for="channelName">Nome Canale</label>
-                                <input type="text" id="channelName" class="form-control" value="Class CNBC" />
-                                <p class="form-hint">Nome visualizzato nell'EPG</p>
-                            </div>
-                        </div>
-                        
                         <div class="form-group">
-                            <label class="form-label" for="timezone">Timezone Input</label>
+                            <label for="channelId">ID Canale</label>
+                            <input type="text" id="channelId" class="form-control" value="">
+                            <small>Identificativo univoco del canale nel file XMLTV</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="channelName">Nome Canale</label>
+                            <input type="text" id="channelName" class="form-control" value="">
+                            <small>Nome visualizzato del canale</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="timezone">Timezone</label>
                             <select id="timezone" class="form-control">
-                                <option value="0">+00:00 (UTC/GMT)</option>
-                                <option value="1" selected>+01:00 (Italia/CET)</option>
-                                <option value="2">+02:00 (Italia Estate/CEST)</option>
+                                <option value="0">+00:00 (UTC)</option>
+                                <option value="1">+01:00 (Italia Inverno/CET)</option>
+                                <option value="2" selected>+02:00 (Italia Estate/CEST)</option>
+                                <option value="-5">-05:00 (EST)</option>
+                                <option value="-8">-08:00 (PST)</option>
                             </select>
-                            <p class="form-hint">Gli orari verranno convertiti in UTC</p>
+                            <small>Timezone del palinsesto Excel (verrà convertito in UTC)</small>
                         </div>
-                        
+
                         <div class="form-group">
-                            <div class="toggle-wrapper">
-                                <div class="toggle active" data-option="fillGaps" id="fillGaps">
-                                    <div class="toggle-slider"></div>
-                                </div>
-                                <label class="form-label" style="margin: 0;">Riempi automaticamente i gap temporali</label>
-                            </div>
-                            <p class="form-hint mt-1">Estende la durata dei programmi per coprire i buchi nella programmazione</p>
-                        </div>
-                        
-                        <div class="form-group">
-                            <div class="toggle-wrapper">
-                                <div class="toggle active" data-option="useRealDates" id="useRealDates">
-                                    <div class="toggle-slider"></div>
-                                </div>
-                                <label class="form-label" style="margin: 0;">Usa date reali del palinsesto</label>
-                            </div>
-                            <p class="form-hint mt-1">Utilizza le date effettive del file Excel invece di proiettare su date future</p>
+                            <label for="iconUrl">URL Base Icone</label>
+                            <input type="text" id="iconUrl" class="form-control" value="">
+                            <small>URL base per le icone dei programmi</small>
                         </div>
                     </div>
-                    
-                    <!-- Advanced Tab -->
-                    <div class="tab-content hidden" data-tab="advanced">
-                        <div class="form-group">
-                            <label class="form-label" for="iconUrl">URL Base Icone</label>
-                            <input type="text" id="iconUrl" class="form-control" value="https://df4c28da231b4c30821e57d5f2111c23.msvdn.net/feeds/epg/ClassCNBC_IT_samsung/Images/" readonly />
-                            <p class="form-hint">URL base per le icone dei format</p>
-                        </div>
-                        
-                        <div class="grid grid-2">
-                            <div class="form-group">
-                                <div class="toggle-wrapper">
-                                    <div class="toggle" data-option="validateData" id="validateData">
-                                        <div class="toggle-slider"></div>
-                                    </div>
-                                    <label class="form-label" style="margin: 0;">Validazione dati</label>
-                                </div>
-                                <p class="form-hint mt-1">Rimuovi duplicati e sovrapposizioni</p>
-                            </div>
-                            
-                            <div class="form-group">
-                                <div class="toggle-wrapper">
-                                    <div class="toggle" data-option="debugMode" id="debugMode">
-                                        <div class="toggle-slider"></div>
-                                    </div>
-                                    <label class="form-label" style="margin: 0;">Modalità debug</label>
-                                </div>
-                                <p class="form-hint mt-1">Log dettagliati nella console</p>
-                            </div>
-                        </div>
-                    </div>
-                    
+
                     <!-- Icons Tab -->
                     <div class="tab-content hidden" data-tab="icons">
-                        <div class="mb-4">
-                            <button class="btn btn-secondary btn-sm" id="scan-formats">
-                                🔍 Verifica Format Mancanti
-                            </button>
-                            <button class="btn btn-secondary btn-sm" id="export-icons">
-                                💾 Esporta Mappatura
-                            </button>
-                            <button class="btn btn-secondary btn-sm" id="import-icons">
-                                📂 Importa Mappatura
-                            </button>
-                            <input type="file" id="importFile" accept=".json" class="hidden" />
-                        </div>
-                        
-                        <div class="icon-grid" id="iconList">
-                            <!-- Populated by JS -->
-                        </div>
-                        
-                        <div class="card mt-4" style="background-color: var(--bg-secondary);">
-                            <h4 class="font-semibold mb-2">Aggiungi Nuovo Format</h4>
-                            <div class="grid grid-2">
-                                <input type="text" id="newFormatName" class="form-control" placeholder="Nome format" />
-                                <input type="text" id="newFormatIcon" class="form-control" placeholder="nome-file.jpg" />
-                            </div>
-                            <button class="btn btn-primary btn-sm mt-2" id="add-format">
-                                + Aggiungi Format
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Navigation buttons -->
-                    <div class="mt-4 flex justify-between">
-                        <button class="btn btn-secondary" id="nav-step2">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="15 18 9 12 15 6"/>
-                            </svg>
-                            Indietro
-                        </button>
-                        <button class="btn btn-primary" id="nav-step4">
-                            Procedi alla Conversione
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Step 4: Convert & Download -->
-                <div class="card step-content hidden" data-step="4">
-                    <div class="card-header">
-                        <h2 class="card-title">Conversione</h2>
-                        <p class="card-description">Genera il file XMLTV</p>
-                    </div>
-                    
-                    <div class="text-center">
-                        <button class="btn btn-primary" id="convertBtn" disabled>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="16 16 12 12 8 16"/>
-                                <line x1="12" y1="12" x2="12" y2="21"/>
-                                <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
-                                <polyline points="16 16 12 12 8 16"/>
-                            </svg>
-                            Converti in XMLTV
-                        </button>
-                    </div>
-                    
-                    <div id="conversion-progress" class="hidden mt-4">
-                        <div class="progress-wrapper">
-                            <div class="progress-label">
-                                <span>Conversione in corso...</span>
-                                <span id="progress-percent">0%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div id="multi-progress" class="multi-progress mt-4 hidden">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-                    
-                    <div id="status" class="mt-4"></div>
-                    
-                    <div id="downloadSection" class="hidden mt-4 text-center slide-up"></div>
-                    
-                    <!-- Navigation button -->
-                    <div class="mt-4 text-left">
-                        <button class="btn btn-secondary" id="nav-step3-back">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="15 18 9 12 15 6"/>
-                            </svg>
-                            Torna alle Opzioni
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Console -->
-                <div class="card mt-4">
-                    <div class="console-header">
-                        <span class="console-title">📟 Console Output</span>
-                        <div class="console-actions">
-                            <button class="btn btn-ghost btn-icon" id="clear-log">
+                        <div class="icon-tools">
+                            <button id="scan-formats" class="btn btn-secondary">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"/>
-                                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <path d="m21 21-4.35-4.35"/>
                                 </svg>
+                                Verifica format mancanti
                             </button>
-                            <button class="btn btn-ghost btn-icon" id="export-log">
+                            <button id="export-icons" class="btn btn-secondary">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
                                     <polyline points="7 10 12 15 17 10"/>
                                     <line x1="12" y1="15" x2="12" y2="3"/>
                                 </svg>
+                                Esporta mappatura
                             </button>
+                            <button id="import-icons" class="btn btn-secondary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                Importa mappatura
+                            </button>
+                            <input type="file" id="importFile" accept=".json" style="display: none;">
+                        </div>
+
+                        <!-- Scan Results -->
+                        <div id="scan-result" class="hidden mt-3"></div>
+
+                        <!-- Add New Format -->
+                        <div class="add-format-section">
+                            <h3>Aggiungi Nuovo Format</h3>
+                            <div class="form-row">
+                                <input type="text" id="newFormatName" placeholder="Nome format" class="form-control">
+                                <input type="text" id="newFormatIcon" placeholder="nome-icona.jpg" class="form-control">
+                                <button id="add-format" class="btn btn-primary">Aggiungi</button>
+                            </div>
+                        </div>
+
+                        <!-- Icon List -->
+                        <div class="icon-list-container">
+                            <h3>Mappatura Format → Icone</h3>
+                            <div id="iconList" class="icon-list"></div>
                         </div>
                     </div>
-                    <div class="console" id="log"></div>
-                </div>
+
+                    <!-- Advanced Tab -->
+                    <div class="tab-content hidden" data-tab="advanced">
+                        <div class="option-group">
+                            <div class="option-item">
+                                <div>
+                                    <strong>Gap Filling</strong>
+                                    <p class="text-sm">Riempi automaticamente i buchi nella programmazione</p>
+                                </div>
+                                <div id="fillGaps" class="toggle active" data-option="fillGaps"></div>
+                            </div>
+
+                            <div class="option-item">
+                                <div>
+                                    <strong>Validazione Dati</strong>
+                                    <p class="text-sm">Verifica la coerenza dei dati durante la conversione</p>
+                                </div>
+                                <div id="validateData" class="toggle" data-option="validateData"></div>
+                            </div>
+
+                            <div class="option-item">
+                                <div>
+                                    <strong>Modalità Debug</strong>
+                                    <p class="text-sm">Log dettagliato per diagnostica avanzata</p>
+                                </div>
+                                <div id="debugMode" class="toggle" data-option="debugMode"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nav-buttons">
+                        <button id="nav-step3" class="btn btn-primary">Procedi alla conversione</button>
+                    </div>
+                </section>
+
+                <!-- Step 4: Convert -->
+                <section class="step-content hidden" data-step="4">
+                    <h2 class="step-title">Conversione</h2>
+                    
+                    <div id="status"></div>
+
+                    <!-- Conversion Progress -->
+                    <div id="conversion-progress" class="conversion-progress hidden">
+                        <h3>Conversione in corso...</h3>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="progress-percent">0%</span>
+                        </div>
+                        <div id="multi-progress" class="multi-progress hidden"></div>
+                    </div>
+
+                    <!-- Console -->
+                    <div class="console-container">
+                        <div class="console-header">
+                            <h3>Console</h3>
+                            <div class="console-actions">
+                                <button id="clear-log" class="btn btn-ghost btn-sm">Pulisci</button>
+                                <button id="export-log" class="btn btn-ghost btn-sm">Esporta</button>
+                            </div>
+                        </div>
+                        <pre id="log" class="console-log"></pre>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="convertBtn" class="btn btn-success" disabled>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"/>
+                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                            </svg>
+                            Converti in XMLTV
+                        </button>
+                        <button id="nav-step4" class="btn btn-secondary">
+                            ← Torna alla configurazione
+                        </button>
+                    </div>
+
+                    <!-- Download Section -->
+                    <div id="downloadSection" class="download-section hidden"></div>
+                </section>
             </main>
         </div>
-        
+
         <!-- Footer -->
         <footer class="footer">
-            <p>EPG Converter v4.0.0 - Modular Edition | Sviluppato da <strong>Telesia S.p.A.</strong> © 2025 | Ultimo aggiornamento: 10/06/2025</p>
+            <p>EPG Converter v4.0.0 - Ultimo aggiornamento: 10/06/2025</p>
         </footer>
     </div>
-    
-    <!-- Load modular JavaScript -->
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
