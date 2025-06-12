@@ -193,10 +193,9 @@ class EPGConverter {
         });
         
         // Navigation buttons
-        document.getElementById('nav-step2')?.addEventListener('click', () => this.navigateToStep(2));
-        document.getElementById('nav-step3')?.addEventListener('click', () => this.navigateToStep(3));
-        document.getElementById('nav-step4')?.addEventListener('click', () => this.navigateToStep(4));
-        document.getElementById('nav-step3-back')?.addEventListener('click', () => this.navigateToStep(3));
+        document.getElementById('step2-nav')?.addEventListener('click', () => this.navigateToStep(3));
+        document.getElementById('nav-step3')?.addEventListener('click', () => this.navigateToStep(4));
+        document.getElementById('nav-step4')?.addEventListener('click', () => this.navigateToStep(3));
         
         // Convert button
         document.getElementById('convertBtn')?.addEventListener('click', () => this.convertFile());
@@ -442,20 +441,13 @@ class EPGConverter {
         // Get parameters
         const params = this.ui.getConversionParameters();
         
-        // DEBUG: Verifichiamo cosa stiamo leggendo
-        const timezoneSelect = document.getElementById('timezone');
-        this.log(`\n🔍 DEBUG Timezone:`);
-        this.log(`- Valore select: "${timezoneSelect.value}"`);
-        this.log(`- Opzione selezionata: "${timezoneSelect.options[timezoneSelect.selectedIndex].text}"`);
-        this.log(`- Parametro passato: ${params.timezoneOffset}`);
-        
         this.log('\n🔧 CONFIGURAZIONE:');
         this.log(`- Tipo canale: ${this.state.currentChannel}`);
         this.log(`- Canale ID: ${params.channelId}`);
         this.log(`- Nome Canale: ${params.channelName}`);
         this.log(`- Timezone input: UTC${params.timezoneOffset >= 0 ? '+' : ''}${params.timezoneOffset}`);
         this.log(`- Output: UTC (conversione automatica)`);
-        this.log(`- Gap filling: ${this.options.fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
+        this.log(`- Gap filling: ${params.fillGaps ? 'ATTIVO' : 'DISATTIVO'}`);
         this.log(`- Date da processare: ${this.state.detectedDates.length}`);
         
         try {
